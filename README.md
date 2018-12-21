@@ -17,11 +17,21 @@ Set up a new environment by copying a 10-line script, setting 5 environment vari
 
 Migrate each environment to the next release by issuing the same 1-word command, adding the version number.
 
-## Docker Hub
-
-Base images are available on [Docker Hub](https://hub.docker.com/u/merkatorgis). The scripts to build these are in this repo.
-
 ## Community-strengthened
 
 The more projects using Docker4GIS, the more issues are reported, the more bugs are fixed, the more features are proposed, the more pull requests are merged.
 Join in, use everything for free, communicate, and help to grow it bigger, and stronger.
+
+## Docker Hub
+
+Base images are available on [Docker Hub](https://hub.docker.com/u/merkatorgis). The scripts to build these are in this repo.
+
+## Getting started
+
+- We're creating an Example project to show how to typically set things up.
+- Also, we're planning to host an introductory workshop in Feb 2019, in cooperation with [OSGeoNL](https://osgeo.nl/).
+- We'll add documentation explaining all the special features as well.
+
+## Enquiries
+
+Please use this repo's Issue board.
