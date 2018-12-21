@@ -6,6 +6,8 @@ Quickly pull up a stable baseline for your Geographical Information System, by e
 - GeoServer for maps
 - Postfix mailserver
 - Cron for system tasks
+- Elm Single Page App server
+- Glassfish Java API server
 - Reverse Proxy
 - Docker registry
 
