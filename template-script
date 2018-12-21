@@ -1,0 +1,136 @@
+#!/usr/bin/bash
+set -e
+
+export DOCKER_USER='template'
+
+# Clone the base Docker repo
+if [ "${DOCKER_BASE}" == '' ]; then
+	pushd "$(dirname $0)/../../Docker/base" > /dev/null
+	export DOCKER_BASE=$(pwd) # make the path absolute
+	popd > /dev/null
+fi
+
+action="${1:-start}"
+
+export DOCKER_TAG="${2:-$DOCKER_TAG}"
+if [ "${DOCKER_TAG}" == '' ]; then
+	export DOCKER_TAG='latest'
+fi
+
+export PROXY_HOST='localhost.merkator.com'
+export PROXY_PORT="${PROXY_PORT:-7443}"
+export APP="${APP:-http://${DOCKER_USER}-app:5000/}"
+export API="${API:-http://${DOCKER_USER}-api:8080/}"
+
+export DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.merkator.com/}"
+export NETWORK_NAME="${DOCKER_USER}-net"
+export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
+
+export PROXY_CONTAINER="${DOCKER_USER}-px"
+export POSTGIS_CONTAINER="${DOCKER_USER}-pg"
+export GEOSERVER_CONTAINER="${DOCKER_USER}-gs"
+export MAPFISH_CONTAINER="${DOCKER_USER}-mf"
+export POSTFIX_CONTAINER="${DOCKER_USER}-pf"
+export CRON_CONTAINER="${DOCKER_USER}-cr"
+export PHP_CONTAINER="${DOCKER_USER}-pp"
+export API_CONTAINER="${DOCKER_USER}-api"
+export APP_CONTAINER="${DOCKER_USER}-app"
+
+export MSYS_NO_PATHCONV=1
+
+latest()
+{
+	# exit 0
+	image="$1"
+	container="$2"
+
+	image="${DOCKER_REGISTRY}${image}:latest"
+	"${DOCKER_BASE}/rename.sh" "${image}" "${container}" force
+	docker pull "${image}"
+}
+
+scripts=$(dirname "$0")
+
+if [ "${action}" == 'start' ]; then
+	"${DOCKER_BASE}/start.sh" "${POSTGIS_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${GEOSERVER_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${MAPFISH_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${CRON_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${POSTFIX_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${API_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${APP_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${PROXY_CONTAINER}"
+elif [ "${action}" == 'stop' ]; then
+	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${API_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${POSTFIX_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${CRON_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${MAPFISH_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${GEOSERVER_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${POSTGIS_CONTAINER}"
+elif [ "${action}" == 'build' ]; then
+	here=$(pwd)
+	cd "${scripts}"; scripts=$(pwd) # make the path absolute
+
+	# latest merkator/proxy no_container
+	# cd "${DOCKER_BASE}/proxy"
+	# ./build.sh
+	# cd "${scripts}/${DOCKER_USER}/proxy"
+	# ./build.sh
+
+	# latest merkator/postfix no_container
+	# cd "${DOCKER_BASE}/postfix"
+	# ./build.sh
+	# cd "${scripts}/${DOCKER_USER}/postfix"
+	# ./build.sh
+
+	# latest merkator/postgis no_container
+	# cd "${DOCKER_BASE}/postgis"
+	# ./build.sh
+	# cd "${scripts}/${DOCKER_USER}/postgis"
+	# ./build.sh
+
+	# latest merkator/geoserver no_container
+	# cd "${DOCKER_BASE}/geoserver"
+	# ./build.sh
+	# cd "${scripts}/${DOCKER_USER}/geoserver"
+	# ./build.sh
+
+	# latest merkator/mapfish no_container
+	# cd "${DOCKER_BASE}/mapfish"
+	# ./build.sh
+	# cd "${scripts}/${DOCKER_USER}/mapfish"
+	# ./build.sh
+
+	# latest merkator/cron no_container
+	# cd "${DOCKER_BASE}/cron"
+	# ./build.sh
+	# cd "${scripts}/${DOCKER_USER}/cron"
+	# ./build.sh
+
+	# cd "${scripts}/${DOCKER_USER}/api"
+	# ./build.sh
+
+	# cd "${scripts}/${DOCKER_USER}/app"
+	# ./build.sh
+
+	# cd "${scripts}/${DOCKER_USER}/run"
+	# PROXY_TAG=latest; POSTFIX_TAG=latest; POSTGIS_TAG=latest; GEOSERVER_TAG=latest; MAPFISH_TAG=latest; CRON_TAG=latest; API_TAG=latest; APP_TAG=latest
+	# ./build.sh "${PROXY_TAG}" "${POSTFIX_TAG}" "${POSTGIS_TAG}" "${GEOSERVER_TAG}" "${MAPFISH_TAG}" "${CRON_TAG}" "${API_TAG}" "${APP_TAG}"
+
+	latest "${DOCKER_USER}/postfix" "${POSTFIX_CONTAINER}"
+	latest "${DOCKER_USER}/postgis" "${POSTGIS_CONTAINER}"
+	latest "${DOCKER_USER}/geoserver" "${GEOSERVER_CONTAINER}"
+	latest "${DOCKER_USER}/mapfish" "${MAPFISH_CONTAINER}"
+	latest "${DOCKER_USER}/cron" "${CRON_CONTAINER}"
+	latest "${DOCKER_USER}/run" no_container
+	latest "${DOCKER_USER}/api" "${API_CONTAINER}"
+	latest "${DOCKER_USER}/app" "${APP_CONTAINER}"
+	latest "${DOCKER_USER}/proxy" "${PROXY_CONTAINER}"
+
+	cd "${here}"
+	"$0" run
+elif [ "${action}" == 'run' ]; then
+	"${scripts}/${DOCKER_USER}/run/run.sh" "${DOCKER_TAG}"
+fi
