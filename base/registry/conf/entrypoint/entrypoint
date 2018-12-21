@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = 'proxy' ]; then
+	cp -r /tmp/conf/certificates/ /
+	export GATEWAY=$(ip route | awk '/default/ { print $3 }')
+	exec /goproxy
+fi
+
+exec "$@"
