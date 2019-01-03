@@ -16,7 +16,7 @@ export API="${API}"
 export HOMEDEST="/app"
 
 echo "
-About to run geowep version: ${docker_tag}
+About to run ${DOCKER_USER} version: ${docker_tag}
 
 With these settings:
 
@@ -41,7 +41,7 @@ echo; echo "Executing ${image}"
 mkdir -p "${DOCKER_BINDS_DIR}"
 temp=$(mktemp -d -p "${DOCKER_BINDS_DIR}")
 
-docker run --name geowep-run \
+docker run --name "${DOCKER_USER}-run" \
 	--rm \
 	-v "${temp}":/host/ \
 	"${image}"

@@ -1,11 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"crypto/tls"
 	"os"
 	"strings"
 )
@@ -25,7 +25,7 @@ var proxies = make(map[string]*url.URL)
 
 func defineProxy(key, target string) {
 	u, _ := url.Parse(target)
-	if (u.Path == "") {
+	if u.Path == "" {
 		u.Path = "/"
 	}
 	key = "/" + key + "/"
@@ -35,43 +35,43 @@ func defineProxy(key, target string) {
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
-		Director: passThroughDirector,
+		Director:       passThroughDirector,
 		ModifyResponse: modifyResponse,
 	}
 	reverseProxy = &httputil.ReverseProxy{
-		Director: reverseDirector,
+		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
 	}
 	transportInsecure := http.DefaultTransport.(*http.Transport)
 	configInsecure := &tls.Config{InsecureSkipVerify: true}
 	transportInsecure.TLSClientConfig = configInsecure
 	reverseProxyInsecure = &httputil.ReverseProxy{
-		Director: reverseDirector,
+		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
-		Transport: transportInsecure,
+		Transport:      transportInsecure,
 	}
-	// goproxy profiler=http://geowep-pp jlkvflk=http://www.vsoiihffvh.com
-    for _, proxy := range os.Args[1:] {
-        split := strings.Split(proxy, "=")
+	// goproxy thfghhj=http://www.dhghdsfgh.com jlkvflk=http://www.vsoiihffvh.com
+	for _, proxy := range os.Args[1:] {
+		split := strings.Split(proxy, "=")
 		defineProxy(split[0], split[1])
-    }
+	}
 	defineProxy("ngr", ngr)
 
 	defineProxy("geoserver", geoserver)
 
 	defineProxy("mapfish", mapfish)
-	defineProxy("print", mapfish + "print/")
+	defineProxy("print", mapfish+"print/")
 
 	defineProxy("api", api)
 
 	defineProxy("app", app)
-	defineProxy("static", app + "static/")
-	defineProxy("favicon.ico", app + "favicon.ico")
-	defineProxy("manifest.json", app + "manifest.json")
-	defineProxy("service-worker.js", app + "service-worker.js")
-	defineProxy("index.html", app + "index.html")
-	defineProxy("index", app + "index")
-	defineProxy("html", app + "html/")
+	defineProxy("static", app+"static/")
+	defineProxy("favicon.ico", app+"favicon.ico")
+	defineProxy("manifest.json", app+"manifest.json")
+	defineProxy("service-worker.js", app+"service-worker.js")
+	defineProxy("index.html", app+"index.html")
+	defineProxy("index", app+"index")
+	defineProxy("html", app+"html/")
 
 	log.Printf("homedest: %s", homedest)
 }
@@ -101,7 +101,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func reverse(w http.ResponseWriter, r *http.Request) {
 	for key, target := range proxies {
-		if r.URL.Path + "/" == key {
+		if r.URL.Path+"/" == key {
 			r.URL.Path = r.URL.Path + "/"
 		}
 		if strings.HasPrefix(r.URL.Path, key) {
@@ -115,10 +115,9 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 					r.Host += ":" + target.Port()
 				}
 				reverseProxyInsecure.ServeHTTP(w, r)
-			} else if (r.FormValue("secret") != secret) && (
-					key == "/print/" ||
-					key == "/mapfish/" ||
-					(key == "/geoserver/" && r.FormValue("service") != "" && ! strings.HasPrefix(referer.Path, key))) {
+			} else if (r.FormValue("secret") != secret) && (key == "/print/" ||
+				key == "/mapfish/" ||
+				(key == "/geoserver/" && r.FormValue("service") != "" && !strings.HasPrefix(referer.Path, key))) {
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			} else {
 				r.Host = target.Host
