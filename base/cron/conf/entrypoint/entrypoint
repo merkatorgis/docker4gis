@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$1" = 'cron' ]; then
+	(sleep 60; /util/cron/startup.sh) &
+	exec crond -f -L /dev/stdout
+fi
+
+exec "$@"
