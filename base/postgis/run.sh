@@ -26,7 +26,7 @@ echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
-	docker volume create pgdata
+	docker volume create "$CONTAINER"
 	docker run --name $CONTAINER \
 		-e PROXY=https://$PROXY_HOST:$PROXY_PORT \
 		-e SECRET=$SECRET \
@@ -39,7 +39,7 @@ if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 		-v $DOCKER_BINDS_DIR/certificates:/certificates \
 		-v $DOCKER_BINDS_DIR/fileport:/fileport \
 		-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-		--mount source=pgdata,target=/var/lib/postgresql/data \
+		--mount source="$CONTAINER",target=/var/lib/postgresql/data \
 		-p $POSTGIS_PORT:5432 \
 		--network "$NETWORK_NAME" \
 		-d $IMAGE
