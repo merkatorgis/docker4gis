@@ -31,6 +31,7 @@ Base images are available on [Docker Hub](https://hub.docker.com/u/merkatorgis).
 - We're creating an Example project to show how to typically set things up.
 - Also, we're planning to host an introductory workshop in Feb 2019, in cooperation with [OSGeoNL](https://osgeo.nl/).
 - We'll add documentation explaining all the special features as well.
+- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](/docs/clouddevenv.md)
 
 ## Enquiries
 
