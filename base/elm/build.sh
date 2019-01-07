@@ -25,8 +25,9 @@ docker container run \
     elm-app/build
 docker image rm elm-app/build
 
-cd build
-echo 'FROM merkatorgis/elm-serve' > ./Dockerfile
-docker image build -t "${IMAGE}" .
-cd ..
+
+here=$(dirname "$0")
+
+"${here}/../serve/build.sh" "$(pwd)/build"
+
 rm -rf build
