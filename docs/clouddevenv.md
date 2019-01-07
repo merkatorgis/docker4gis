@@ -1,7 +1,7 @@
 
 # Development environment on Cloud Virtual Machine
 
-Since many standard laptops aren't equipped to run a full Docker development environment, a (temporary) setup in the cloud might be an easy way to get you started.
+Many standard laptops aren't equipped to run a full Docker development environment; Docker For Windows requires Windows 10 Professional Edition, and you'll need 16 GB of RAM in a laptop. Therefore, a (temporary) setup in the cloud might be an easy way to get things started.
 
 ## Setup Cloud VM
 
