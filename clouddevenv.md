@@ -52,8 +52,8 @@ Login on [Digital Ocean](https://www.digitalocean.com/). New accounts with 60 da
 - Choose a region near you
 - Click "Create"
 - Check your email for the ip address and password
-- If you are on Windows, install [PuTTY](https://www.putty.org/), and start a session to the ip address of you VM
-- If you are on Mac or Linux, open a terminal, and type `ssh <ipaddressofyourvm>`
+- If you are on Windows, install [PuTTY](https://www.putty.org/), and open a session to the ip address of you VM
+- If you are on Mac or Linux, open a terminal, and type `ssh ipaddressofyourvm`
 - In the console, enter `root`, then the password to login (in PuTTY, right-click to paste)
 - Enter the password again, to authenticate for creating a new password
 - Make up a new password, enter it twice
