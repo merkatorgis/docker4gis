@@ -22,7 +22,7 @@ Login on [Microsoft Azure](https://portal.azure.com). New accounts come with a f
 - Click "Go to resource"
 - Click "Serial console"
 - In the console, set the username variable by typing: `username=theusernameyouchose`
-- Then run the following (first 3 command take like 10 minutes):
+- Then run the following (first 3 commands take like 10 minutes):
   - (if prompted, choose `install the package maintainer's version`)
 
 ``` bash
@@ -60,7 +60,7 @@ Login on [Digital Ocean](https://www.digitalocean.com/). New accounts with 60 da
 - Make up a 'normal' user name (a non-root one) and password
 - Create the user with `adduser theusernameyouchose`
 - Set the username variable by typing: `username=theusernameyouchose`
-- Then run the following (first 3 command take like 10 minutes):
+- Then run the following (first 3 commands take like 10 minutes):
   - (if prompted, choose `install the package maintainer's version`)
 
 ``` bash
