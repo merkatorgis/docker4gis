@@ -5,7 +5,7 @@ Many standard laptops aren't equipped to run a full Docker development environme
 
 ## Setup Cloud VM
 
-Choose your cloud provider. We tried Azure & Digital Ocean; steps for others would be quite similar.
+Choose your cloud provider. We tried Azure & Digital Ocean; steps for others would be quite similar. Kudos to [Jerry Gamblin](https://github.com/jgamblin) for his [blog on this subject](https://jerrygamblin.com/2016/10/19/ubuntu-remote-desktop-on-digital-ocean/), and to [Brendan Forster](https://github.com/shiftkey/desktop) for his Linux fork of GitHub Desktop.
 
 ### Azure
 
