@@ -10,9 +10,10 @@ Since many standard laptops aren't equipped to run a full Docker development env
 Login on [Microsoft Azure](https://portal.azure.com). New accounts come with a free USD 200,-- credit.
 
 - Choose to add a virtual machine resource
-- Ubuntu Server 18.04 LTS
-- password (provide username & password)
-- allow selected ports: HTTPS, SSH, RDP
+- Image: Ubuntu Server 18.04 LTS
+- Size: Standard D2s v3 (2 vcpus, 8 GB memory)
+- Authentication type: Password (provide username & password)
+- Allow selected ports: HTTPS, SSH, RDP
 - "Review + create"
 - "Create"
 - "Go to resource"
