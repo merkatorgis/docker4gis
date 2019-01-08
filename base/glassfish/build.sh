@@ -32,14 +32,15 @@ build_dir="${src_dir}/target/${artifact_id}-${version}"
 
 # Asserting a ./Dockerfile like:
 # FROM aws-eb-glassfish:5.0-al-onbuild-2.11.1
+# ADD conf /tmp/conf
 # RUN cp \
 #     ./WEB-INF/lib/mysql-*.jar \
 #     ${GLASSFISH_HOME}/glassfish/domains/domain1/lib
-
-cp ./Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
+mkdir -p conf
+cp -r conf Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
 pushd "${build_dir}"
 docker image build -t "${IMAGE}" .
-rm ./Dockerfile ./admin.sh
+rm -rf conf Dockerfile admin.sh
 popd
 docker container run -d --name tmp-glassfish-conf "${IMAGE}"
 sleep 15
