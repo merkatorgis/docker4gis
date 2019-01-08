@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-merkatorgis}"

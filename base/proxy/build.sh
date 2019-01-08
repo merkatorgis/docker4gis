@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
@@ -26,5 +26,6 @@ if [ -d ./goproxy ]; then # building base
 		echo 'Skipping build in absence of Go'
 	fi
 else # building upon base
+	mkdir -p conf
 	docker build -t $IMAGE .
 fi
