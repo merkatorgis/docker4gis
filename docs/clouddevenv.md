@@ -34,6 +34,7 @@ echo mate-session> ~/.xsession
 sudo cp "/home/${username}/.xsession" /etc/skel
 sudo service xrdp restart
 sudo snap install firefox
+sudo apt-get install pgadmin3
 sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
@@ -74,6 +75,7 @@ echo mate-session> ~/.xsession
 sudo cp "/home/$(whoami)/.xsession" /etc/skel
 sudo service xrdp restart
 sudo snap install firefox
+sudo apt-get install pgadmin3
 sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
