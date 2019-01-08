@@ -25,3 +25,5 @@ EXPOSE 25
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["postfix"]
+
+ONBUILD ADD conf /tmp/conf

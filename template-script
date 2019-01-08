@@ -73,39 +73,21 @@ elif [ "${action}" == 'build' ]; then
 	here=$(pwd)
 	cd "${scripts}"; scripts=$(pwd) # make the path absolute
 
-	# latest merkator/proxy no_container
-	# cd "${DOCKER_BASE}/proxy"
-	# ./build.sh
 	# cd "${scripts}/${DOCKER_USER}/proxy"
 	# ./build.sh
 
-	# latest merkator/postfix no_container
-	# cd "${DOCKER_BASE}/postfix"
-	# ./build.sh
 	# cd "${scripts}/${DOCKER_USER}/postfix"
 	# ./build.sh
 
-	# latest merkator/postgis no_container
-	# cd "${DOCKER_BASE}/postgis"
-	# ./build.sh
 	# cd "${scripts}/${DOCKER_USER}/postgis"
 	# ./build.sh
 
-	# latest merkator/geoserver no_container
-	# cd "${DOCKER_BASE}/geoserver"
-	# ./build.sh
 	# cd "${scripts}/${DOCKER_USER}/geoserver"
 	# ./build.sh
 
-	# latest merkator/mapfish no_container
-	# cd "${DOCKER_BASE}/mapfish"
-	# ./build.sh
 	# cd "${scripts}/${DOCKER_USER}/mapfish"
 	# ./build.sh
 
-	# latest merkator/cron no_container
-	# cd "${DOCKER_BASE}/cron"
-	# ./build.sh
 	# cd "${scripts}/${DOCKER_USER}/cron"
 	# ./build.sh
 
