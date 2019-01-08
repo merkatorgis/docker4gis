@@ -13,7 +13,7 @@ ENV GEOSERVER_USER=admin \
 	PATH=/util:$PATH \
 	JAVA_OPTS='-Xms2g -Xmx2g -XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseParNewGC -XX:NewRatio=2 -XX:+AggressiveOpts'
 
-COPY conf /tmp/conf
+ADD conf /tmp/conf
 
 RUN mv /tmp/conf/base/conf/server.xml $CATALINA_HOME/conf/server.xml; \
     mv /tmp/conf/base/conf/web.xml    $CATALINA_HOME/conf/web.xml; \
@@ -35,3 +35,5 @@ RUN mv /jai/jai-1_1_3/lib/*.jar       $JAVA_HOME/lib/ext/; \
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["geoserver"]
+
+ONBUILD ADD conf /tmp/conf

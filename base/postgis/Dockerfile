@@ -3,7 +3,7 @@ FROM merkatorgis/postgis-gdal
 RUN apk update; apk add --no-cache \
 		python py2-psycopg2 sudo
 
-COPY conf /tmp/conf
+ADD conf /tmp/conf
 
 RUN /tmp/conf/ogr_fdw/install.sh
 RUN /tmp/conf/odbc_fdw/install.sh
@@ -21,3 +21,5 @@ ENV PATH=/util:$PATH
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["postgis"]
+
+ONBUILD ADD conf /tmp/conf
