@@ -51,6 +51,7 @@ cat << EOF > "${here}/conf/${DOCKER_USER}.sh"
 
 	export DOCKER_USER="${DOCKER_USER}"
 EOF
+chmod +x "${here}/conf/${DOCKER_USER}.sh"
 cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 	here=$(dirname "$0")
 
