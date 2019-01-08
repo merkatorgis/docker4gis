@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
