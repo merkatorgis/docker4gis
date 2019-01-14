@@ -73,31 +73,23 @@ elif [ "${action}" == 'build' ]; then
 	here=$(pwd)
 	cd "${scripts}"; scripts=$(pwd) # make the path absolute
 
-	# cd "${scripts}/${DOCKER_USER}/proxy"
-	# ./build.sh
+	# cd "${scripts}/postfix"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/postfix"
-	# ./build.sh
+	# cd "${scripts}/geoserver"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/postgis"
-	# ./build.sh
+	# cd "${scripts}/mapfish"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/geoserver"
-	# ./build.sh
+	# cd "${scripts}/cron"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/mapfish"
-	# ./build.sh
+	# cd "${scripts}/api"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/cron"
-	# ./build.sh
+	# cd "${scripts}/proxy"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/api"
-	# ./build.sh
+	# cd "${scripts}/app"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/app"
-	# ./build.sh
+	# cd "${scripts}/postgis"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/run"
+	# cd "${scripts}/run"
 	# PROXY_TAG=latest; POSTFIX_TAG=latest; POSTGIS_TAG=latest; GEOSERVER_TAG=latest; MAPFISH_TAG=latest; CRON_TAG=latest; API_TAG=latest; APP_TAG=latest
 	# ./build.sh "${PROXY_TAG}" "${POSTFIX_TAG}" "${POSTGIS_TAG}" "${GEOSERVER_TAG}" "${MAPFISH_TAG}" "${CRON_TAG}" "${API_TAG}" "${APP_TAG}"
 
@@ -114,5 +106,5 @@ elif [ "${action}" == 'build' ]; then
 	cd "${here}"
 	"$0" run
 elif [ "${action}" == 'run' ]; then
-	"${scripts}/${DOCKER_USER}/run/run.sh" "${DOCKER_TAG}"
+	"${scripts}/run/run.sh" "${DOCKER_TAG}"
 fi
