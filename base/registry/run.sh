@@ -36,4 +36,5 @@ docker container run --name theregistry \
 	-e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
 	-e REGISTRY_HTTP_TLS_CERTIFICATE=/certificates/$REGISTRY_HOST.crt \
 	-e REGISTRY_HTTP_TLS_KEY=/certificates/$REGISTRY_HOST.key \
+	-e REGISTRY_STORAGE_DELETE_ENABLED=true \
 	-d registry:2
