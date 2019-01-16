@@ -2,7 +2,7 @@
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
 DOCKER_REPO="${DOCKER_REPO:-elm-app}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 

@@ -1,8 +1,8 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
 DOCKER_REPO="${DOCKER_REPO:-mapfish}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 MAPFISH_CONTAINER="${MAPFISH_CONTAINER:-$DOCKER_USER-mf}"

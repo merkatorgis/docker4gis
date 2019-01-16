@@ -1,8 +1,8 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
 DOCKER_REPO="${DOCKER_REPO:-cron}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 CRON_CONTAINER="${CRON_CONTAINER:-$DOCKER_USER-cr}"

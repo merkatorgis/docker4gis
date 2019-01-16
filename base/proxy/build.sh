@@ -1,8 +1,8 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
 DOCKER_REPO="${DOCKER_REPO:-proxy}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 PROXY_CONTAINER="${PROXY_CONTAINER:-$DOCKER_USER-px}"
@@ -26,5 +26,6 @@ if [ -d ./goproxy ]; then # building base
 		echo 'Skipping build in absence of Go'
 	fi
 else # building upon base
+	mkdir -p conf
 	docker build -t $IMAGE .
 fi

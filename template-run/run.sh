@@ -4,6 +4,7 @@ set -e
 docker_tag="${1:-latest}"
 
 export PROXY_HOST="${PROXY_HOST}"
+export DOCKER_USER="${DOCKER_USER}"
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 export NETWORK_NAME="${DOCKER_USER}-net"
