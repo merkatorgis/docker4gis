@@ -27,7 +27,7 @@ if [ -d ./goproxy ]; then # building base
 	fi
 else # building upon base
 	mkdir -p conf
-	cp -r "${HERE}/../include" "conf"
+	cp -r "${HERE}/../plugins" "conf"
 	docker image build -t "${IMAGE}" .
-	rm -rf "conf/include"
+	rm -rf "conf/plugins"
 fi

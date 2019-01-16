@@ -15,6 +15,6 @@ HERE=$(dirname "$0")
 "$HERE/../rename.sh" "$IMAGE" "$MAPFISH_CONTAINER" force
 
 mkdir -p conf
-cp -r "${HERE}/../include" "conf"
+cp -r "${HERE}/../plugins" "conf"
 docker image build -t "${IMAGE}" .
-rm -rf "conf/include"
+rm -rf "conf/plugins"

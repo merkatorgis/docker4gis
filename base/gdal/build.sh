@@ -13,6 +13,6 @@ echo; echo "Building $IMAGE"
 HERE=$(dirname "$0")
 
 mkdir -p conf
-cp -r "${HERE}/../include" "conf"
+cp -r "${HERE}/../plugins" "conf"
 docker image build -t "${IMAGE}" .
-rm -rf "conf/include"
+rm -rf "conf/plugins"
