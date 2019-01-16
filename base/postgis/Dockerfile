@@ -9,8 +9,8 @@ RUN /tmp/conf/ogr_fdw/install.sh
 RUN /tmp/conf/odbc_fdw/install.sh
 RUN /tmp/conf/tds/install.sh
 
-RUN /tmp/conf/include/runner/install.sh
-RUN /tmp/conf/include/pg/install.sh
+RUN /tmp/conf/plugins/runner/install.sh
+RUN /tmp/conf/plugins/pg/install.sh
 
 RUN	mkdir -p /etc/postgresql /util; \
 	mv /tmp/conf/p*.conf /etc/postgresql/; \
