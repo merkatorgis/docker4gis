@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-merkatorgis}"
@@ -12,6 +12,7 @@ echo; echo "Building $IMAGE"
 
 HERE=$(dirname "$0")
 
-cp -r "$HERE/../include" "$HERE/conf"
-docker build -t "$IMAGE" .
-rm -rf "$HERE/conf/include"
+mkdir -p conf
+cp -r "${HERE}/../include" "conf"
+docker image build -t "${IMAGE}" .
+rm -rf "conf/include"

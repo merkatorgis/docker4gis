@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 LIBKML_VERSION="${LIBKML_VERSION:-1.3.0}"
 GDAL_VERSION="${GDAL_VERSION:-2.2.4}"

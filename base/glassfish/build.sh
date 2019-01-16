@@ -41,6 +41,7 @@ HERE=$(dirname "$0")
 mkdir -p conf
 cp -r conf Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
 pushd "${build_dir}"
+cp -r "${HERE}/../include" "conf"
 docker image build -t "${IMAGE}" .
 rm -rf conf Dockerfile admin.sh
 popd
