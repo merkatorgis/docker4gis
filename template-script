@@ -40,7 +40,6 @@ if [ "${action}" == 'start' ]; then
 	"${DOCKER_BASE}/start.sh" "${POSTFIX_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${API_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${POSTGIS_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${POSTGIS_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${APP_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${PROXY_CONTAINER}"
 elif [ "${action}" == 'stop' ]; then
