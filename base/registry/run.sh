@@ -5,7 +5,7 @@ export MSYS_NO_PATHCONV=1
 REGISTRY_HOST="${REGISTRY_HOST:-localhost}"
 REGISTRY_PORT="${REGISTRY_PORT:-443}"
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
 DOCKER_REPO="${DOCKER_REPO:-registry}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 
@@ -36,4 +36,5 @@ docker container run --name theregistry \
 	-e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
 	-e REGISTRY_HTTP_TLS_CERTIFICATE=/certificates/$REGISTRY_HOST.crt \
 	-e REGISTRY_HTTP_TLS_KEY=/certificates/$REGISTRY_HOST.key \
+	-e REGISTRY_STORAGE_DELETE_ENABLED=true \
 	-d registry:2

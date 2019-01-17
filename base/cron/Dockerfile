@@ -3,7 +3,7 @@ FROM merkatorgis/postgis
 RUN apk update; apk add --no-cache \
 	bash curl wget unzip grep sed
 
-COPY conf /tmp/conf
+ADD conf /tmp/conf
 
 RUN /tmp/conf/include/gs/install.sh
 
@@ -16,3 +16,5 @@ ENV PATH=/util:$PATH
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["cron"]
+
+ONBUILD ADD conf /tmp/conf

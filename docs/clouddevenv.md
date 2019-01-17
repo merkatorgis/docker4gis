@@ -1,11 +1,11 @@
 
 # Development environment on Cloud Virtual Machine
 
-Since many standard laptops aren't equipped to run a full Docker development environment, a (temporary) setup in the cloud might be an easy way to get you started.
+Many standard laptops aren't equipped to run a full Docker development environment; Docker For Windows requires Windows 10 Professional Edition, and you'll need 16 GB of RAM in a laptop. Therefore, a (temporary) setup in the cloud might be an easy way to get things started.
 
 ## Setup Cloud VM
 
-Choose your cloud provider. We tried Azure & Digital Ocean; steps for others would be quite similar.
+Choose your cloud provider. We tried Azure & Digital Ocean; steps for others would be quite similar. Kudos to [Jerry Gamblin](https://github.com/jgamblin) for his [blog on this subject](https://jerrygamblin.com/2016/10/19/ubuntu-remote-desktop-on-digital-ocean/), and to [Brendan Forster](https://github.com/shiftkey/desktop) for his Linux fork of GitHub Desktop.
 
 ### Azure
 
@@ -34,6 +34,7 @@ echo mate-session> ~/.xsession
 sudo cp "/home/${username}/.xsession" /etc/skel
 sudo service xrdp restart
 sudo snap install firefox
+sudo apt-get install pgadmin3
 sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
@@ -52,7 +53,7 @@ Login on [Digital Ocean](https://www.digitalocean.com/). New accounts with 60 da
 - Choose a region near you
 - Click "Create"
 - Check your email for the ip address and password
-- If you are on Windows, install [PuTTY](https://www.putty.org/), and open a session to the ip address of you VM
+- If you are on Windows, install [PuTTY](https://www.putty.org/), and open a session to the ip address of your VM
 - If you are on Mac or Linux, open a terminal, and type `ssh ipaddressofyourvm`
 - In the console, enter `root`, then the password to login (in PuTTY, right-click to paste)
 - Enter the password again, to authenticate for creating a new password
@@ -74,6 +75,7 @@ echo mate-session> ~/.xsession
 sudo cp "/home/$(whoami)/.xsession" /etc/skel
 sudo service xrdp restart
 sudo snap install firefox
+sudo apt-get install pgadmin3
 sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap

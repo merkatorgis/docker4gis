@@ -4,15 +4,14 @@ set -e
 src_dir="${1}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
-DOCKER_REPO="${DOCKER_REPO:-glassfish}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
+DOCKER_REPO="${DOCKER_REPO:-api}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
+API_CONTAINER="${API_CONTAINER:-$DOCKER_USER-api}"
 
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
-
-HERE=$(dirname "$0")
 
 echo; echo "Compiling from '${src_dir}'..."
 
@@ -30,6 +29,9 @@ read -r -a artifact_id <<< $(grep -oPm1 '(?<=<artifactId>)[^<]+' "${src_dir}/pom
 read -r -a version <<< $(grep -oPm1 '(?<=<version>)[^<]+' "${src_dir}/pom.xml")
 build_dir="${src_dir}/target/${artifact_id}-${version}"
 
+HERE=$(dirname "$0")
+"$HERE/../rename.sh" "$IMAGE" "$API_CONTAINER" force
+
 # Asserting a ./Dockerfile like:
 # FROM aws-eb-glassfish:5.0-al-onbuild-2.11.1
 # ADD conf /tmp/conf
@@ -39,6 +41,7 @@ build_dir="${src_dir}/target/${artifact_id}-${version}"
 mkdir -p conf
 cp -r conf Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
 pushd "${build_dir}"
+cp -r "${HERE}/../plugins" "conf"
 docker image build -t "${IMAGE}" .
 rm -rf conf Dockerfile admin.sh
 popd

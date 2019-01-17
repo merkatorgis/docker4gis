@@ -1,8 +1,8 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkator}"
+DOCKER_USER="${DOCKER_USER:-merkatorgis}"
 DOCKER_REPO="${DOCKER_REPO:-proxy}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 PROXY_CONTAINER="${PROXY_CONTAINER:-$DOCKER_USER-px}"
@@ -21,10 +21,13 @@ if [ -d ./goproxy ]; then # building base
 		CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -ldflags '-w' .
 		cd ..
 
-		docker build -t $IMAGE .
+		docker image build -t "${IMAGE}" .
 	else
 		echo 'Skipping build in absence of Go'
 	fi
 else # building upon base
-	docker build -t $IMAGE .
+	mkdir -p conf
+	cp -r "${HERE}/../plugins" "conf"
+	docker image build -t "${IMAGE}" .
+	rm -rf "conf/plugins"
 fi

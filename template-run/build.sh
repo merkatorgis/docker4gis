@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 PROXY_TAG="${1:-latest}"
@@ -33,6 +33,8 @@ cp "${DOCKER_BASE}/geoserver/run.sh" "${here}/conf/scripts/geoserver"
 cp "${DOCKER_BASE}/mapfish/run.sh"   "${here}/conf/scripts/mapfish"
 cp "${DOCKER_BASE}/postfix/run.sh"   "${here}/conf/scripts/postfix"
 cp "${DOCKER_BASE}/cron/run.sh"      "${here}/conf/scripts/cron"
+cp "${DOCKER_BASE}/glassfish/run.sh" "${here}/conf/scripts/api"
+cp "${DOCKER_BASE}/serve/run.sh"     "${here}/conf/scripts/app"
 cp "${DOCKER_BASE}/rename.sh"        "${here}/conf/scripts"
 cp "${DOCKER_BASE}/network.sh"       "${here}/conf/scripts"
 
@@ -49,6 +51,7 @@ cat << EOF > "${here}/conf/${DOCKER_USER}.sh"
 
 	export DOCKER_USER="${DOCKER_USER}"
 EOF
+chmod +x "${here}/conf/${DOCKER_USER}.sh"
 cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 	here=$(dirname "$0")
 

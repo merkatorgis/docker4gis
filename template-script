@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 set -e
 
 export DOCKER_USER='template'
@@ -22,7 +22,7 @@ export PROXY_PORT="${PROXY_PORT:-7443}"
 export APP="${APP:-http://${DOCKER_USER}-app:5000/}"
 export API="${API:-http://${DOCKER_USER}-api:8080/}"
 
-export DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.merkator.com/}"
+# export DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.merkator.com/}"
 export NETWORK_NAME="${DOCKER_USER}-net"
 export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
 
@@ -73,49 +73,23 @@ elif [ "${action}" == 'build' ]; then
 	here=$(pwd)
 	cd "${scripts}"; scripts=$(pwd) # make the path absolute
 
-	# latest merkator/proxy no_container
-	# cd "${DOCKER_BASE}/proxy"
-	# ./build.sh
-	# cd "${scripts}/${DOCKER_USER}/proxy"
-	# ./build.sh
+	# cd "${scripts}/postfix"; ./build.sh
 
-	# latest merkator/postfix no_container
-	# cd "${DOCKER_BASE}/postfix"
-	# ./build.sh
-	# cd "${scripts}/${DOCKER_USER}/postfix"
-	# ./build.sh
+	# cd "${scripts}/geoserver"; ./build.sh
 
-	# latest merkator/postgis no_container
-	# cd "${DOCKER_BASE}/postgis"
-	# ./build.sh
-	# cd "${scripts}/${DOCKER_USER}/postgis"
-	# ./build.sh
+	# cd "${scripts}/mapfish"; ./build.sh
 
-	# latest merkator/geoserver no_container
-	# cd "${DOCKER_BASE}/geoserver"
-	# ./build.sh
-	# cd "${scripts}/${DOCKER_USER}/geoserver"
-	# ./build.sh
+	# cd "${scripts}/cron"; ./build.sh
 
-	# latest merkator/mapfish no_container
-	# cd "${DOCKER_BASE}/mapfish"
-	# ./build.sh
-	# cd "${scripts}/${DOCKER_USER}/mapfish"
-	# ./build.sh
+	# cd "${scripts}/api"; ./build.sh
 
-	# latest merkator/cron no_container
-	# cd "${DOCKER_BASE}/cron"
-	# ./build.sh
-	# cd "${scripts}/${DOCKER_USER}/cron"
-	# ./build.sh
+	# cd "${scripts}/proxy"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/api"
-	# ./build.sh
+	# cd "${scripts}/app"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/app"
-	# ./build.sh
+	# cd "${scripts}/postgis"; ./build.sh
 
-	# cd "${scripts}/${DOCKER_USER}/run"
+	# cd "${scripts}/run"
 	# PROXY_TAG=latest; POSTFIX_TAG=latest; POSTGIS_TAG=latest; GEOSERVER_TAG=latest; MAPFISH_TAG=latest; CRON_TAG=latest; API_TAG=latest; APP_TAG=latest
 	# ./build.sh "${PROXY_TAG}" "${POSTFIX_TAG}" "${POSTGIS_TAG}" "${GEOSERVER_TAG}" "${MAPFISH_TAG}" "${CRON_TAG}" "${API_TAG}" "${APP_TAG}"
 
@@ -132,5 +106,5 @@ elif [ "${action}" == 'build' ]; then
 	cd "${here}"
 	"$0" run
 elif [ "${action}" == 'run' ]; then
-	"${scripts}/${DOCKER_USER}/run/run.sh" "${DOCKER_TAG}"
+	"${scripts}/run/run.sh" "${DOCKER_TAG}"
 fi

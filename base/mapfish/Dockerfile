@@ -1,6 +1,9 @@
 FROM camptocamp/mapfish_print
 
-ADD conf/print-apps ${CATALINA_HOME}/webapps/ROOT/print-apps/
+ADD conf /tmp/conf
 
-ADD conf/fonts ${CATALINA_HOME}/webapps/ROOT/WEB-INF/classes/fonts/
-ADD conf/mapfish-spring-custom-fonts.xml ${CATALINA_HOME}/webapps/ROOT/WEB-INF/classes/mapfish-spring-custom-fonts.xml
+RUN mv /tmp/conf/print-apps ${CATALINA_HOME}/webapps/ROOT/print-apps/; \
+    mv /tmp/conf/fonts ${CATALINA_HOME}/webapps/ROOT/WEB-INF/classes/fonts/; \
+    mv /tmp/conf/mapfish-spring-custom-fonts.xml ${CATALINA_HOME}/webapps/ROOT/WEB-INF/classes/mapfish-spring-custom-fonts.xml
+
+ONBUILD ADD conf /tmp/conf
