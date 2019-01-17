@@ -31,9 +31,7 @@ func main() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%+v", r)
-	if r.Method == "GET" {
-		registry.ServeHTTP(w, r)
-	} else if owner := strings.SplitN(r.RequestURI, "/", 4)[2]; owner == "" { // "/v2/"
+	if owner := strings.SplitN(r.RequestURI, "/", 4)[2]; owner == "" { // "/v2/"
 		registry.ServeHTTP(w, r)
 	} else { // "/v2/owner/repo/image..."
 		auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2) // "Basic =458g7y8734hg438hjvkvogdh"
