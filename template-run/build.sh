@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-PROXY_TAG="${1:-latest}"
-POSTFIX_TAG="${2:-latest}"
-POSTGIS_TAG="${3:-latest}"
-GEOSERVER_TAG="${4:-latest}"
-MAPFISH_TAG="${5:-latest}"
-CRON_TAG="${6:-latest}"
-API_TAG="${7:-latest}"
-APP_TAG="${8:-latest}"
+PROXY_TAG="${PROXY_TAG:-latest}"
+POSTFIX_TAG="${POSTFIX_TAG:-latest}"
+POSTGIS_TAG="${POSTGIS_TAG:-latest}"
+GEOSERVER_TAG="${GEOSERVER_TAG:-latest}"
+MAPFISH_TAG="${MAPFISH_TAG:-latest}"
+CRON_TAG="${CRON_TAG:-latest}"
+API_TAG="${API_TAG:-latest}"
+APP_TAG="${APP_TAG:-latest}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
