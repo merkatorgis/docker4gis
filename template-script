@@ -7,7 +7,7 @@ export DOCKER_USER='template'
 # Fork the merkatorgis/docker4gis repo and set the environment variable
 # to the docker4gis/base directory
 export DOCKER_BASE="${DOCKER_BASE}"
-echo "DOCKER_BASE: ${DOCKER_BASE}"
+echo; echo "DOCKER_BASE: ${DOCKER_BASE}"
 
 action="${1:-start}"
 shift 1
