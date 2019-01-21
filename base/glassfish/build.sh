@@ -34,10 +34,11 @@ HERE=$(dirname "$0")
 
 # Asserting a ./Dockerfile like:
 # FROM aws-eb-glassfish:5.0-al-onbuild-2.11.1
-# ADD conf /tmp/conf
 # RUN cp \
 #     ./WEB-INF/lib/mysql-*.jar \
 #     ${GLASSFISH_HOME}/glassfish/domains/domain1/lib
+# RUN mv /var/app/conf/... ...
+# RUN /var/app/conf/plugins/.../install.sh
 mkdir -p conf
 cp -r conf Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
 pushd "${build_dir}"
