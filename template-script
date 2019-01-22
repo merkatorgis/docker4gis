@@ -1,21 +1,16 @@
 #!/bin/bash
 set -e
 
+# edit here
 export DOCKER_USER='template'
 
-# Clone the base Docker repo
-if [ "${DOCKER_BASE}" == '' ]; then
-	pushd "$(dirname $0)/../../Docker/base" > /dev/null
-	export DOCKER_BASE=$(pwd) # make the path absolute
-	popd > /dev/null
-fi
+# Fork the merkatorgis/docker4gis repo and set the environment variable
+# to the docker4gis/base directory
+export DOCKER_BASE="${DOCKER_BASE}"
+echo; echo "DOCKER_BASE: ${DOCKER_BASE}"
 
 action="${1:-start}"
-
-export DOCKER_TAG="${2:-$DOCKER_TAG}"
-if [ "${DOCKER_TAG}" == '' ]; then
-	export DOCKER_TAG='latest'
-fi
+shift 1
 
 export PROXY_HOST='localhost.merkator.com'
 export PROXY_PORT="${PROXY_PORT:-7443}"
@@ -38,73 +33,62 @@ export APP_CONTAINER="${DOCKER_USER}-app"
 
 export MSYS_NO_PATHCONV=1
 
-latest()
-{
-	# exit 0
-	image="$1"
-	container="$2"
-
-	image="${DOCKER_REGISTRY}${image}:latest"
-	"${DOCKER_BASE}/rename.sh" "${image}" "${container}" force
-	docker pull "${image}"
-}
-
-scripts=$(dirname "$0")
-
 if [ "${action}" == 'start' ]; then
-	"${DOCKER_BASE}/start.sh" "${POSTGIS_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${GEOSERVER_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${MAPFISH_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${CRON_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${POSTFIX_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${API_CONTAINER}"
+	"${DOCKER_BASE}/start.sh" "${POSTGIS_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${APP_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${PROXY_CONTAINER}"
 elif [ "${action}" == 'stop' ]; then
 	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${POSTGIS_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${API_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${POSTFIX_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${CRON_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${MAPFISH_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${GEOSERVER_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${POSTGIS_CONTAINER}"
 elif [ "${action}" == 'build' ]; then
-	here=$(pwd)
-	cd "${scripts}"; scripts=$(pwd) # make the path absolute
-
-	# cd "${scripts}/postfix"; ./build.sh
-
-	# cd "${scripts}/geoserver"; ./build.sh
-
-	# cd "${scripts}/mapfish"; ./build.sh
-
-	# cd "${scripts}/cron"; ./build.sh
-
-	# cd "${scripts}/api"; ./build.sh
-
-	# cd "${scripts}/proxy"; ./build.sh
-
-	# cd "${scripts}/app"; ./build.sh
-
-	# cd "${scripts}/postgis"; ./build.sh
-
-	# cd "${scripts}/run"
-	# PROXY_TAG=latest; POSTFIX_TAG=latest; POSTGIS_TAG=latest; GEOSERVER_TAG=latest; MAPFISH_TAG=latest; CRON_TAG=latest; API_TAG=latest; APP_TAG=latest
-	# ./build.sh "${PROXY_TAG}" "${POSTFIX_TAG}" "${POSTGIS_TAG}" "${GEOSERVER_TAG}" "${MAPFISH_TAG}" "${CRON_TAG}" "${API_TAG}" "${APP_TAG}"
-
-	latest "${DOCKER_USER}/postfix" "${POSTFIX_CONTAINER}"
-	latest "${DOCKER_USER}/postgis" "${POSTGIS_CONTAINER}"
-	latest "${DOCKER_USER}/geoserver" "${GEOSERVER_CONTAINER}"
-	latest "${DOCKER_USER}/mapfish" "${MAPFISH_CONTAINER}"
-	latest "${DOCKER_USER}/cron" "${CRON_CONTAINER}"
-	latest "${DOCKER_USER}/run" no_container
-	latest "${DOCKER_USER}/api" "${API_CONTAINER}"
-	latest "${DOCKER_USER}/app" "${APP_CONTAINER}"
-	latest "${DOCKER_USER}/proxy" "${PROXY_CONTAINER}"
-
-	cd "${here}"
-	"$0" run
+	# Examples:
+	# ./ex build app
+	# ./ex build app 627
+	# APP_TAG=627 ./ex build run 38
+	# ./ex build api; ./ex br app
+	export PROXY_TAG="${PROXY_TAG}"
+	export POSTFIX_TAG="${POSTFIX_TAG}"
+	export POSTGIS_TAG="${POSTGIS_TAG}"
+	export GEOSERVER_TAG="${GEOSERVER_TAG}"
+	export MAPFISH_TAG="${MAPFISH_TAG}"
+	export CRON_TAG="${CRON_TAG}"
+	export API_TAG="${API_TAG}"
+	export APP_TAG="${APP_TAG}"
+	"${DOCKER_BASE}/build.sh" "$0" "$@"
 elif [ "${action}" == 'run' ]; then
-	"${scripts}/run/run.sh" "${DOCKER_TAG}"
+	# Examples:
+	# ./ex run
+	# ./ex run 38
+	"${DOCKER_BASE}/run.sh" "$0" "$@"
+elif [ "${action}" == 'br' ]; then
+	# Examples:
+	# ./ex br app
+	# ./ex br postgis
+	"$0" build "${1}"
+	"$0" run
+elif [ "${action}" == 'latest' ]; then
+	"${DOCKER_BASE}/latest.sh" postfix "${POSTFIX_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" geoserver "${GEOSERVER_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" mapfish "${MAPFISH_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" cron "${CRON_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" api "${API_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" run no_container
+	"${DOCKER_BASE}/latest.sh" postgis "${POSTGIS_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" app "${APP_CONTAINER}"
+	"${DOCKER_BASE}/latest.sh" proxy "${PROXY_CONTAINER}"
+
+	"$0" run
+else
+	echo "Unknown action: ${action}"
 fi

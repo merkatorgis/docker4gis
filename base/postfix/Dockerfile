@@ -19,7 +19,7 @@ RUN	mkdir -p     /var/spool/postfix/ /var/spool/postfix/pid /var/mail; \
 	postalias /etc/postfix/aliases; \
 	mv /tmp/conf/entrypoint/* /; \
 	mv /tmp/conf/util         /util; \
-	/tmp/conf/include/runner/install.sh
+	/tmp/conf/plugins/runner/install.sh
 
 EXPOSE 25
 
