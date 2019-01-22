@@ -14,6 +14,8 @@ NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
+mkdir -p "${DOCKER_BINDS_DIR}/${CONTAINER}/templates"
+
 echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
@@ -22,6 +24,7 @@ if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	docker run --name $CONTAINER \
 		--network "$NETWORK_NAME" \
 		--mount source="${CONTAINER}",target=/host \
+		-v ${DOCKER_BINDS_DIR}/${CONTAINER}/templates:/host/templates \
 		-p "${app_port}":8080 \
 		-p "${admin_port}":4848 \
 		"$@" \
