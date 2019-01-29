@@ -21,14 +21,13 @@ Login on [Microsoft Azure](https://portal.azure.com). New accounts come with a f
 - Click "Create"
 - Click "Go to resource"
 - Click "Serial console"
-- In the console, set the username variable by typing: `username=theusernameyouchose`
-- Then run the following (first 3 commands take like 10 minutes):
-  - (if prompted, choose `install the package maintainer's version`)
+- In the console, run the following (first 3 commands take like 10 minutes):
 
 ``` bash
 sudo apt-get update && sudo apt-get dist-upgrade -y
 sudo apt-get install --no-install-recommends ubuntu-mate-core ubuntu-mate-desktop -y
 sudo apt-get install mate-core mate-desktop-environment mate-notification-daemon xrdp -y
+username="$(whoami)"
 sudo usermod -aG admin "${username}"
 echo mate-session> ~/.xsession
 sudo cp "/home/${username}/.xsession" /etc/skel
