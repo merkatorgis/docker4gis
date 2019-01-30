@@ -24,8 +24,8 @@ echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
-	docker volume create gsdynamic
-	docker run --name $CONTAINER \
+	sudo docker volume create gsdynamic
+	sudo docker run --name $CONTAINER \
 		-e GEOSERVER_HOST=$GEOSERVER_HOST \
 		-v $DOCKER_BINDS_DIR/secrets:/secrets \
 		-v $DOCKER_BINDS_DIR/fileport:/fileport \

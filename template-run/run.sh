@@ -42,7 +42,7 @@ echo; echo "Executing ${image}"
 mkdir -p "${DOCKER_BINDS_DIR}"
 temp=$(mktemp -d -p "${DOCKER_BINDS_DIR}")
 
-docker run --name "${DOCKER_USER}-run" \
+sudo docker run --name "${DOCKER_USER}-run" \
 	--rm \
 	-v "${temp}":/host/ \
 	"${image}"

@@ -14,11 +14,11 @@ IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Running $CONTAINER from $IMAGE"
 
-docker volume create certificates
-docker volume create registry
-if (docker network create registry 2>/dev/null); then true; fi
+sudo docker volume create certificates
+sudo docker volume create registry
+if (sudo docker network create registry 2>/dev/null); then true; fi
 
-docker container run --name $CONTAINER \
+sudo docker container run --name $CONTAINER \
 	--network registry \
 	-v certificates:/certificates \
 	-e REGISTRY_HOST=$REGISTRY_HOST \
@@ -26,7 +26,7 @@ docker container run --name $CONTAINER \
 	"$@" \
 	-d "$IMAGE"
 
-docker container run --name theregistry \
+sudo docker container run --name theregistry \
 	--network registry \
 	-v certificates:/certificates \
 	-v registry:/var/lib/registry \

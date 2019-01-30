@@ -14,7 +14,7 @@ echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
-	docker run --name $CONTAINER \
+	sudo docker run --name $CONTAINER \
 		--network "$NETWORK_NAME" \
 		-p 5000:5000 \
 		"$@" \

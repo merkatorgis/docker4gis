@@ -87,9 +87,9 @@ cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 	export DOCKER_TAG="$APP_TAG"
 	"${here}/scripts/app/run.sh"
 
-	rm -rf "${here}"
+	sudo rm -rf "${here}"
 EOF
 
-docker build -t $IMAGE .
+sudo docker build -t $IMAGE .
 
 rm -rf "${here}/conf/scripts" "${here}/conf/${DOCKER_USER}.sh"

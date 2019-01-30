@@ -2,4 +2,4 @@
 
 CONTAINER="$1"
 
-docker start "$CONTAINER"
+sudo docker start "$CONTAINER"

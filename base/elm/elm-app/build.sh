@@ -10,4 +10,4 @@ IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
 
-docker image build -t "${IMAGE}" .
+sudo docker image build -t "${IMAGE}" .

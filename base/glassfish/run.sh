@@ -18,8 +18,8 @@ echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
-	docker volume create "${CONTAINER}"
-	docker run --name $CONTAINER \
+	sudo docker volume create "${CONTAINER}"
+	sudo docker run --name $CONTAINER \
 		--network "$NETWORK_NAME" \
 		--mount source="${CONTAINER}",target=/host \
 		-p "${app_port}":8080 \

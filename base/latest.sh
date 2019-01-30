@@ -8,4 +8,4 @@ here=$(dirname "$0")
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:latest"
 
 "${here}/rename.sh" "${image}" "${container}" force
-docker image pull "${image}"
+sudo docker image pull "${image}"

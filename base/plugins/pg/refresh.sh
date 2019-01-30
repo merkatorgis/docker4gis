@@ -2,9 +2,9 @@
 
 # In verschillende sessies:
 # $ top
-# $ docker container exec -ti myapp-pg top
+# $ sudo docker container exec -ti myapp-pg top
 # $ tail -f /docker/binds/runner/util/runner/util/refresh.sh.2018-07-03.log
-# $ docker container exec myapp-pg refresh.sh run schema.mv_matviewname &
+# $ sudo docker container exec myapp-pg refresh.sh run schema.mv_matviewname &
 
 
 if [ "$1" = 'run' ]; then
