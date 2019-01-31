@@ -21,20 +21,19 @@ Login on [Microsoft Azure](https://portal.azure.com). New accounts come with a f
 - Click "Create"
 - Click "Go to resource"
 - Click "Serial console"
-- In the console, set the username variable by typing: `username=theusernameyouchose`
-- Then run the following (first 3 commands take like 10 minutes):
-  - (if prompted, choose `install the package maintainer's version`)
+- In the console, run the following (first 3 commands take like 10 minutes):
 
 ``` bash
 sudo apt-get update && sudo apt-get dist-upgrade -y
 sudo apt-get install --no-install-recommends ubuntu-mate-core ubuntu-mate-desktop -y
 sudo apt-get install mate-core mate-desktop-environment mate-notification-daemon xrdp -y
+username="$(whoami)"
 sudo usermod -aG admin "${username}"
 echo mate-session> ~/.xsession
 sudo cp "/home/${username}/.xsession" /etc/skel
 sudo service xrdp restart
 sudo snap install firefox
-sudo apt-get install pgadmin3
+sudo apt-get install pgadmin3 -y
 sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
@@ -75,7 +74,7 @@ echo mate-session> ~/.xsession
 sudo cp "/home/$(whoami)/.xsession" /etc/skel
 sudo service xrdp restart
 sudo snap install firefox
-sudo apt-get install pgadmin3
+sudo apt-get install pgadmin3 -y
 sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
