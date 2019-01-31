@@ -50,3 +50,5 @@ docker run --name "${DOCKER_USER}-run" \
 "${temp}/${DOCKER_USER}.sh"
 
 rm -rf "${temp}"
+
+echo; docker container ls
