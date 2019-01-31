@@ -33,7 +33,7 @@ APP=${APP}
 API=${API}
 HOMEDEST=${HOMEDEST}
 "
-read -n 1 -p 'Press any key to continue...'
+read -n 1 -p "Press any key to continue..."
 
 image="${DOCKER_REGISTRY}${DOCKER_USER}/run:${docker_tag}"
 
@@ -50,3 +50,5 @@ docker run --name "${DOCKER_USER}-run" \
 "${temp}/${DOCKER_USER}.sh"
 
 rm -rf "${temp}"
+
+echo; docker container ls
