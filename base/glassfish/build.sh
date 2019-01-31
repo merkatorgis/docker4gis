@@ -15,9 +15,9 @@ echo; echo "Building $IMAGE"
 
 echo; echo "Compiling from '${src_dir}'..."
 
-sudo docker volume create mvndata
+docker volume create mvndata
 
-sudo docker container run --rm \
+docker container run --rm \
     --mount source=mvndata,target=/root/.m2 \
     -v "${src_dir}":/src \
     "${DOCKER_REGISTRY}dirichlet/netbeans" \
@@ -43,11 +43,11 @@ mkdir -p conf
 cp -r conf Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
 pushd "${build_dir}"
 cp -r "${HERE}/../plugins" "conf"
-sudo docker image build -t "${IMAGE}" .
+docker image build -t "${IMAGE}" .
 rm -rf conf Dockerfile admin.sh
 popd
-sudo docker container run -d --name tmp-glassfish-conf "${IMAGE}"
+docker container run -d --name tmp-glassfish-conf "${IMAGE}"
 sleep 15
-sudo docker container exec tmp-glassfish-conf /var/app/admin.sh
-sudo docker container commit tmp-glassfish-conf "${IMAGE}"
-sudo docker container rm -f tmp-glassfish-conf
+docker container exec tmp-glassfish-conf /var/app/admin.sh
+docker container commit tmp-glassfish-conf "${IMAGE}"
+docker container rm -f tmp-glassfish-conf

@@ -19,7 +19,7 @@ HERE=$(dirname "$0")
 pushd "${build_dir}"
 
 echo 'FROM merkatorgis/serve' > ./Dockerfile
-sudo docker image build -t "${IMAGE}" .
+docker image build -t "${IMAGE}" .
 rm ./Dockerfile
 
 popd

@@ -19,7 +19,7 @@ if [ -d ./goproxy ]; then # building base
 	cd ./goproxy
 	CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -ldflags '-w' .
 	cd ..
-	sudo docker build -t "$IMAGE" .
+	docker build -t "$IMAGE" .
 else # building upon base
-	sudo docker build -t "$IMAGE" .
+	docker build -t "$IMAGE" .
 fi

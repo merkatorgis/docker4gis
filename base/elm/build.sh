@@ -7,16 +7,16 @@ echo; echo "Building ${src_dir}"
 
 pushd "${src_dir}"
 echo 'FROM merkatorgis/elm-app' > ./Dockerfile
-sudo docker image build -t elm-app/build .
+docker image build -t elm-app/build .
 rm ./Dockerfile
 popd
 
 mkdir -p build
-sudo docker container run \
+docker container run \
     --rm \
     -v $PWD/build:/app/build \
     elm-app/build
-sudo docker image rm elm-app/build
+docker image rm elm-app/build
 
 
 here=$(dirname "$0")

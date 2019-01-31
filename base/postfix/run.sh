@@ -17,7 +17,7 @@ mkdir -p "${DOCKER_BINDS_DIR}/runner"
 echo; echo "Running $POSTFIX_CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$POSTFIX_CONTAINER"); then
-	sudo docker run --name $POSTFIX_CONTAINER \
+	docker run --name $POSTFIX_CONTAINER \
 		-v $DOCKER_BINDS_DIR/fileport:/fileport \
 		-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 		-p $POSTFIX_PORT:25 \

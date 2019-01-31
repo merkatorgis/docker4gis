@@ -54,7 +54,7 @@ echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
-	sudo docker run --name $CONTAINER \
+	docker run --name $CONTAINER \
 		-e PROXY_HOST=$PROXY_HOST \
 		-e API=$API \
 		-e APP=$APP \

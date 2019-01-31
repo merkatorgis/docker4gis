@@ -21,13 +21,13 @@ if [ -d ./goproxy ]; then # building base
 		CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -ldflags '-w' .
 		cd ..
 
-		sudo docker image build -t "${IMAGE}" .
+		docker image build -t "${IMAGE}" .
 	else
 		echo 'Skipping build in absence of Go'
 	fi
 else # building upon base
 	mkdir -p conf
 	cp -r "${HERE}/../plugins" "conf"
-	sudo docker image build -t "${IMAGE}" .
+	docker image build -t "${IMAGE}" .
 	rm -rf "conf/plugins"
 fi

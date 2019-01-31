@@ -90,6 +90,6 @@ cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 	sudo rm -rf "${here}"
 EOF
 
-sudo docker build -t $IMAGE .
+docker build -t $IMAGE .
 
 rm -rf "${here}/conf/scripts" "${here}/conf/${DOCKER_USER}.sh"
