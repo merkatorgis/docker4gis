@@ -69,7 +69,7 @@ cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 
 	export DOCKER_REPO='geoserver'
 	export DOCKER_TAG="$GEOSERVER_TAG"
-	"${here}/scripts/geoserver/run.sh"
+	"${here}/scripts/geoserver/run.sh" -P
 
 	export DOCKER_REPO='mapfish'
 	export DOCKER_TAG="$MAPFISH_TAG"
