@@ -24,7 +24,7 @@ Join in, use everything for free, communicate, and help to grow it bigger, and s
 
 ## Docker Hub
 
-Base images are available on [Docker Hub](https://hub.docker.com/u/merkatorgis). The scripts to build these are in this repo.
+Base images are available on [Docker Hub](https://hub.docker.com/u/docker4gis). The scripts to build these are in this repo.
 
 ## Getting started
 

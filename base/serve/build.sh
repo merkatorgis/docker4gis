@@ -4,7 +4,7 @@ set -e
 build_dir="${1}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkatorgis}"
+DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-app}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 APP_CONTAINER="${APP_CONTAINER:-$DOCKER_USER-app}"
@@ -18,7 +18,7 @@ HERE=$(dirname "$0")
 
 pushd "${build_dir}"
 
-echo 'FROM merkatorgis/serve' > ./Dockerfile
+echo 'FROM docker4gis/serve' > ./Dockerfile
 docker image build -t "${IMAGE}" .
 rm ./Dockerfile
 
