@@ -2,7 +2,7 @@
 set -ex
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkatorgis}"
+DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-gdal}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 

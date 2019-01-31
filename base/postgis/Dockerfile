@@ -1,4 +1,4 @@
-FROM merkatorgis/postgis-gdal
+FROM docker4gis/postgis-gdal
 
 RUN apk update; apk add --no-cache \
 		python py2-psycopg2 sudo
