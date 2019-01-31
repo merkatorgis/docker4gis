@@ -5,7 +5,7 @@ RUN apk update; apk add --no-cache \
 
 ADD conf /tmp/conf
 
-RUN /tmp/conf/include/gs/install.sh
+RUN /tmp/conf/plugins/gs/install.sh
 
 RUN	mv /tmp/conf/cron.sh /util/; \
 	mkdir -p /util/cron; \

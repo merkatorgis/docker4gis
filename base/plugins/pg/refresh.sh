@@ -6,6 +6,19 @@
 # $ tail -f /docker/binds/runner/util/runner/util/refresh.sh.2018-07-03.log
 # $ docker container exec myapp-pg refresh.sh run schema.mv_matviewname &
 
+refresh()
+{
+	what="$1"
+	message="${taskid} refreshing ${what}..."
+	echo "${message}"
+	if pg.sh -c "refresh materialized view ${what}"; then
+		echo "${message}... done"
+		echo 0
+	else
+		echo "${message}... failed"
+		echo 1
+	fi
+}
 
 if [ "$1" = 'run' ]; then
 	shift 1
@@ -13,16 +26,10 @@ if [ "$1" = 'run' ]; then
 else
 	taskid="$1"
 	mv="$2"
-	what="${mv}"
-	if pg.sh -c "select from ${mv} limit 0" 1>/dev/null 2>&1; then
-		what="concurrently ${mv}"
-	fi
-	echo "${taskid} refreshing ${what}..."
-	if pg.sh -c "refresh materialized view ${what}"; then
-		echo "${taskid} refreshing ${what}... done"
-		exit 0
-	else
-		echo "${taskid} refreshing ${what}... failed"
-		exit 1
+	force="$3"
+	if ! pg.sh -c "select from ${mv} limit 0" 1>/dev/null 2>&1; then
+		refresh "${mv}"
+	elif ! refresh "concurrently ${mv}" && [ "${force}" == 'force' ]; then
+		refresh "${mv}"
 	fi
 fi
