@@ -1,4 +1,4 @@
-# proxy
+# proxy base image
 
 A reverse proxy, acting as the gateway to the different containers. All your containers are connected through an internal Docker network. Only the proxy container has a port open to the outside. Clients connect to it through the Docker host's standard HTTPS port 443.
 
