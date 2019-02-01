@@ -1,3 +1,5 @@
+[![Merkator logo](Merkator_Simple_Transparent_No_Gradient.png)](https://www.merkator.com/)
+
 # docker4gis
 
 Quickly pull up a stable baseline for your Geographical Information System, by extending some of the Docker images for common GIS components:
