@@ -39,4 +39,4 @@ In your `run/build.sh` script, extend the line running the proxy, eg:
 So a client request for `https://<hostname>/extra1` will trigger a request from the proxy to `http://container1` and echo the response from there back to the client. Note that containers on the Docker network are addressed by their container name. Also note that since the only route into a container is through the proxy, there's no need for any SSL on the destination containers.
 
 ### Home destination
-The HOMEDEST defines the address to redirect to when requesting the root of `https://<hostname>`. It could be set to an external address, or to a local address, eg `/app` for `https://<hostname>/app`.
+The HOMEDEST environment variable defines the address to redirect to when requesting the root of `https://<hostname>`. It could be set to an external address, or to a local address, eg `/app` for `https://<hostname>/app`.
