@@ -1,4 +1,3 @@
-
 # Development environment on Cloud Virtual Machine
 
 Many standard laptops aren't equipped to run a full Docker development environment; Docker For Windows requires Windows 10 Professional Edition, and you'll need 16 GB of RAM in a laptop. Therefore, a (temporary) setup in the cloud might be an easy way to get things started.
@@ -39,7 +38,26 @@ wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap connect github-desktop:password-manager-service
 sudo snap install --classic vscode
-sudo snap install docker
+```
+
+- Lastly, to [install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/):
+
+``` bash
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+sudo usermod -aG docker "${username}"
 ```
 
 ### Digital Ocean
@@ -67,6 +85,7 @@ Login on [Digital Ocean](https://www.digitalocean.com/). New accounts with 60 da
 apt-get update && apt-get dist-upgrade -y
 apt-get install --no-install-recommends ubuntu-mate-core ubuntu-mate-desktop -y
 apt-get install mate-core mate-desktop-environment mate-notification-daemon xrdp -y
+usermod -aG docker "${username}"
 usermod -aG admin "${username}"
 usermod -aG sudo "${username}"
 su - "${username}"
