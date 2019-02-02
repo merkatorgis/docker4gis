@@ -4,9 +4,9 @@ A reverse proxy, acting as the gateway to the different containers. All your con
 
 HTTP 2.0 is supported.
 
-## Get started
+## Getting started
 
-Copy this `proxy` directory as a template into your project's `Docker` folder. The default `run\build.sh` script will pick things up then.
+Copy the `templates/proxy` directory into your project's `Docker` directory. The default `run\build.sh` script will pick things up then.
 
 ### Default destinations
 

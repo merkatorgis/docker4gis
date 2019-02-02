@@ -109,6 +109,6 @@ sudo ufw allow 3389
 
 - WinKey + R, then enter: `mstsc /v:ipaddressofyourvm`
 
-![RDP login prompt](./rdp_login.png)
+![RDP login prompt](clouddevenv/rdp_login.png)
 
-![RDP applications](./rdp_apps.png)
+![RDP applications](clouddevenv/rdp_apps.png)
