@@ -4,7 +4,7 @@
 
 ### Docker
 
-Docker runs __containers__ from __images__. Containers are processes running in a separate computing environment, like the're started in a freshly created virtual machine dedicated to that specific process. So as a container, the process is running in the same predifined context each and every time. The context is defined in a Docker __image__, that is stored in a __registry__. Whether the container runs on your development laptop, or on your staging server, or on your production server, if it's started from the same image, it'll run in the same context. This way, apps gain a great level of baked-in robustness and predictability, which are great enablers for  extension and improvement.
+Docker runs _containers_ from _images_. Containers are processes running in a separate computing environment, like the're started in a freshly created virtual machine dedicated to that specific process. So as a container, the process is running in the same predifined context each and every time. The context is defined in a Docker _image_, that is stored in a _registry_. Whether the container runs on your development laptop, or on your staging server, or on your production server, if it's started from the same image, it'll run in the same context. This way, apps gain a great level of baked-in robustness and predictability, which are great enablers for  extension and improvement.
 
 ### docker4gis
 
@@ -19,7 +19,7 @@ browser - proxy - |    |
                   | - geoserver
 
 ```
-The docker4gis repo provides base images, the scripts to build and run them, and extend then, and a common interface called the [__main script__](#building_things)
+The docker4gis repo provides base images, the scripts to build and run them, and extend then, and a common interface called the [_main script_](#building_things)
 
 
 ## Getting started
@@ -51,13 +51,13 @@ Make your main script executable with `chmod +x app` (where app it the script's 
 
 See the different [base images](#base_images) for their features and how to set them up for your app. Mostly, you'd copy a template `Dockerfile` and `build.sh` script, and optionally add things you need.
 
-Then, use your __main script__ to build things, eg `./app build proxy` to build your app's proxy image
+Then, use your _main script_ to build things, eg `./app build proxy` to build your app's proxy image
 
 ## Running things
 
 Read about the [run image](run.md).
 
-When you've built all your images __and__ the `run` image, `./app run` will run your app. That is, it'll run the `latest` version of it; see the [run image](run.md) docs for details about versioning.
+When you've built all your images _and_ the `run` image, `./app run` will run your app. That is, it'll run the `latest` version of it; see the [run image](run.md) docs for details about versioning.
 
 Where `./app run` creates containers from images, `./app stop` will stop all the app's containers, and `./app start` will start existing (stopped) containers.
 
