@@ -4,22 +4,22 @@
 
 ### Docker
 
-Docker runs __containers__ from __iamges__. Containers are processes running in a separate computing environment, like the're started in a freshly created virtual machine dedicated to that specific process. So as a container, the process is running every time in the same predifined context. The context is defined in a Docker __image__, that is stored in a __registry__. Whether the container runs on your development laptop, or on your staging server, or on your production server, if it's started from the same image, it'll run in the same context. This way, apps gain a great level of baked-in robustness and predictability, which are great enablers for extension and improvement.
+Docker runs __containers__ from __images__. Containers are processes running in a separate computing environment, like the're started in a freshly created virtual machine dedicated to that specific process. So as a container, the process is running in the same predifined context each and every time. The context is defined in a Docker __image__, that is stored in a __registry__. Whether the container runs on your development laptop, or on your staging server, or on your production server, if it's started from the same image, it'll run in the same context. This way, apps gain a great level of baked-in robustness and predictability, which are great enablers for  extension and improvement.
 
 ### docker4gis
 
 A docker4gis app/website consists of several Docker images, from which interconnected containers are run behind a reverse proxy HTTPS gateway container, eg
 ```
-                  - app
-                /
-browser - proxy --- api
-              | \    |
-              |  - postgis
-              |      |
-               \ - geoserver
+                  | - app
+                  |
+                  | - api
+browser - proxy - |    |
+                  | - postgis
+                  |    |
+                  | - geoserver
 
 ```
-The docker4gis repo provides base images, the scripts to build and run extensions, and a common interface called the [__main script__](#building_things)
+The docker4gis repo provides base images, the scripts to build and run them, and extend then, and a common interface called the [__main script__](#building_things)
 
 
 ## Getting started
@@ -33,17 +33,17 @@ A development environment requires:
 - [GitHub Desktop](https://desktop.github.com/) (or just the git command line tools)
 - A code oriented text editor (Atom, Sublime Text, Visual Studio Code, or maybe you're a fan of vi or Emacs, anything like these would work).
 
-On Windows, Docker equires Windows 10 Professional. The Home edition won't work. Also, 16 GB of RAM is very much recommended. If this poses any hurdles, take a look at our guide for setting up a [Cloud development environment](clouddevenv.md).
+On Windows, Docker requires Windows 10 Professional or Enterprise (the Home edition won't work), and you need 16 GB of RAM. If this poses any hurdles, take a look at our guide for setting up a [Cloud development environment](clouddevenv.md).
 
 ### Fork
 
-Create a fork of [this repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
+Create a fork of [the main dockedr4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
 
 ### Setup app directory
 
 Create a directory for your app on your local file system. Make a directory `Docker` inside it. Copy the template [run](/templates/run) directory and the template [main script](/templates/script/app) to this `Docker` directory.
 
-Rename the main script to a short name for your specific app. Then edit the main script to set the `DOCKER_USER` variable. If you're on a private Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your bash profile).
+Rename the main script to a short name for your specific app. Then edit the main script to set the `DOCKER_USER` variable. If you're on a specific Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your bash profile).
 
 Make your main script executable with `chmod +x app` (where app it the script's filename).
 
@@ -61,9 +61,9 @@ When you've built all your images __and__ the `run` image, `./app run` will run 
 
 Where `./app run` creates containers from images, `./app stop` will stop all the app's containers, and `./app start` will start existing (stopped) containers.
 
-When you're happy about an image, you can `docker image push` it to a Docker  Registry. This can be the Docker Hub, or any other public or private registry. The docker4gis registry base image facilitates setting up a private registry.
+When you're happy about an image, you can `docker image push` it to a Docker registry. This can be the Docker Hub, or any other public or private registry. The docker4gis `registry` base image facilitates setting up a private registry.
 
-Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, just run. So the only thing you need there, is the little run script that runs the run image. See its [docs](run.md) for details.
+Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, only run. So the only thing you need there, is the little run script that runs the run image. See its [docs](run.md) for details.
 
 ## Base images 
 
@@ -76,9 +76,9 @@ Once your images are in a registry, they're accessible there from your servers. 
 - postfix
 - postgis
 - postgis-gdal
+- [proxy](proxy.md)
 - registry
 - serve
-- [proxy](proxy.md)
 
 ## Other topics
 
