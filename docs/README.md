@@ -19,7 +19,7 @@ browser - proxy - |    |
                   | - geoserver
 
 ```
-The docker4gis repo provides base images, the scripts to build and run them, and extend then, and a common interface called the [_main script_](#building_things)
+The docker4gis repo provides base images, the scripts to build and run them, and extend then, and a common interface called the [_main script_](#building-things)
 
 
 ## Getting started
@@ -49,7 +49,7 @@ Make your main script executable with `chmod +x app` (where app it the script's 
 
 ## Building things
 
-See the different [base images](#base_images) for their features and how to set them up for your app. Mostly, you'd copy a template `Dockerfile` and `build.sh` script, and optionally add things you need.
+See the different [base images](#base-images) for their features and how to set them up for your app. Mostly, you'd copy a template `Dockerfile` and `build.sh` script, and optionally add things you need.
 
 Then, use your _main script_ to build things, eg `./app build proxy` to build your app's proxy image
 
