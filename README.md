@@ -1,4 +1,4 @@
-[![Merkator logo](Merkator_Simple_Transparent_No_Gradient.png)](https://www.merkator.com/)
+[![Merkator logo](logo.png)](https://www.merkator.com/)
 
 # docker4gis
 
@@ -32,8 +32,8 @@ Base images are available on [Docker Hub](https://hub.docker.com/u/docker4gis). 
 
 - We're creating an Example project to show how to typically set things up.
 - Also, we're planning to host an introductory workshop in Apr 2019, in cooperation with [OSGeoNL](https://osgeo.nl/).
-- We're adding [documentation](docs/docs.md) explaining all the special features as well.
-- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](docs/clouddevenv/clouddevenv.md)
+- We're adding [documentation](docs) explaining all the special features as well.
+- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](docs/clouddevenv.md)
 
 ## Enquiries
 

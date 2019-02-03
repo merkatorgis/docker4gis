@@ -57,7 +57,7 @@ cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 
 	export DOCKER_REPO='proxy'
 	export DOCKER_TAG="$PROXY_TAG"
-	"${here}/scripts/proxy/run.sh" -- 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
+	"${here}/scripts/proxy/run.sh" # 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
 
 	export DOCKER_REPO='postfix'
 	export DOCKER_TAG="$POSTFIX_TAG"
