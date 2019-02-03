@@ -6,7 +6,7 @@ Tagging your run images with a version label lets you start specific versions of
 
 ## Getting started
 
-Copy this [`templates/run`](/templates/run) directory to your application's `Docker` directory.
+Copy the [`templates/run`](/templates/run) directory to your application's `Docker` directory.
 
 ## Customising
 
