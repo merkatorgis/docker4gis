@@ -25,7 +25,7 @@ For a version-tagged run image: `./app build run 627`
 
 To use specific versions of the actual application images, specify environment variables, eg:
 ```
-APP_TAG=193 POSTGIS_TAG=12 ./app/build run 628
+APP_TAG=193 POSTGIS_TAG=12 ./app build run 628
 ```
 
 ## Running
@@ -38,7 +38,17 @@ Use your app's main script: `./app run` will start the `latest` version of your 
 
 To build the run image and then run in one go, use `./app br run`. This works for any other image as well, eg `./app br proxy` builds the proxy image and runs the latest run image (`./app br proxy 27` would build proxy:27 and run run:latest, whereas `./app br run 8` would work, but not make sense).
 
+#### Push
+
+When things work, use `docker image push` to store the run image in the Docker registry.
+
 ### Server
 
-Use the app's run script (which is a copy of `run/run.sh`): `./apprun` for latest, `./apprun 628` for version 628 with app 193 & postgis 12.
+All a server needs is Docker, access to the Docker registry, and the little script running the run image.
+
+- Copy `run/run.sh` to the server, eg `~/apprun`.
+- Edit it to set environment variable `DOCKER_USER` 
+- Make it executable through `chmod +x ~/apprun`
+
+`cd ~`, then `./apprun` for latest, `./apprun 628` for version 628 with app 193 & postgis 12.
 Any image version not found locally on the server, will be pulled from the Docker registry automatically.
