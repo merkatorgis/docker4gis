@@ -12,7 +12,6 @@ Copy the [`templates/run`](/templates/run) directory to your application's `Dock
 
 In `build.sh`, comment out the lines starting containers you don't need, eg
 ```
-	# export DOCKER_REPO='mapfish'
 	# export DOCKER_TAG="$MAPFISH_TAG"
 	# "${here}/scripts/mapfish/run.sh"
 ```
