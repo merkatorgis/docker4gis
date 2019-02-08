@@ -9,6 +9,10 @@ export DOCKER_USER='template'
 export DOCKER_BASE="${DOCKER_BASE}"
 echo; echo "DOCKER_BASE: ${DOCKER_BASE}"
 
+# Either empty for Docker Hub
+# or eg docker.merkator.com/ (including the trailing slash)
+export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+
 action="${1:-start}"
 shift 1
 

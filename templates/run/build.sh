@@ -55,35 +55,27 @@ chmod +x "${here}/conf/${DOCKER_USER}.sh"
 cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 	here=$(dirname "$0")
 
-	export DOCKER_REPO='proxy'
 	export DOCKER_TAG="$PROXY_TAG"
-	"${here}/scripts/proxy/run.sh"
+	"${here}/scripts/proxy/run.sh" # 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
 
-	export DOCKER_REPO='postfix'
 	export DOCKER_TAG="$POSTFIX_TAG"
 	"${here}/scripts/postfix/run.sh"
 
-	export DOCKER_REPO='postgis'
 	export DOCKER_TAG="$POSTGIS_TAG"
 	"${here}/scripts/postgis/run.sh" postgres pwd dbname
 
-	export DOCKER_REPO='geoserver'
 	export DOCKER_TAG="$GEOSERVER_TAG"
-	"${here}/scripts/geoserver/run.sh"
+	"${here}/scripts/geoserver/run.sh" -P
 
-	export DOCKER_REPO='mapfish'
 	export DOCKER_TAG="$MAPFISH_TAG"
 	"${here}/scripts/mapfish/run.sh"
 
-	export DOCKER_REPO='cron'
 	export DOCKER_TAG="$CRON_TAG"
 	"${here}/scripts/cron/run.sh"
 
-	export DOCKER_REPO='api'
 	export DOCKER_TAG="$API_TAG"
 	"${here}/scripts/api/run.sh" 9090 5858
 
-	export DOCKER_REPO='app'
 	export DOCKER_TAG="$APP_TAG"
 	"${here}/scripts/app/run.sh"
 

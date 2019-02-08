@@ -3,7 +3,7 @@ set -e
 
 GEOSERVER_HOST="${GEOSERVER_HOST:-geoserver.merkator.com}"
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkatorgis}"
+DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-geoserver}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR:-d:/Docker/binds}"
