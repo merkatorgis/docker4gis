@@ -1,5 +1,19 @@
 # docker4gis documentation
 
+## Table of contents
+
+- [The general idea](#the-general-idea)
+  - [Docker](#docker)
+  - [docker4gis](#docker4gis)
+- [Getting started](#getting-started)
+  - [Development environment](#development-environment)
+  - [Fork](#fork)
+  - [Setup app directory](#setup-app-directory)
+- [Building things](#building-things)
+- [Running things](#running-things)
+- [Base images](#base-images)
+- [Other topics](#other-topics)
+
 ## The general idea
 
 ### Docker
