@@ -92,6 +92,8 @@ elif [ "${action}" == 'latest' ]; then
 	"${DOCKER_BASE}/latest.sh" run no_container
 
 	"$0" run
+elif [ "${action}" == 'binds' ]; then
+	echo "${DOCKER_BINDS_DIR}"
 else
 	echo "Unknown action: ${action}"
 fi
