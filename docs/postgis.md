@@ -11,6 +11,10 @@ A [PostgreSQL](https://www.postgresql.org/) database with [PostGIS](https://post
 - `1.sh` uses the `pg.sh` utility to run the `create schema` statement.
 - You can extend `conf.sh` and/or `1.sh` with what you need to be done.
 
+## Data
+
+The data files are put on a [Docker volume](https://docs.docker.com/storage/volumes/), with the same name as the container running the database. The container can be stopped, or even removed, without losing the data. If you do want to get rid of it, you can remove the volume with `docker volume rm <name>` (to list volume names: `docker volume ls`).
+
 ## Utilities
 
 ### conf
