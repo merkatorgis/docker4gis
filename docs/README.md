@@ -72,7 +72,7 @@ Once your images are in a registry, they're accessible there from your servers. 
 - glassfish
 - mapfish
 - postfix
-- postgis
+- [postgis](postgis.md)
 - postgis-gdal
 - [proxy](proxy.md)
 - registry
