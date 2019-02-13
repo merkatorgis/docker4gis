@@ -17,7 +17,7 @@ export API="${API}"
 export HOMEDEST="/app"
 
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
-if [ !"${DOCKER_BINDS_DIR}" ]; then
+if [ "${DOCKER_BINDS_DIR}" == '' ]; then
 	pushd ~
 	export DOCKER_BINDS_DIR="$(pwd)/docker-binds"
 	popd
