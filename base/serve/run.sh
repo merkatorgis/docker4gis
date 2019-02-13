@@ -16,7 +16,7 @@ if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
 	docker run --name $CONTAINER \
 		--network "$NETWORK_NAME" \
-		-p 5000:5000 \
+		-p 5000:80 \
 		"$@" \
 		-d $IMAGE
 fi
