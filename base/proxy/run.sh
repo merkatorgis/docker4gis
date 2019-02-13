@@ -19,7 +19,7 @@ API="${API:-http://${API_CONTAINER}:8080/}"
 APP="${APP:-http://${APP_CONTAINER}/}"
 HOMEDEST="${HOMEDEST}"
 NGR="${NGR:-https://geodata.nationaalgeoregister.nl}"
-GEOSERVER="${GEOSERVER:-http://${GEOSERVER_CONTAINER}/geoserver/}"
+GEOSERVER="${GEOSERVER:-http://${GEOSERVER_CONTAINER}:8080/geoserver/}"
 MAPFISH="${MAPFISH:-http://${MAPFISH_CONTAINER}:8080/}"
 SECRET="${SECRET}"
 
