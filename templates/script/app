@@ -16,12 +16,6 @@ export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 action="${1:-start}"
 shift 1
 
-export PROXY_HOST='localhost.merkator.com'
-export PROXY_PORT="${PROXY_PORT:-7443}"
-export APP="${APP:-http://${DOCKER_USER}-app:5000/}"
-export API="${API:-http://${DOCKER_USER}-api:8080/}"
-
-# export DOCKER_REGISTRY="${DOCKER_REGISTRY:-docker.merkator.com/}"
 export NETWORK_NAME="${DOCKER_USER}-net"
 export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
 
@@ -33,6 +27,11 @@ export POSTFIX_CONTAINER="${DOCKER_USER}-pf"
 export CRON_CONTAINER="${DOCKER_USER}-cr"
 export APP_CONTAINER="${DOCKER_USER}-app"
 export PROXY_CONTAINER="${DOCKER_USER}-px"
+
+export PROXY_HOST='localhost.merkator.com'
+export PROXY_PORT="${PROXY_PORT:-7443}"
+export APP="${APP}"
+export API="${API}"
 
 export MSYS_NO_PATHCONV=1
 
