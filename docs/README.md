@@ -50,7 +50,7 @@ On Windows, Docker requires Windows 10 Professional or Enterprise (the Home edit
 
 ### Fork
 
-Create a fork of [the main dockedr4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
+Create a fork of [the main docker4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
 
 ### Setup app directory
 
