@@ -31,7 +31,6 @@ browser - proxy - |    |
                   | - postgis
                   |    |
                   | - geoserver
-
 ```
 The docker4gis repo provides base images, the scripts to build and run them, as well as extend them, and a common interface to all this, called the [_main script_](#building-things)
 
