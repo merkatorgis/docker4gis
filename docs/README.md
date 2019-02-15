@@ -55,7 +55,7 @@ Create a fork of [the main dockedr4gis repo](https://github.com/merkatorgis/dock
 
 ### Setup app directory
 
-Create a directory for your app's code on your local file system. Make a directory `Docker` inside it. Copy the template [run](/templates/run) directory and the template [main script](/templates/script/app) to this `Docker` directory.
+Create a directory for your app's code on your local file system. Make a directory `docker` inside it. Copy the template [run](/templates/run) directory and the template [main script](/templates/script/app) to this `docker` directory.
 
 Rename the main script to a short name for your specific app (yor're going to type that name quite a lot in the terminal). Then edit the main script to set the `DOCKER_USER` variable. If you're on a specific Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your Bash profile).
 

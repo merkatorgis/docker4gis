@@ -4,8 +4,8 @@ A [PostgreSQL](https://www.postgresql.org/) database with [PostGIS](https://post
 
 ## Getting started
 
-- Copy the [`templates/postgis`](/templates/postgis) directory into your project's `Docker` directory.
-- Rename the `Docker/postgis/schema_name` directory to something that suits your case.
+- Copy the [`templates/postgis`](/templates/postgis) directory into your project's `docker` directory.
+- Rename the `docker/postgis/schema_name` directory to something that suits your case.
 - The `conf.sh` script in that directory will be run at container start.
 - It calls the `schema.sh` utility, which will run `1.sh` to create version one of your database schema.
 - `1.sh` uses the `pg.sh` utility to run the `create schema` statement.
