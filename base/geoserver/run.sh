@@ -24,7 +24,7 @@ echo; echo "Running $CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
-	docker volume create gsdynamic
+	docker volume create "$CONTAINER"
 	docker run --name $CONTAINER \
 		-e GEOSERVER_HOST=$GEOSERVER_HOST \
 		-v $DOCKER_BINDS_DIR/secrets:/secrets \
@@ -32,7 +32,7 @@ if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 		-v $DOCKER_BINDS_DIR/certificates:/certificates \
 		-v $DOCKER_BINDS_DIR/gwc:/geoserver/cache \
 		-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-		--mount source=gsdynamic,target=/geoserver/data/workspaces/dynamic \
+		--mount source="$CONTAINER",target=/geoserver/data/workspaces/dynamic \
 		--network "$NETWORK_NAME" \
 		-e "GEOSERVER_USER=${GEOSERVER_USER}" \
 		-e "GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD}" \
