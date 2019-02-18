@@ -1,11 +1,11 @@
-FROM merkatorgis/postgis
+FROM docker4gis/postgis
 
 RUN apk update; apk add --no-cache \
 	bash curl wget unzip grep sed
 
 ADD conf /tmp/conf
 
-RUN /tmp/conf/include/gs/install.sh
+RUN /tmp/conf/plugins/gs/install.sh
 
 RUN	mv /tmp/conf/cron.sh /util/; \
 	mkdir -p /util/cron; \

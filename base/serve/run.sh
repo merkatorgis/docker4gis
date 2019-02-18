@@ -2,10 +2,10 @@
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-merkatorgis}"
+DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-app}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
-CONTAINER="${CONTAINER:-$DOCKER_USER-$DOCKER_REPO}"
+CONTAINER="${CONTAINER:-$DOCKER_USER-app}"
 NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
@@ -16,7 +16,6 @@ if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
 	"$HERE/../network.sh"
 	docker run --name $CONTAINER \
 		--network "$NETWORK_NAME" \
-		-p 5000:5000 \
 		"$@" \
 		-d $IMAGE
 fi

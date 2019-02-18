@@ -1,3 +1,5 @@
+[![Merkator logo](logo.png)](https://www.merkator.com/)
+
 # docker4gis
 
 Quickly pull up a stable baseline for your Geographical Information System, by extending some of the Docker images for common GIS components:
@@ -24,14 +26,14 @@ Join in, use everything for free, communicate, and help to grow it bigger, and s
 
 ## Docker Hub
 
-Base images are available on [Docker Hub](https://hub.docker.com/u/merkatorgis). The scripts to build these are in this repo.
+Base images are available on [Docker Hub](https://hub.docker.com/u/docker4gis). The scripts to build these are in this repo.
 
 ## Getting started
 
 - We're creating an Example project to show how to typically set things up.
-- Also, we're planning to host an introductory workshop in Feb 2019, in cooperation with [OSGeoNL](https://osgeo.nl/).
-- We'll add documentation explaining all the special features as well.
-- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](/docs/clouddevenv.md)
+- Also, we're planning to host an introductory workshop in Apr 2019, in cooperation with [OSGeoNL](https://osgeo.nl/).
+- We're adding [documentation](docs) explaining all the special features as well.
+- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](docs/clouddevenv.md)
 
 ## Enquiries
 
