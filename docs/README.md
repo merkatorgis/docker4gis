@@ -50,7 +50,7 @@ On Windows, Docker requires Windows 10 Professional or Enterprise (the Home edit
 
 ### Fork
 
-Create a fork of [the main docker4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
+Create a fork*) of [the main docker4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
 
 ### Setup app directory
 
@@ -96,3 +96,7 @@ Once your images are in a registry, they're accessible there from your servers. 
 - plugins
 - certificates
 - [Cloud development environment](clouddevenv.md)
+
+*) fork & merkatorgis:
+- If you fix, extend, or otherwise improve things, please create a pull request, so that it can be merged into the originating merkatorgis/docker4gis repository.
+- When you want to update your fork with new "upstream" changes from merkatorgis/docker4gis, create a pull request as well, but then switch the left and right repositories so that the arrow points from merkatorgis/docker4gis towards your fork. You might need to temporarily select a third party's fork on one side to get to that setup.
