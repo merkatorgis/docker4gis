@@ -20,15 +20,20 @@ In `build.sh`, comment out the lines starting containers you don't need, eg
 
 Use your app's main script, eg `./app build run` to build the run image. This gets you a `latest`-tagged run image, that starts the `latest` version of all different application images.
 
-To use specific versions of the application images, specify tags in environment variables, eg:
+### Tagging
+
+To tag a specific version of an application image, use the main script's `tag` action, eg:
 ```
-APP_TAG=193 POSTGIS_TAG=12 ./app build run
+./app tag app 193
+./app tag postgis 12
 ```
 
-Then, to tag that run image with a specific version:
+To build a specific version of the run image, that runs specific versions of the application images, eg:
 ```
-./app tag 627 run
+APP_TAG=193 POSTGIS_TAG=12 ./app build run 627
 ```
+
+This leaves your `run:latest` untouched (starting `app:latest` and `postgis:latest`), and yields an extra `run:627` starting `app:193` and `postgis:12`.
 
 ## Running
 
@@ -42,9 +47,9 @@ To build the run image and then run in one go, use `./app br run`. This works fo
 
 #### Push
 
-When things work, use `docker image push` to store the run image in the Docker registry.
+When things work, use `docker image push` to store the images in the Docker registry, eg `docker image push ourapp/run:latest`, or `docker image push docker.itsus.com/com/ourapp/postgis:12`.
 
-As a convenience, the pushing can be done directly when tagging, through `./app tag -push {tag} {image}`, eg: `./app tag -push 627 run` to tag run:latest as run:627, push run:latest, and push run:627.
+As a convenience, the pushing can be done directly when tagging, through `./app tag -push {tag} {image}`, eg: `./app tag -push 12 postgis` to tag postgis `latest` as postgis `12`, push postgis `latest`, and push postgis `12`. Use this for application images. Push the run image by hand, so that `./app run` predictably starts the `latest` of everything.
 
 ### Server
 
