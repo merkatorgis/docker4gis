@@ -14,6 +14,7 @@ var host = os.Getenv("PROXY_HOST")
 var api = os.Getenv("API")
 var app = os.Getenv("APP")
 var homedest = os.Getenv("HOMEDEST")
+var resources = os.Getenv("RESOURCES")
 var ngr = os.Getenv("NGR")
 var geoserver = os.Getenv("GEOSERVER")
 var mapfish = os.Getenv("MAPFISH")
@@ -72,6 +73,8 @@ func init() {
 	defineProxy("index.html", app+"index.html")
 	defineProxy("index", app+"index")
 	defineProxy("html", app+"html/")
+
+	defineProxy("resources", resources)
 
 	log.Printf("homedest: %s", homedest)
 }
