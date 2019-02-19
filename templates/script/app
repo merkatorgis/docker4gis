@@ -43,6 +43,7 @@ if [ "${action}" == 'start' ]; then
 	"${DOCKER_BASE}/start.sh" "${CRON_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${APP_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${PROXY_CONTAINER}"
+	echo; docker container ls
 elif [ "${action}" == 'stop' ]; then
 	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
@@ -100,18 +101,7 @@ elif [ "${action}" == 'tag' ]; then
 	# Examples:
 	# ./ex tag 627 app
 	# ./ex tag -push 12 postgis
-	push="${1}"
-	if [ "${push}" == '-push' ]; then
-		shift 1
-	fi
-	tag="${1}"
-	image="${2}"
-	image="${DOCKER_REGISTRY}${DOCKER_USER}/${image}"
-	docker image tag "${image}:latest" "${image}:${tag}"
-	if [ "${push}" == '-push' ]; then
-		docker image push "${image}:latest"
-		docker image push "${image}:${tag}"
-	fi
+	"${DOCKER_BASE}/tag.sh" "$@"
 else
 	echo "Unknown action: ${action}"
 fi
