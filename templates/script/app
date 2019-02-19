@@ -55,7 +55,8 @@ elif [ "${action}" == 'stop' ]; then
 elif [ "${action}" == 'build' ]; then
 	# Examples:
 	# ./ex build app
-	# ./ex build app 627
+	# ./ex build run
+	# ./ex tag 627 app
 	# APP_TAG=627 ./ex build run 38
 	# ./ex build api; ./ex br app
 	export POSTGIS_TAG="${POSTGIS_TAG}"
@@ -76,6 +77,7 @@ elif [ "${action}" == 'br' ]; then
 	# Examples:
 	# ./ex br app
 	# ./ex br postgis
+	# ./ex br run
 	"$0" build "${1}"
 	"$0" run
 elif [ "${action}" == 'latest' ]; then
@@ -91,8 +93,13 @@ elif [ "${action}" == 'latest' ]; then
 
 	"$0" run
 elif [ "${action}" == 'binds' ]; then
+	# Examples:
+	# ls -la $(./ex binds)
 	echo "${DOCKER_BINDS_DIR}"
 elif [ "${action}" == 'tag' ]; then
+	# Examples:
+	# ./ex tag 627 app
+	# ./ex tag -push 12 postgis
 	push="${1}"
 	if [ "${push}" == '-push' ]; then
 		shift 1
