@@ -98,10 +98,16 @@ elif [ "${action}" == 'binds' ]; then
 	# ls -la $(./ex binds)
 	echo "${DOCKER_BINDS_DIR}"
 elif [ "${action}" == 'tag' ]; then
+	# Labels latest with the specified tag
 	# Examples:
 	# ./ex tag 627 app
 	# ./ex tag -push 12 postgis
 	"${DOCKER_BASE}/tag.sh" "$@"
+elif [ "${action}" == 'push' ]; then
+	# Pushes the specified tag AND latest to the registry
+	# Examples:
+	# ./ex push 38 run
+	"${DOCKER_BASE}/push.sh" "$@"
 else
 	echo "Unknown action: ${action}"
 fi
