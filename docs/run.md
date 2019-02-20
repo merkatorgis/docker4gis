@@ -49,7 +49,7 @@ To build the run image and then run in one go, use `./app br run`. This works fo
 
 When things work, use `docker image push` to store the images in the Docker registry, eg `docker image push ourapp/run:latest`, or `docker image push docker.itsus.com/com/ourapp/postgis:12`.
 
-As a convenience, the pushing can be done directly when tagging, through `./app tag -push {tag} {image}`, eg: `./app tag -push 12 postgis` to tag postgis `latest` as postgis `12`, push postgis `latest`, and push postgis `12`. Use this for application images. Push the run image by hand, so that `./app run` predictably starts the `latest` of everything.
+As a convenience, the pushing can be done directly when tagging, through `./app tag -push {tag} {image}`, eg: `./app tag -push 12 postgis` to tag postgis `latest` as postgis `12`, push postgis `latest`, and push postgis `12`. Use this for application images, not for the `run` image, so that `./app run` predictably starts the `latest` of everything. You can use `./app push 627 run` to push both run `latest` and run `627`.
 
 ### Server
 
