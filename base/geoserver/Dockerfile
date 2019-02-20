@@ -19,9 +19,7 @@ RUN mv /tmp/conf/base/conf/server.xml $CATALINA_HOME/conf/server.xml; \
     mv /tmp/conf/base/conf/web.xml    $CATALINA_HOME/conf/web.xml; \
 	mkdir -p /usr/local/tomcat/webapps/geoserver; \
 	unzip -qo /tmp/conf/base/geoserver/geoserver-*-war.zip -d /tmp/conf/base; \
-	unzip -qo /tmp/conf/base/geoserver.war                 -d $CATALINA_HOME/webapps/geoserver; \
-	unzip -qo /tmp/conf/base/geoserver/lib/*.zip           -d $CATALINA_HOME/webapps/geoserver/WEB-INF/lib/; \ 
-	mv /tmp/conf/base/geoserver/lib/*.jar                     $CATALINA_HOME/webapps/geoserver/WEB-INF/lib/; \
+	unzip -qo /tmp/conf/base/geoserver.war -d $CATALINA_HOME/webapps/geoserver; \
 	mv /tmp/conf/base/entrypoint/* /; \
 	/tmp/conf/plugins/pg/install.sh
 
