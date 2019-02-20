@@ -13,6 +13,5 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${image}"
 docker image tag "${image}:latest" "${image}:${tag}"
 
 if [ "${push}" == '-push' ]; then
-    docker image push "${image}:latest"
-    docker image push "${image}:${tag}"
+    $(dirname "${0}")/push.sh "${@}"
 fi
