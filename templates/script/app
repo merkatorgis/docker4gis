@@ -43,6 +43,7 @@ if [ "${action}" == 'start' ]; then
 	"${DOCKER_BASE}/start.sh" "${CRON_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${APP_CONTAINER}"
 	"${DOCKER_BASE}/start.sh" "${PROXY_CONTAINER}"
+	echo; docker container ls
 elif [ "${action}" == 'stop' ]; then
 	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
 	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
@@ -55,7 +56,8 @@ elif [ "${action}" == 'stop' ]; then
 elif [ "${action}" == 'build' ]; then
 	# Examples:
 	# ./ex build app
-	# ./ex build app 627
+	# ./ex build run
+	# ./ex tag 627 app
 	# APP_TAG=627 ./ex build run 38
 	# ./ex build api; ./ex br app
 	export POSTGIS_TAG="${POSTGIS_TAG}"
@@ -76,6 +78,7 @@ elif [ "${action}" == 'br' ]; then
 	# Examples:
 	# ./ex br app
 	# ./ex br postgis
+	# ./ex br run
 	"$0" build "${1}"
 	"$0" run
 elif [ "${action}" == 'latest' ]; then
@@ -91,20 +94,20 @@ elif [ "${action}" == 'latest' ]; then
 
 	"$0" run
 elif [ "${action}" == 'binds' ]; then
+	# Examples:
+	# ls -la $(./ex binds)
 	echo "${DOCKER_BINDS_DIR}"
 elif [ "${action}" == 'tag' ]; then
-	push="${1}"
-	if [ "${push}" == '-push' ]; then
-		shift 1
-	fi
-	tag="${1}"
-	image="${2}"
-	image="${DOCKER_REGISTRY}${DOCKER_USER}/${image}"
-	docker image tag "${image}:latest" "${image}:${tag}"
-	if [ "${push}" == '-push' ]; then
-		docker image push "${image}:latest"
-		docker image push "${image}:${tag}"
-	fi
+	# Labels latest with the specified tag
+	# Examples:
+	# ./ex tag 627 app
+	# ./ex tag -push 12 postgis
+	"${DOCKER_BASE}/tag.sh" "$@"
+elif [ "${action}" == 'push' ]; then
+	# Pushes the specified tag AND latest to the registry
+	# Examples:
+	# ./ex push 38 run
+	"${DOCKER_BASE}/push.sh" "$@"
 else
 	echo "Unknown action: ${action}"
 fi
