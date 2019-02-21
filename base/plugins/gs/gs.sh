@@ -2,7 +2,7 @@
 
 COMPONENT="$2" # gwc -> /geoserver/gwc/rest
 
-URL="https://${GEOSERVER_CONTAINER}/geoserver"
+URL="http://${GEOSERVER_CONTAINER}:8080/geoserver"
 if [ "$COMPONENT" ]; then URL="$URL/$COMPONENT"; fi
 URL="$URL/rest"
 

@@ -6,7 +6,7 @@ HTTP 2.0 is supported.
 
 ## Getting started
 
-Copy the [`templates/proxy`](/templates/proxy) directory into your project's `Docker` directory. The default `run\build.sh` script will pick things up then.
+Copy the [`templates/proxy`](/templates/proxy) directory into your project's `docker` directory. The default `run\build.sh` script will pick things up then.
 
 ### Default destinations
 

@@ -1,5 +1,19 @@
 # docker4gis documentation
 
+## Table of contents
+
+- [The general idea](#the-general-idea)
+  - [Docker](#docker)
+  - [docker4gis](#docker4gis)
+- [Getting started](#getting-started)
+  - [Development environment](#development-environment)
+  - [Fork](#fork)
+  - [Setup app directory](#setup-app-directory)
+- [Building things](#building-things)
+- [Running things](#running-things)
+- [Base images](#base-images)
+- [Other topics](#other-topics)
+
 ## The general idea
 
 ### Docker
@@ -17,7 +31,6 @@ browser - proxy - |    |
                   | - postgis
                   |    |
                   | - geoserver
-
 ```
 The docker4gis repo provides base images, the scripts to build and run them, as well as extend them, and a common interface to all this, called the [_main script_](#building-things)
 
@@ -37,11 +50,11 @@ On Windows, Docker requires Windows 10 Professional or Enterprise (the Home edit
 
 ### Fork
 
-Create a fork of [the main dockedr4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
+Create a fork*) of [the main docker4gis repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with GitHub Desktop.
 
 ### Setup app directory
 
-Create a directory for your app's code on your local file system. Make a directory `Docker` inside it. Copy the template [run](/templates/run) directory and the template [main script](/templates/script/app) to this `Docker` directory.
+Create a directory for your app's code on your local file system. Make a directory `docker` inside it. Copy the template [run](/templates/run) directory and the template [main script](/templates/script/app) to this `docker` directory.
 
 Rename the main script to a short name for your specific app (yor're going to type that name quite a lot in the terminal). Then edit the main script to set the `DOCKER_USER` variable. If you're on a specific Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your Bash profile).
 
@@ -72,7 +85,7 @@ Once your images are in a registry, they're accessible there from your servers. 
 - glassfish
 - mapfish
 - postfix
-- postgis
+- [postgis](postgis.md)
 - postgis-gdal
 - [proxy](proxy.md)
 - registry
@@ -83,3 +96,7 @@ Once your images are in a registry, they're accessible there from your servers. 
 - plugins
 - certificates
 - [Cloud development environment](clouddevenv.md)
+
+*) fork & merkatorgis:
+- If you fix, extend, or otherwise improve things, please create a pull request, so that it can be merged into the originating merkatorgis/docker4gis repository.
+- When you want to update your fork with new "upstream" changes from merkatorgis/docker4gis, create a pull request as well, but then switch the left and right repositories so that the arrow points from merkatorgis/docker4gis towards your fork. You might need to temporarily select a third party's fork on one side to get to that setup.
