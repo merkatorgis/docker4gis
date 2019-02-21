@@ -1,3 +1,4 @@
 binds
 base/proxy/goproxy/goproxy
 base/registry/goproxy/goproxy
+*.bak
