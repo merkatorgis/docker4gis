@@ -2,6 +2,7 @@
 set -e
 
 POSTFIX_PORT="${POSTFIX_PORT:-25}"
+POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-postfix}"
@@ -14,6 +15,11 @@ IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
+destination=
+if [ "${POSTFIX_DESTINATION}" != '' ]; then
+	destination="-e DESTINATION=${POSTFIX_DESTINATION}"
+fi
+
 echo; echo "Running $POSTFIX_CONTAINER from $IMAGE"
 HERE=$(dirname "$0")
 if ("$HERE/../rename.sh" "$IMAGE" "$POSTFIX_CONTAINER"); then
@@ -21,5 +27,6 @@ if ("$HERE/../rename.sh" "$IMAGE" "$POSTFIX_CONTAINER"); then
 		-v $DOCKER_BINDS_DIR/fileport:/fileport \
 		-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 		-p $POSTFIX_PORT:25 \
+		 ${destination} \
 		-d $IMAGE
 fi
