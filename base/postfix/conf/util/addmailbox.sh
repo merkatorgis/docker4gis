@@ -1,5 +1,7 @@
 #!/bin/bash
 
-USER="$1"
+login="${1}"
+comment="${2}"
 
-adduser -D "$USER"
+adduser -D "${login}"
+usermod -c "${comment}" "${login}"

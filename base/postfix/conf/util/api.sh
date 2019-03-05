@@ -3,7 +3,9 @@
 USER="$1"
 SCRIPT="$2"
 
-addmailbox.sh "$USER"
+if ! getent passwd | grep "^${USER}:"; then
+	addmailbox.sh "$USER"
+fi
 
 LOGDIR="/util/runner/log/$(dirname $SCRIPT)"
 mkdir -p "$LOGDIR"
