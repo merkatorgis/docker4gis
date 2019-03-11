@@ -1,11 +1,14 @@
 #!/bin/bash
 
 if [ "$1" = 'postfix' ]; then
-	DEFAULT='$myhostname localhost.$mydomain localhost'
-	postconf -e "mydestination=$DEFAULT $DESTINATION"
+	postconf -e "myorigin=${DESTINATION}"
+
+	default_destination='$myhostname localhost.$mydomain localhost'
+	postconf -e "mydestination=${default_destination} ${DESTINATION}"
 	cp /etc/postfix/transport.template /etc/postfix/transport
 	sed -i -e "s/{{DESTINATION}}/${DESTINATION}/g" /etc/postfix/transport
 	postmap /etc/postfix/transport
+
 	rsyslogd
 	postfix start
 	exec tail -f /var/log/maillog
