@@ -21,7 +21,7 @@ docker container run --rm \
     --mount source=mvndata,target=/root/.m2 \
     -v "${src_dir}":/src \
     "${DOCKER_REGISTRY}dirichlet/netbeans" \
-    bash -c 'cd /src; mvn -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar -Dfile.encoding=UTF-8 install'
+    bash -c 'cd /src; mvn -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar -Dfile.encoding=UTF-8 clean install'
 
 echo; echo "Building server from binaries..."
 
