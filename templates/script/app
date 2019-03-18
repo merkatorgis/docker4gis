@@ -12,6 +12,8 @@ export DOCKER_BASE="${DOCKER_BASE}"
 # or eg docker.merkator.com/ (including the trailing slash)
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 
+export DOCKER_ENV=DEVELOPMENT
+
 action="${1:-start}"
 shift 1
 
