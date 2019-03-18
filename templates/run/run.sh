@@ -5,6 +5,7 @@ docker_tag="${1:-latest}"
 
 export DOCKER_USER="${DOCKER_USER}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+export DOCKER_ENV="${DOCKER_ENV}"
 export PROXY_HOST="${PROXY_HOST:-localhost}"
 
 export NETWORK_NAME="${DOCKER_USER}-net"
@@ -27,6 +28,8 @@ echo "
 About to run ${DOCKER_USER} version: ${docker_tag}
 
 With these settings:
+
+DOCKER_ENV=${DOCKER_ENV}
 
 PROXY_HOST=${PROXY_HOST}
 
