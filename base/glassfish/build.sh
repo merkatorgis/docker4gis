@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-
 src_dir="${1}"
 flush="${2}"
 
