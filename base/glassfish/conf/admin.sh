@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 ADMIN_USER=admin
 ADMIN_PASSWORD=adminadmin
 
