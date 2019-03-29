@@ -2,6 +2,7 @@
 set -e
 
 src_dir="${1}"
+flush="${2}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
@@ -17,11 +18,24 @@ echo; echo "Compiling from '${src_dir}'..."
 
 docker volume create mvndata
 
+cache_dir=/root/.m2
+if [ "${flush}" == 'flush' ]; then
+    cache_dir="${cache_dir}.not"
+fi
+
 docker container run --rm \
-    --mount source=mvndata,target=/root/.m2 \
     -v "${src_dir}":/src \
-    "${DOCKER_REGISTRY}dirichlet/netbeans" \
-    bash -c 'cd /src; mvn -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar -Dfile.encoding=UTF-8 install'
+    --mount source=mvndata,target="${cache_dir}" \
+    dirichlet/netbeans \
+    bash -c '\
+        cd /src; \
+        mvn \
+            -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar \
+            -Dfile.encoding=UTF-8 \
+            clean \
+            install \
+        ; \
+    '
 
 echo; echo "Building server from binaries..."
 

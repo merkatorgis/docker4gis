@@ -12,6 +12,8 @@ export DOCKER_BASE="${DOCKER_BASE}"
 # or eg docker.merkator.com/ (including the trailing slash)
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 
+export DOCKER_ENV=DEVELOPMENT
+
 action="${1:-start}"
 shift 1
 
@@ -34,26 +36,7 @@ export API="${API}"
 
 export MSYS_NO_PATHCONV=1
 
-if [ "${action}" == 'start' ]; then
-	"${DOCKER_BASE}/start.sh" "${POSTGIS_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${API_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${GEOSERVER_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${MAPFISH_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${POSTFIX_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${CRON_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${APP_CONTAINER}"
-	"${DOCKER_BASE}/start.sh" "${PROXY_CONTAINER}"
-	echo; docker container ls
-elif [ "${action}" == 'stop' ]; then
-	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${CRON_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${POSTFIX_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${MAPFISH_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${GEOSERVER_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${API_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${POSTGIS_CONTAINER}"
-elif [ "${action}" == 'build' ]; then
+if [ "${action}" == 'build' ]; then
 	# Examples:
 	# ./ex build app
 	# ./ex build run
@@ -81,6 +64,15 @@ elif [ "${action}" == 'br' ]; then
 	# ./ex br run
 	"$0" build "${1}"
 	"$0" run
+elif [ "${action}" == 'stop' ]; then
+	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${CRON_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${POSTFIX_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${MAPFISH_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${GEOSERVER_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${API_CONTAINER}"
+	"${DOCKER_BASE}/stop.sh" "${POSTGIS_CONTAINER}"
 elif [ "${action}" == 'latest' ]; then
 	"${DOCKER_BASE}/latest.sh" postgis "${POSTGIS_CONTAINER}"
 	"${DOCKER_BASE}/latest.sh" api "${API_CONTAINER}"

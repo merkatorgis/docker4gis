@@ -33,7 +33,7 @@ Base images are available on [Docker Hub](https://hub.docker.com/u/docker4gis). 
 - We're creating an Example project to show how to typically set things up.
 - Also, we're planning to host an introductory workshop in Apr 2019, in cooperation with [OSGeoNL](https://osgeo.nl/).
 - We're adding [documentation](docs) explaining all the special features as well.
-- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](docs/clouddevenv.md)
+- To quickly pull up a development environment, follow our [Cloud Dev Env Guide](docs/clouddevenv.md). Or, [check](docs#development-environment) what you'd need on your laptop.
 
 ## Enquiries
 
