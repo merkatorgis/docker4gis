@@ -7,5 +7,5 @@ container="$2"
 here=$(dirname "$0")
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:latest"
 
-"${here}/rename.sh" "${image}" "${container}" force
+docker container rm -f "${container}"
 docker image pull "${image}"

@@ -49,8 +49,8 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/run:${docker_tag}"
 
 echo; echo "Executing ${image}"
 
-mkdir -p "${DOCKER_BINDS_DIR}"
-temp=$(mktemp -d -p "${DOCKER_BINDS_DIR}")
+temp="/tmp/$(mktemp -d)"
+mkdir -p "${temp}"
 
 docker run --name "${DOCKER_USER}-run" \
 	--rm \
