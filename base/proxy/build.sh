@@ -10,9 +10,9 @@ PROXY_CONTAINER="${PROXY_CONTAINER:-$DOCKER_USER-px}"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
+docker container rm -f "${PROXY_CONTAINER}" 2>/dev/null
 
 HERE=$(dirname "$0")
-"$HERE/../rename.sh" "$IMAGE" "$PROXY_CONTAINER" force
 
 if [ -d ./goproxy ]; then # building base
 	if (which go 1>/dev/null 2>&1); then

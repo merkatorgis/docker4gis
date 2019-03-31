@@ -21,7 +21,6 @@ IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 echo; echo "Building $IMAGE"
 
 here=$(dirname "$0")
-"${DOCKER_BASE}/rename.sh" "$IMAGE" "$CONTAINER" force
 
 mkdir -p "${here}/conf/scripts"
 pushd "${here}/conf/scripts" > /dev/null
@@ -35,7 +34,7 @@ cp "${DOCKER_BASE}/postfix/run.sh"   "${here}/conf/scripts/postfix"
 cp "${DOCKER_BASE}/cron/run.sh"      "${here}/conf/scripts/cron"
 cp "${DOCKER_BASE}/serve/run.sh"     "${here}/conf/scripts/app"
 cp "${DOCKER_BASE}/proxy/run.sh"     "${here}/conf/scripts/proxy"
-cp "${DOCKER_BASE}/rename.sh"        "${here}/conf/scripts"
+cp "${DOCKER_BASE}/start.sh"         "${here}/conf/scripts"
 cp "${DOCKER_BASE}/network.sh"       "${here}/conf/scripts"
 
 cat << EOF > "${here}/conf/${DOCKER_USER}.sh"
@@ -84,4 +83,4 @@ EOF
 
 docker build -t $IMAGE .
 
-rm -rf "${here}/conf/scripts" "${here}/conf/${DOCKER_USER}.sh"
+rm -rf "${here}/conf/"

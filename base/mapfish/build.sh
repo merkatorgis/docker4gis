@@ -10,9 +10,9 @@ MAPFISH_CONTAINER="${MAPFISH_CONTAINER:-$DOCKER_USER-mf}"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
+docker container rm -f "${MAPFISH_CONTAINER}" 2>/dev/null
 
 HERE=$(dirname "$0")
-"$HERE/../rename.sh" "$IMAGE" "$MAPFISH_CONTAINER" force
 
 mkdir -p conf
 cp -r "${HERE}/../plugins" "conf"
