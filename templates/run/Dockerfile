@@ -1,8 +1,5 @@
 FROM alpine:3.7
 
-COPY conf /tmp/conf
+COPY conf /tmp/__run
 
-RUN mv /tmp/conf/entrypoint/* /
-
-ENTRYPOINT ["/entrypoint"]
-CMD ["run"]
+ENTRYPOINT ["top"]

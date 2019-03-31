@@ -45,20 +45,17 @@ HOMEDEST=${HOMEDEST}
 "
 read -n 1 -p 'Press any key to continue...'
 
+container="${DOCKER_USER}-run"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/run:${docker_tag}"
 
 echo; echo "Executing ${image}"
 
-temp="/tmp/$(mktemp -d)"
-mkdir -p "${temp}"
+docker container run --name "${container}" -d "${image}"
+docker container cp ${container}:/tmp/__run .
+docker container rm -f ${container}
 
-docker run --name "${DOCKER_USER}-run" \
-	--rm \
-	-v "${temp}":/host/ \
-	"${image}"
+__run/${DOCKER_USER}.sh
 
-"${temp}/${DOCKER_USER}.sh"
-
-rm -rf "${temp}"
+rm -rf __run
 
 echo; docker container ls

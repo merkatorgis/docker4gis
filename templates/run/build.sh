@@ -83,4 +83,4 @@ EOF
 
 docker build -t $IMAGE .
 
-rm -rf "${here}/conf/scripts" "${here}/conf/${DOCKER_USER}.sh"
+rm -rf "${here}/conf/"
