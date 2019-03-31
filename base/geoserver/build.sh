@@ -10,7 +10,7 @@ container="${GEOSERVER_CONTAINER:-$DOCKER_USER-gs}"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
-docker container rm -f "${container}"
+docker container rm -f "${container}" 2>/dev/null
 
 HERE=$(dirname "$0")
 

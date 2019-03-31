@@ -9,12 +9,11 @@ NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 container="${APP_CONTAINER:-$DOCKER_USER-app}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo; echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
-HERE=$(dirname "$0")
-"$HERE/../network.sh"
+"$here/../network.sh"
 docker container run --name $container \
 	--network "$NETWORK_NAME" \
 	"$@" \

@@ -10,7 +10,7 @@ CONTAINER="$DOCKER_REPO"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
-docker container rm -f "${CONTAINER}"
+docker container rm -f "${CONTAINER}" 2>/dev/null
 
 if [ -d ./goproxy ]; then # building base
 	which go

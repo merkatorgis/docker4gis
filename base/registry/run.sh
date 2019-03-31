@@ -11,9 +11,9 @@ DOCKER_TAG="${DOCKER_TAG:-latest}"
 
 container="$DOCKER_REPO"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
 docker volume create certificates
 docker volume create registry

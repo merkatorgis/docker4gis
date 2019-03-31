@@ -26,9 +26,9 @@ SECRET="${SECRET}"
 
 container="${PROXY_CONTAINER:-$DOCKER_USER-px}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo; echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
@@ -52,8 +52,7 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-HERE=$(dirname "$0")
-"$HERE/../network.sh"
+"$here/../network.sh"
 docker run --name $container \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e API=$API \

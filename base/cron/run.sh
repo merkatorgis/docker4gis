@@ -13,16 +13,15 @@ NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 container="${CRON_CONTAINER:-$DOCKER_USER-cr}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo; echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
-HERE=$(dirname "$0")
-"$HERE/../network.sh"
+"$here/../network.sh"
 docker run --name $container \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \

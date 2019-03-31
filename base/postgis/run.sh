@@ -16,18 +16,16 @@ POSTGRES_DB="${3:-$DOCKER_USER}"
 
 container="${POSTGIS_CONTAINER:-$DOCKER_USER-pg}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
-HERE=$(dirname "$0")
-"$HERE/../network.sh"
-
+"$here/../network.sh"
 docker volume create "$container"
 docker run --name $container \
 	-e PROXY=https://$PROXY_HOST:$PROXY_PORT \

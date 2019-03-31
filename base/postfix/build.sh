@@ -10,7 +10,7 @@ POSTFIX_CONTAINER="${POSTFIX_CONTAINER:-$DOCKER_USER-pf}"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
-docker container rm -f "${POSTFIX_CONTAINER}"
+docker container rm -f "${POSTFIX_CONTAINER}" 2>/dev/null
 
 HERE=$(dirname "$0")
 

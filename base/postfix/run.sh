@@ -12,9 +12,9 @@ NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 container="${POSTFIX_CONTAINER:-$DOCKER_USER-pf}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo; echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
@@ -24,12 +24,7 @@ if [ "${POSTFIX_DESTINATION}" != '' ]; then
 	destination="-e DESTINATION=${POSTFIX_DESTINATION}"
 fi
 
-HERE=$(dirname "$0")
-if "$HERE/../exists.sh" "${container}"; then
-	exit
-fi
-
-"$HERE/../network.sh"
+"$here/../network.sh"
 docker run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \

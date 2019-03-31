@@ -14,9 +14,9 @@ GEOSERVER_PASSWORD="${GEOSERVER_PASSWORD:-geoserver}"
 
 container="${GEOSERVER_CONTAINER:-$DOCKER_USER-gs}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; if docker container start "${container}"; then exit; fi
-echo; echo "Running $container from $image"
+echo; if "$here/../start.sh" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
@@ -24,9 +24,7 @@ mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 mkdir -p "${DOCKER_BINDS_DIR}/gwc"
 
-echo; echo "Running $container from $image"
-HERE=$(dirname "$0")
-"$HERE/../network.sh"
+"$here/../network.sh"
 docker volume create "$container"
 docker run --name $container \
 	-e GEOSERVER_HOST=$GEOSERVER_HOST \

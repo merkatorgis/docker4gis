@@ -38,7 +38,7 @@ docker container run --rm \
     '
 
 echo; echo "Building server from binaries..."
-docker container rm -f "${API_CONTAINER}"
+docker container rm -f "${API_CONTAINER}" 2>/dev/null
 
 read -r -a artifact_id <<< $(grep -oPm1 '(?<=<artifactId>)[^<]+' "${src_dir}/pom.xml")
 read -r -a version <<< $(grep -oPm1 '(?<=<version>)[^<]+' "${src_dir}/pom.xml")

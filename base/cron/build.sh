@@ -10,7 +10,7 @@ CRON_CONTAINER="${CRON_CONTAINER:-$DOCKER_USER-cr}"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
-docker container rm -f "${CRON_CONTAINER}"
+docker container rm -f "${CRON_CONTAINER}" 2>/dev/null
 
 HERE=$(dirname "$0")
 
