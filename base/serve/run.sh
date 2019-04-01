@@ -11,7 +11,7 @@ container="${APP_CONTAINER:-$DOCKER_USER-app}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 here=$(dirname "$0")
 
-echo; if "$here/../start.sh" "${container}"; then exit; fi
+if "$here/../start.sh" "${container}"; then exit; fi
 
 "$here/../network.sh"
 docker container run --name $container \
