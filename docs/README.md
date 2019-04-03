@@ -47,6 +47,7 @@ A development environment requires:
 - A code oriented text editor (Atom, Sublime Text, Visual Studio Code, or maybe you're a fan of vi or Emacs, anything like these would work).
 
 On Windows, Docker requires Windows 10 Professional or Enterprise (the Home edition won't work), and you need 16 GB of RAM. If this poses any hurdles, take a look at our guide for setting up a [Cloud development environment](clouddevenv.md).
+Also, on Windows, make sure you get LF line endings, instead of CRLF; issuing `git config --global core.autocrlf false` before cloning the repo should do the trick.
 
 ### Fork
 
@@ -99,4 +100,4 @@ Once your images are in a registry, they're accessible there from your servers. 
 
 *) fork & merkatorgis:
 - If you fix, extend, or otherwise improve things, please create a pull request, so that it can be merged into the originating merkatorgis/docker4gis repository.
-- When you want to update your fork with new "upstream" changes from merkatorgis/docker4gis, create a pull request as well, but then switch the left and right repositories so that the arrow points from merkatorgis/docker4gis towards your fork. You might need to temporarily select a third party's fork on one side to get to that setup.
+- When you want to update your fork with new "upstream" changes from merkatorgis/docker4gis, use the `compare` function on GitHub: https://github.com/${your_account}/docker4gis/compare/master...merkatorgis:master

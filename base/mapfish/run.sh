@@ -5,17 +5,16 @@ DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-mapfish}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
-CONTAINER="${CONTAINER:-$DOCKER_USER-mf}"
 NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+container="${MAPFISH_CONTAINER:-$DOCKER_USER-mf}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; echo "Running $CONTAINER from $IMAGE"
-HERE=$(dirname "$0")
-if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
-	"$HERE/../network.sh"
-	docker run --name $CONTAINER \
-		--network "$NETWORK_NAME" \
-		"$@" \
-		-d $IMAGE
-fi
+if "$here/../start.sh" "${container}"; then exit; fi
+
+"$here/../network.sh"
+docker run --name $container \
+	--network "$NETWORK_NAME" \
+	"$@" \
+	-d $image

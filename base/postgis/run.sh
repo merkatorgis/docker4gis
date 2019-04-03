@@ -8,43 +8,43 @@ DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-postgis}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
+DOCKER_ENV="${DOCKER_ENV}"
+
 POSTGRES_USER="${1:-postgres}"
 POSTGRES_PASSWORD="${2:-postgres}"
 POSTGRES_DB="${3:-$DOCKER_USER}"
-CONTAINER="${POSTGIS_CONTAINER:-$DOCKER_USER-pg}"
-DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR:-d:/Docker/binds}"
-NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+container="${POSTGIS_CONTAINER:-$DOCKER_USER-pg}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
+
+if "$here/../start.sh" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
-echo; echo "Running $CONTAINER from $IMAGE"
-HERE=$(dirname "$0")
-if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
-	"$HERE/../network.sh"
-	docker volume create "$CONTAINER"
-	docker run --name $CONTAINER \
-		-e PROXY=https://$PROXY_HOST:$PROXY_PORT \
-		-e SECRET=$SECRET \
-		-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-		-e POSTGRES_DB=$POSTGRES_DB \
-		-e POSTGRES_USER=$POSTGRES_USER \
-		-e POSTGIS_HOST=$POSTGIS_HOST \
-		-e CONTAINER=$CONTAINER \
-		-v $DOCKER_BINDS_DIR/secrets:/secrets \
-		-v $DOCKER_BINDS_DIR/certificates:/certificates \
-		-v $DOCKER_BINDS_DIR/fileport:/fileport \
-		-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-		--mount source="$CONTAINER",target=/var/lib/postgresql/data \
-		-p $POSTGIS_PORT:5432 \
-		--network "$NETWORK_NAME" \
-		-d $IMAGE
-fi
+"$here/../network.sh"
+docker volume create "$container"
+docker run --name $container \
+	-e PROXY=https://$PROXY_HOST:$PROXY_PORT \
+	-e SECRET=$SECRET \
+	-e DOCKER_ENV=$DOCKER_ENV \
+	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+	-e POSTGRES_DB=$POSTGRES_DB \
+	-e POSTGRES_USER=$POSTGRES_USER \
+	-e POSTGIS_HOST=$POSTGIS_HOST \
+	-e CONTAINER=$container \
+	-v $DOCKER_BINDS_DIR/secrets:/secrets \
+	-v $DOCKER_BINDS_DIR/certificates:/certificates \
+	-v $DOCKER_BINDS_DIR/fileport:/fileport \
+	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
+	--mount source="$container",target=/var/lib/postgresql/data \
+	-p $POSTGIS_PORT:5432 \
+	--network "$NETWORK_NAME" \
+	-d $image
 
 sleep 1
 # wait for db
-docker exec "$CONTAINER" pg.sh -c 'select 1' > /dev/null
+docker exec "$container" pg.sh -c 'select 1' > /dev/null

@@ -8,7 +8,6 @@ DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-proxy}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR:-d:/Docker/binds}"
-CONTAINER="${PROXY_CONTAINER:-$DOCKER_USER-px}"
 NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 API_CONTAINER="${API_CONTAINER:-$DOCKER_USER-api}"
@@ -25,21 +24,26 @@ GEOSERVER="${GEOSERVER:-http://${GEOSERVER_CONTAINER}:8080/geoserver/}"
 MAPFISH="${MAPFISH:-http://${MAPFISH_CONTAINER}:8080/}"
 SECRET="${SECRET}"
 
+container="${PROXY_CONTAINER:-$DOCKER_USER-px}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
+
+if "$here/../start.sh" "${container}"; then exit; fi
+
+mkdir -p "${DOCKER_BINDS_DIR}/certificates"
+
 getip()
 {
-	if which getent >/dev/null 2>&1; then
-		if result=$(getent ahostsv4 "${1}"); then
-			echo "${result}" | awk '{ print $1 ; exit }'
-		else
-			echo '127.0.0.1'
-		fi
-	else
-		if result=$(ping -4 -n 1 "${1}"); then
-			echo "${result}" | grep "${1}" | sed 's~.*\[\(.*\)\].*~\1~'
-		else
-			echo '127.0.0.1'
-		fi
+	if result=$(getent ahostsv4 "${1}" 2>/dev/null); then
+		echo "${result}" | awk '{ print $1 ; exit }'
+	elif result=$(ping -4 -n 1 "${1}" 2>/dev/null); then
+		echo "${result}" | grep "${1}" | sed 's~.*\[\(.*\)\].*~\1~'
 		# Pinging wouter [10.0.75.1] with 32 bytes of data:
+	elif result=$(ping -c 1 "${1}" 2>/dev/null); then
+		echo "${result}" | grep PING | grep -o -E '\d+\.\d+\.\d+\.\d+'
+		# PING macbook-pro-van-wouter.local (188.166.80.233): 56 data bytes
+	else
+		echo '127.0.0.1'
 	fi
 }
 
@@ -48,28 +52,20 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
-
-mkdir -p "${DOCKER_BINDS_DIR}/certificates"
-
-echo; echo "Running $CONTAINER from $IMAGE"
-HERE=$(dirname "$0")
-if ("$HERE/../rename.sh" "$IMAGE" "$CONTAINER"); then
-	"$HERE/../network.sh"
-	docker run --name $CONTAINER \
-		-e PROXY_HOST=$PROXY_HOST \
-		-e API=$API \
-		-e APP=$APP \
-		-e RESOURCES=$RESOURCES \
-		-e HOMEDEST=$HOMEDEST \
-		-e NGR=$NGR \
-		-e GEOSERVER=$GEOSERVER \
-		-e MAPFISH=$MAPFISH \
-		-e SECRET=$SECRET \
-		-v $DOCKER_BINDS_DIR/certificates:/certificates \
-		-p $PROXY_PORT:443 \
-		--network "$NETWORK_NAME" \
-		--add-host=$(hostname):$(getip $(hostname)) \
-		--add-host="${PROXY_HOST}":$(getip $(urlhost "${API}")) \
-		-d $IMAGE proxy "$@"
-fi
+"$here/../network.sh"
+docker run --name $container \
+	-e PROXY_HOST=$PROXY_HOST \
+	-e API=$API \
+	-e APP=$APP \
+	-e RESOURCES=$RESOURCES \
+	-e HOMEDEST=$HOMEDEST \
+	-e NGR=$NGR \
+	-e GEOSERVER=$GEOSERVER \
+	-e MAPFISH=$MAPFISH \
+	-e SECRET=$SECRET \
+	-v $DOCKER_BINDS_DIR/certificates:/certificates \
+	-p $PROXY_PORT:443 \
+	--network "$NETWORK_NAME" \
+	--add-host=$(hostname):$(getip $(hostname)) \
+	--add-host="${PROXY_HOST}":$(getip $(urlhost "${API}")) \
+	-d $image proxy "$@"

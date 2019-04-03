@@ -9,22 +9,23 @@ DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-registry}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
 
-CONTAINER="$DOCKER_REPO"
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+container="$DOCKER_REPO"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+here=$(dirname "$0")
 
-echo; echo "Running $CONTAINER from $IMAGE"
+if "$here/../start.sh" "${container}"; then exit; fi
 
 docker volume create certificates
 docker volume create registry
 if (docker network create registry 2>/dev/null); then true; fi
 
-docker container run --name $CONTAINER \
+docker container run --name $container \
 	--network registry \
 	-v certificates:/certificates \
 	-e REGISTRY_HOST=$REGISTRY_HOST \
 	-p $REGISTRY_PORT:443 \
 	"$@" \
-	-d "$IMAGE"
+	-d "$image"
 
 docker container run --name theregistry \
 	--network registry \

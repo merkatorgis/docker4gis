@@ -13,9 +13,7 @@ SERVE_CONTAINER="${SERVE_CONTAINER:-$DOCKER_USER-app}"
 IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
-
-HERE=$(dirname "$0")
-"$HERE/../rename.sh" "$IMAGE" "$SERVE_CONTAINER" force
+docker container rm -f "${SERVE_CONTAINER}" 2>/dev/null
 
 pushd "${build_dir}"
 

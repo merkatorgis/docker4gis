@@ -5,6 +5,7 @@ docker_tag="${1:-latest}"
 
 export DOCKER_USER="${DOCKER_USER}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+export DOCKER_ENV="${DOCKER_ENV}"
 export PROXY_HOST="${PROXY_HOST:-localhost}"
 
 export NETWORK_NAME="${DOCKER_USER}-net"
@@ -28,6 +29,8 @@ About to run ${DOCKER_USER} version: ${docker_tag}
 
 With these settings:
 
+DOCKER_ENV=${DOCKER_ENV}
+
 PROXY_HOST=${PROXY_HOST}
 
 DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR}
@@ -42,20 +45,17 @@ HOMEDEST=${HOMEDEST}
 "
 read -n 1 -p 'Press any key to continue...'
 
+container="${DOCKER_USER}-run"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/run:${docker_tag}"
 
 echo; echo "Executing ${image}"
 
-mkdir -p "${DOCKER_BINDS_DIR}"
-temp=$(mktemp -d -p "${DOCKER_BINDS_DIR}")
+docker container run --name "${container}" -d "${image}"
+docker container cp ${container}:/tmp/__run .
+docker container rm -f ${container}
 
-docker run --name "${DOCKER_USER}-run" \
-	--rm \
-	-v "${temp}":/host/ \
-	"${image}"
+__run/${DOCKER_USER}.sh
 
-"${temp}/${DOCKER_USER}.sh"
-
-rm -rf "${temp}"
+rm -rf __run
 
 echo; docker container ls

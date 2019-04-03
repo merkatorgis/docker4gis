@@ -2,6 +2,7 @@
 set -e
 
 src_dir="${1}"
+flush="${2}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
@@ -17,20 +18,33 @@ echo; echo "Compiling from '${src_dir}'..."
 
 docker volume create mvndata
 
+cache_dir=/root/.m2
+if [ "${flush}" == 'flush' ]; then
+    cache_dir="${cache_dir}.not"
+fi
+
 docker container run --rm \
-    --mount source=mvndata,target=/root/.m2 \
     -v "${src_dir}":/src \
-    "${DOCKER_REGISTRY}dirichlet/netbeans" \
-    bash -c 'cd /src; mvn -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar -Dfile.encoding=UTF-8 clean install'
+    --mount source=mvndata,target="${cache_dir}" \
+    dirichlet/netbeans \
+    bash -c '\
+        cd /src; \
+        mvn \
+            -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar \
+            -Dfile.encoding=UTF-8 \
+            clean \
+            install \
+        ; \
+    '
 
 echo; echo "Building server from binaries..."
+docker container rm -f "${API_CONTAINER}" 2>/dev/null
 
 read -r -a artifact_id <<< $(grep -oPm1 '(?<=<artifactId>)[^<]+' "${src_dir}/pom.xml")
 read -r -a version <<< $(grep -oPm1 '(?<=<version>)[^<]+' "${src_dir}/pom.xml")
 build_dir="${src_dir}/target/${artifact_id}-${version}"
 
 HERE=$(dirname "$0")
-"$HERE/../rename.sh" "$IMAGE" "$API_CONTAINER" force
 
 # Asserting a ./Dockerfile like:
 # FROM aws-eb-glassfish:5.0-al-onbuild-2.11.1
