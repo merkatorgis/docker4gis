@@ -3,6 +3,7 @@ set -e
 
 src_dir="${1}"
 flush="${2}"
+war="${2}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
@@ -14,28 +15,30 @@ IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 echo; echo "Building $IMAGE"
 
-echo; echo "Compiling from '${src_dir}'..."
+if [ "${war}" != 'war' ]; then
+    echo; echo "Compiling from '${src_dir}'..."
 
-docker volume create mvndata
+    docker volume create mvndata
 
-cache_dir=/root/.m2
-if [ "${flush}" == 'flush' ]; then
-    cache_dir="${cache_dir}.not"
+    cache_dir=/root/.m2
+    if [ "${flush}" == 'flush' ]; then
+        cache_dir="${cache_dir}.not"
+    fi
+
+    docker container run --rm \
+        -v "${src_dir}":/src \
+        --mount source=mvndata,target="${cache_dir}" \
+        dirichlet/netbeans \
+        bash -c '\
+            cd /src; \
+            mvn \
+                -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar \
+                -Dfile.encoding=UTF-8 \
+                clean \
+                install \
+            ; \
+        '
 fi
-
-docker container run --rm \
-    -v "${src_dir}":/src \
-    --mount source=mvndata,target="${cache_dir}" \
-    dirichlet/netbeans \
-    bash -c '\
-        cd /src; \
-        mvn \
-            -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar \
-            -Dfile.encoding=UTF-8 \
-            clean \
-            install \
-        ; \
-    '
 
 echo; echo "Building server from binaries..."
 docker container rm -f "${API_CONTAINER}" 2>/dev/null
