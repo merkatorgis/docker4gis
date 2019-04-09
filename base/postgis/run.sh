@@ -47,4 +47,4 @@ docker run --name $container \
 
 sleep 1
 # wait for db
-docker exec "$container" pg.sh -c 'select 1' > /dev/null
+# docker exec "$container" pg.sh -c 'select 1' > /dev/null

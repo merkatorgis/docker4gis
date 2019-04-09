@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
