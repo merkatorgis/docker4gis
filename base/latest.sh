@@ -7,5 +7,5 @@ container="$2"
 here=$(dirname "$0")
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:latest"
 
-docker container rm -f "${container}"
+docker container rm -f "${container}" 2>/dev/null
 docker image pull "${image}"
