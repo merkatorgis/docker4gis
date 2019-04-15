@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"github.com/gorilla/handlers"
 )
 
 var host = os.Getenv("PROXY_HOST")
@@ -80,9 +81,18 @@ func init() {
 }
 
 func main() {
+
+	// Redirect http to https
+	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL
+		url.Host = r.Host
+		url.Scheme = "https"
+		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
+	}))
+
 	crt := "/certificates/" + host + ".crt"
 	key := "/certificates/" + host + ".key"
-	log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
+	log.Fatal(http.ListenAndServeTLS(":443", crt, key, handlers.CompressHandler(http.HandlerFunc(handler))))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
