@@ -37,7 +37,7 @@ sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap connect github-desktop:password-manager-service
-sudo snap install --classic vscode
+sudo snap install --classic code
 ```
 
 - Lastly, to [install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/):
@@ -98,7 +98,7 @@ sudo apt-get install gnome-keyring -y
 wget https://github.com/shiftkey/desktop/releases/download/release-1.5.1-linux2/GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap install --dangerous ./GitHubDesktop-linux-1.5.1-linux2.snap
 sudo snap connect github-desktop:password-manager-service
-sudo snap install --classic vscode
+sudo snap install --classic code
 sudo ufw allow https
 sudo ufw allow 3389
 ```
