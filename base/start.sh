@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 image="$1"
 container="$2"
