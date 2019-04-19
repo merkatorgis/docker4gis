@@ -28,7 +28,7 @@ container="${PROXY_CONTAINER:-$DOCKER_USER-px}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 here=$(dirname "$0")
 
-if "$here/../start.sh" "${container}"; then exit; fi
+if "$here/../start.sh" "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
