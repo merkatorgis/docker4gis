@@ -3,6 +3,9 @@ set -e
 
 src_dir="${1}"
 
+shift 1
+includes="${@}"
+
 echo; echo "Building ${src_dir}"
 
 pushd "${src_dir}"
@@ -18,9 +21,10 @@ docker container run \
     elm-app/build
 docker image rm elm-app/build
 
+cp -r "${includes}" build/
 
 here=$(dirname "$0")
 
-"${here}/../serve/build.sh" "$(pwd)/build"
+"${here}/../serve/build.sh" build/ --single
 
-rm -rf build
+rm -rf build/
