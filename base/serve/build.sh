@@ -1,7 +1,7 @@
 #!/bin/bash
 
 build_dir="${1}"
-single="${2:---single}"
+single="${2}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
