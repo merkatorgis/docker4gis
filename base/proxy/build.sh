@@ -16,8 +16,6 @@ HERE=$(dirname "$0")
 if [ -d ./goproxy ]; then # building base
 	if (which go 1>/dev/null 2>&1); then
 
-		go get -u github.com/gorilla/handlers
-
 		cd ./goproxy
 		CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -ldflags '-w' .
 		cd ..

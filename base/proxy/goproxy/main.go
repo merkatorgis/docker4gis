@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"github.com/gorilla/handlers"
 )
 
 var host = os.Getenv("PROXY_HOST")
@@ -92,7 +91,7 @@ func main() {
 
 	crt := "/certificates/" + host + ".crt"
 	key := "/certificates/" + host + ".key"
-	log.Fatal(http.ListenAndServeTLS(":443", crt, key, handlers.CompressHandler(http.HandlerFunc(handler))))
+	log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
