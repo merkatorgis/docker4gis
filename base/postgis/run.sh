@@ -18,7 +18,7 @@ container="${POSTGIS_CONTAINER:-$DOCKER_USER-pg}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 here=$(dirname "$0")
 
-if "$here/../start.sh" "${container}"; then exit; fi
+if "$here/../start.sh" "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
@@ -47,4 +47,4 @@ docker run --name $container \
 
 sleep 1
 # wait for db
-docker exec "$container" pg.sh -c 'select 1' > /dev/null
+docker container exec "$container" pg.sh -c "select" > /dev/null

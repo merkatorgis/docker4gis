@@ -61,7 +61,7 @@ cat << 'EOF' >> "${here}/conf/${DOCKER_USER}.sh"
 	"${here}/scripts/api/run.sh" 9090 5858
 
 	export DOCKER_TAG="$GEOSERVER_TAG"
-	"${here}/scripts/geoserver/run.sh" -P
+	"${here}/scripts/geoserver/run.sh"
 
 	export DOCKER_TAG="$MAPFISH_TAG"
 	"${here}/scripts/mapfish/run.sh"

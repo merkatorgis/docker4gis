@@ -11,12 +11,13 @@ NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
 
 GEOSERVER_USER="${GEOSERVER_USER:-admin}"
 GEOSERVER_PASSWORD="${GEOSERVER_PASSWORD:-geoserver}"
+GEOSERVER_PORT="${GEOSERVER_PORT:-58080}"
 
 container="${GEOSERVER_CONTAINER:-$DOCKER_USER-gs}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 here=$(dirname "$0")
 
-if "$here/../start.sh" "${container}"; then exit; fi
+if "$here/../start.sh" "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
@@ -37,5 +38,6 @@ docker run --name $container \
 	--network "$NETWORK_NAME" \
 	-e "GEOSERVER_USER=${GEOSERVER_USER}" \
 	-e "GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD}" \
+	-p "${GEOSERVER_PORT}":8080 \
 	"$@" \
 	-d $image

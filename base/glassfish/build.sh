@@ -41,7 +41,7 @@ if [ "${war}" != 'war' ]; then
 fi
 
 echo; echo "Building server from binaries..."
-docker container rm -f "${API_CONTAINER}" 2>/dev/null
+if docker container rm -f "${API_CONTAINER}" 2>/dev/null; then true; fi
 
 read -r -a artifact_id <<< $(grep -oPm1 '(?<=<artifactId>)[^<]+' "${src_dir}/pom.xml")
 read -r -a version <<< $(grep -oPm1 '(?<=<version>)[^<]+' "${src_dir}/pom.xml")
@@ -50,7 +50,7 @@ build_dir="${src_dir}/target/${artifact_id}-${version}"
 HERE=$(dirname "$0")
 
 # Asserting a ./Dockerfile like:
-# FROM aws-eb-glassfish:5.0-al-onbuild-2.11.1
+# FROM amazon/aws-eb-glassfish:5.0-al-onbuild-2.11.1
 # RUN cp \
 #     ./WEB-INF/lib/mysql-*.jar \
 #     ${GLASSFISH_HOME}/glassfish/domains/domain1/lib
