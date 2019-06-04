@@ -35,11 +35,10 @@ cp "${DOCKER_BASE}/network.sh" "${here}/conf/scripts"
 component()
 {
 	envs="${envs}"
-	base="${1}"
-	impl="${2}"
-	tag="${3}"
+	impl="${1}"
+	tag="${2}"
+	src="${3}/run.sh"
 	shift 3
-	src="${DOCKER_BASE}/${base}/run.sh"
 	if [ -f "${src}" -a -d "${here}/../${impl}" ]; then
 		dst="${here}/conf/scripts/${impl}"
 		mkdir -p "${dst}"; cp "${src}" "${dst}"
@@ -47,15 +46,16 @@ component()
 	fi
 }
 
-component postgis postgis "${POSTGIS_TAG}" postgres pwd dbname
-component glassfish api "${API_TAG}" 9090 5858
-component geoserver geoserver "${GEOSERVER_TAG}"
-component mapfish mapfish "${MAPFISH_TAG}"
-component postfix postfix "${POSTFIX_TAG}"
-component cron cron "${CRON_TAG}"
-component serve app "${APP_TAG}"
-envs="APP_CONTAINER=${DOCKER_USER}-res DOCKER_REPO=resources" component serve resources "${RESOURCES_TAG}"
-component proxy proxy "${PROXY_TAG}" # 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
+component postgis   "${POSTGIS_TAG}"   "${DOCKER_BASE}/postgis" postgres pwd dbname
+component api       "${API_TAG}"       "${DOCKER_BASE}/glassfish" 9090 5858
+component geoserver "${GEOSERVER_TAG}" "${DOCKER_BASE}/geoserver"
+component mapfish   "${MAPFISH_TAG}"   "${DOCKER_BASE}/mapfish"
+component postfix   "${POSTFIX_TAG}"   "${DOCKER_BASE}/postfix"
+component cron      "${CRON_TAG}"      "${DOCKER_BASE}/cron"
+component app       "${APP_TAG}"       "${DOCKER_BASE}/serve"
+envs="APP_CONTAINER=${DOCKER_USER}-res DOCKER_REPO=resources" \
+component resources "${RESOURCES_TAG}" "${DOCKER_BASE}/serve"
+component proxy     "${PROXY_TAG}"     "${DOCKER_BASE}/proxy" # 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
 
 docker build -t $IMAGE .
 
