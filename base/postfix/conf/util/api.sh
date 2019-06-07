@@ -2,6 +2,7 @@
 
 user="${1}"
 script="${2}"
+shift 2
 
 if ! getent passwd | grep "^${user}:"; then
 	addmailbox.sh "${user}"
@@ -12,7 +13,7 @@ mkdir -p "${logdir}"
 chown "${user}" "${logdir}"
 
 echo "${user}   unix  -       n       n       -       -       pipe
-      user=${user} argv=/util/runner.sh ${script}" >> /etc/postfix/master.cf
+      user=${user} argv=/util/runner.sh ${script} $@" >> /etc/postfix/master.cf
 
 postconf -e 'transport_maps=hash:/etc/postfix/transport'
 
