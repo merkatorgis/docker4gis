@@ -22,6 +22,7 @@ docker volume create "${container}"
 docker run --name $container \
 	--network "$NETWORK_NAME" \
 	--mount source="${container}",target=/host \
+	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-p "${app_port}":8080 \
 	-p "${admin_port}":4848 \
 	"$@" \
