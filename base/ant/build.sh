@@ -14,6 +14,7 @@ echo; echo "Building ${image}"
 docker container rm -f "${container}" 2>/dev/null
 
 pushd $(dirname "$0")
+rm -rf __src
 cp -r "${src_dir}" __src
 docker image build -t "${image}" .
 rm -rf __src

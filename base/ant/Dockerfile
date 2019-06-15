@@ -15,4 +15,4 @@ RUN rm -rf build dist; \
 
 FROM docker4gis/tomcat
 
-COPY --from=BUILD_IMAGE /src/dist /tmp/conf/war
+COPY --from=BUILD_IMAGE /src/dist /tmp/conf/webapps

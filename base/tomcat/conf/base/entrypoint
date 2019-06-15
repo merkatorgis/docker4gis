@@ -5,7 +5,7 @@ if [ "$1" = 'tomcat' ]
 then
 	if [ -d /tmp/conf ]
 	then
-		cp /tmp/conf/war/*.war "${CATALINA_HOME}/webapps"
+		cp -r /tmp/conf/webapps/* "${CATALINA_HOME}/webapps"
 
 		/tmp/conf/conf.sh
 		rm -rf /tmp/conf
