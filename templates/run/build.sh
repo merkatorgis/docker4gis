@@ -47,7 +47,8 @@ component()
 }
 
 component postgis   "${POSTGIS_TAG}"   "${DOCKER_BASE}/postgis" postgres pwd dbname
-component api       "${API_TAG}"       "${DOCKER_BASE}/glassfish" 9090 5858
+# component api       "${API_TAG}"       "${DOCKER_BASE}/glassfish" 9090 5858
+component api       "${API_TAG}"       "${DOCKER_BASE}/tomcat" -P
 component geoserver "${GEOSERVER_TAG}" "${DOCKER_BASE}/geoserver"
 component mapfish   "${MAPFISH_TAG}"   "${DOCKER_BASE}/mapfish"
 component postfix   "${POSTFIX_TAG}"   "${DOCKER_BASE}/postfix"
