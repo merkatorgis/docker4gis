@@ -25,5 +25,9 @@ then
 
     docker image build -t "${image}" .
 
-    rm -rf "${war}"
+    rm -f "${war}"
+    if [ ! $(ls conf/webapps) ]
+    then
+        rm -rf conf/webapps
+    fi
 fi
