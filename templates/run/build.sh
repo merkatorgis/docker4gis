@@ -31,6 +31,7 @@ chmod +x "${main}"
 
 cp "${DOCKER_BASE}/start.sh"   "${here}/conf/scripts"
 cp "${DOCKER_BASE}/network.sh" "${here}/conf/scripts"
+cp "${DOCKER_BASE}/port.sh"    "${here}/conf/scripts"
 
 component()
 {
@@ -48,7 +49,7 @@ component()
 
 component postgis   "${POSTGIS_TAG}"   "${DOCKER_BASE}/postgis" postgres pwd dbname
 # component api       "${API_TAG}"       "${DOCKER_BASE}/glassfish" 9090 5858
-component api       "${API_TAG}"       "${DOCKER_BASE}/tomcat" -P
+component api       "${API_TAG}"       "${DOCKER_BASE}/tomcat" 9090
 component geoserver "${GEOSERVER_TAG}" "${DOCKER_BASE}/geoserver"
 component mapfish   "${MAPFISH_TAG}"   "${DOCKER_BASE}/mapfish"
 component postfix   "${POSTFIX_TAG}"   "${DOCKER_BASE}/postfix"

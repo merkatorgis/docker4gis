@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+if [ $1 ]
+then
+	TOMCAT_PORT="$1"
+	shift 1
+else
+	TOMCAT_PORT="${TOMCAT_PORT}"
+fi
+
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 DOCKER_REPO="${DOCKER_REPO:-api}"
@@ -15,17 +23,18 @@ here=$(dirname "$0")
 
 if "$here/../start.sh" "${image}" "${container}"; then exit; fi
 
-mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
+mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
 "$here/../network.sh"
-docker volume create "$container"
-docker run --name $container \
+docker container run \
+	--name $container \
 	-e DOCKER_ENV=$DOCKER_ENV \
-	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
+	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--network "$NETWORK_NAME" \
+	$("$here/../port.sh" "${TOMCAT_PORT}" 8080) \
 	"$@" \
 	-d $image

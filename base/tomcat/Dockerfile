@@ -10,7 +10,7 @@ ENV PATH=/util:$PATH \
 
 ADD conf /tmp/conf
 
-RUN mv /tmp/conf/base/entrypoint /; \
+RUN mv /tmp/conf/entrypoint/* /; \
 	/tmp/conf/plugins/pg/install.sh
 
 ENTRYPOINT ["/entrypoint"]
