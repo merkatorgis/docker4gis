@@ -1,6 +1,7 @@
 #!/bin/bash
 
 src_dir="$1"
+maven_tag="${2:-latest}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
@@ -12,20 +13,17 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
 here=$(dirname "$0")
 
-if "${here}/../base/run.sh" "${src_dir}"
+if "${here}/../base/run.sh" "${src_dir}" "${maven_tag}"
 then
     echo; echo "Building ${image}"
     docker container rm -f "${container}" 2>/dev/null
 
-    mkdir -p conf
-    cp -r conf "${here}"
-
-    pushd "${here}"
-    mkdir -p conf/webapps
     app_name=$(basename "${src_dir}")
-    cp "${src_dir}"/target/*.war "conf/webapps/${app_name}.war"
+    war="conf/webapps/${app_name}.war"
+    mkdir -p conf/webapps
+    cp "${src_dir}"/target/*.war "${war}"
 
     docker image build -t "${image}" .
-    rm -rf conf
-    popd
+
+    rm -rf "${war}"
 fi
