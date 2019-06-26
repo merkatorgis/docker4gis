@@ -10,20 +10,14 @@ DOCKER_TAG="${DOCKER_TAG:-latest}"
 container="${DOCKER_CONTAINER:-$DOCKER_USER-api}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
 
-echo; echo "Compiling from '${src_dir}'..."
+here=$(dirname "$0")
 
-docker volume create mvndata
-
-if docker container run --rm \
-    -v "${src_dir}":/src \
-    --mount source=mvndata,target=/root/.m2 \
-    docker4gis/maven
+if "${here}/../base/run.sh" "${src_dir}"
 then
     echo; echo "Building ${image}"
     docker container rm -f "${container}" 2>/dev/null
 
     mkdir -p conf
-    here=$(dirname "$0")
     cp -r conf "${here}"
 
     pushd "${here}"
