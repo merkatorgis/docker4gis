@@ -28,9 +28,11 @@ mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
 "$here/../network.sh"
+docker volume create "${container}"
 docker container run \
 	--name $container \
 	-e DOCKER_ENV=$DOCKER_ENV \
+	--mount source="${container}",target=/host \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
