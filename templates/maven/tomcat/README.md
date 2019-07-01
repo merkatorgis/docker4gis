@@ -26,7 +26,7 @@
     1. A browser window opens w/ localhost:8080
     1. Type url localhost:8080/webresources/generic
         1. Should get HTTP 500 w/ UnsupportedOperationException message
-        1. Change method getXml() in GenericResource.java to: return "<hello>world</hello>";
+        1. Change method getXml() in GenericResource.java to: `return "<hello>world</hello>";`
         1. Ctrl-S to save the file
         1. Refresh the browser window, should get the xml text now
 1. File ApplicationConfig.java: Change @javax.ws.rs.ApplicationPath to "rest"
