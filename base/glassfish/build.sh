@@ -35,7 +35,7 @@ if [ "${war}" != 'war' ]; then
                 -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar \
                 -Dfile.encoding=UTF-8 \
                 clean \
-                install \
+                package \
             ; \
         '
 fi

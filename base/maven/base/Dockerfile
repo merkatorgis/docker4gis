@@ -9,4 +9,4 @@ VOLUME /src
 WORKDIR /src
 
 ENTRYPOINT [ "mvn" ]
-CMD [ "-Dfile.encoding=UTF-8", "clean", "install" ]
+CMD [ "-Dfile.encoding=UTF-8", "clean", "package" ]
