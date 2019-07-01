@@ -35,6 +35,6 @@
 
 ### Deploy
 
-Once built an ran, on the Tomcat container, the address is: /project_name/rest/generic.
+Once built and ran, on the Tomcat container, the address is: /project_name/rest/generic.
 
 When used w/ the Proxy container, the address is: https://localhost.merkator.com:7443/api/project_name/rest/generic
