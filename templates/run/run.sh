@@ -58,4 +58,5 @@ __run/${DOCKER_USER}.sh
 
 rm -rf __run
 
+echo; date
 echo; docker container ls
