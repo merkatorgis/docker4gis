@@ -1,6 +1,10 @@
 #!/bin/bash
 
 src_dir="$1"
+pushd "${src_dir}"
+src_dir=$(pwd)
+popd
+
 maven_tag="${2:-latest}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
