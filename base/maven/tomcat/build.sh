@@ -25,11 +25,11 @@ then
     app_name=$(basename "${src_dir}")
     war="conf/webapps/${app_name}.war"
     mkdir -p conf/webapps
-    cp "${src_dir}"/target/*.war "${war}"
+    mv "${src_dir}"/target/*.war "${war}"
 
     docker image build -t "${image}" .
 
-    rm -f "${war}"
+    mv "${war}" "${src_dir}"/target/
     if [ ! $(ls conf/webapps) ]
     then
         rm -rf conf/webapps
