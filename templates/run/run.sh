@@ -25,6 +25,8 @@ if [ "${DOCKER_BINDS_DIR}" == '' ]; then
 fi
 
 echo "
+$(date)
+
 About to run ${DOCKER_USER} version: ${docker_tag}
 
 With these settings:
@@ -42,21 +44,22 @@ PROXY_PORT=${PROXY_PORT}
 APP=${APP}
 API=${API}
 HOMEDEST=${HOMEDEST}
-"
-read -n 1 -p 'Press any key to continue...'
+" | tee -a ${DOCKER_USER}.log
 
+read -n 1 -p 'Press any key to continue...'
 container="${DOCKER_USER}-run"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/run:${docker_tag}"
 
-echo; echo "Executing ${image}"
+echo "
+Executing ${image}" | tee -a ${DOCKER_USER}.log
 
 docker container run --name "${container}" -d "${image}"
 docker container cp ${container}:/tmp/__run .
 docker container rm -f ${container}
 
-__run/${DOCKER_USER}.sh
+__run/${DOCKER_USER}.sh | tee -a ${DOCKER_USER}.log
+
+echo "
+$(docker container ls)" | tee -a ${DOCKER_USER}.log
 
 rm -rf __run
-
-echo; date
-echo; docker container ls
