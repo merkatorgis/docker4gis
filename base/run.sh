@@ -1,4 +1,6 @@
 #!/bin/bash
-basedir=$(dirname "${1}")
+main_script="$1"
+tag="${2:-latest}"
 
-echo '' | "${basedir}/run/run.sh" "${2:-latest}"
+basedir=$(dirname "${main_script}")
+echo '' | "${basedir}/package/run.sh" "${tag}"

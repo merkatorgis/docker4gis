@@ -2,19 +2,18 @@
 set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-app}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
-NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
+DOCKER_USER="${DOCKER_USER}"
+DOCKER_TAG="${DOCKER_TAG}"
+DOCKER_ENV="${DOCKER_ENV}"
+DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-container="${APP_CONTAINER:-$DOCKER_USER-app}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
-here=$(dirname "$0")
+repo="$(basename $(pwd))"
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-if "$here/../start.sh" "${image}" "${container}"; then exit; fi
+if ../start.sh "${image}" "${container}"; then exit; fi
 
-"$here/../network.sh"
 docker container run --name $container \
-	--network "$NETWORK_NAME" \
+	--network "${DOCKER_USER}-net" \
 	"$@" \
 	-d $image

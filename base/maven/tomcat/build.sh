@@ -9,11 +9,10 @@ maven_tag="${2:-latest}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-api}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
 
-container="${DOCKER_CONTAINER:-$DOCKER_USER-api}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+repo="$(basename $(pwd))"
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
 here=$(dirname "$0")
 

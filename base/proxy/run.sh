@@ -3,18 +3,23 @@ set -e
 
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
+
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-proxy}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
-DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR:-d:/Docker/binds}"
-NETWORK_NAME="${NETWORK_NAME:-$DOCKER_USER-net}"
+DOCKER_USER="${DOCKER_USER}"
+DOCKER_TAG="${DOCKER_TAG}"
+DOCKER_ENV="${DOCKER_ENV}"
+DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
+
+repo="$(basename $(pwd))"
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
 API_CONTAINER="${API_CONTAINER:-$DOCKER_USER-api}"
 APP_CONTAINER="${APP_CONTAINER:-$DOCKER_USER-app}"
-RESOURCES_CONTAINER="${RESOURCES_CONTAINER:-$DOCKER_USER-res}"
-GEOSERVER_CONTAINER="${GEOSERVER_CONTAINER:-$DOCKER_USER-gs}"
-MAPFISH_CONTAINER="${MAPFISH_CONTAINER:-$DOCKER_USER-mf}"
+RESOURCES_CONTAINER="${RESOURCES_CONTAINER:-$DOCKER_USER-resources}"
+GEOSERVER_CONTAINER="${GEOSERVER_CONTAINER:-$DOCKER_USER-geoserver}"
+MAPFISH_CONTAINER="${MAPFISH_CONTAINER:-$DOCKER_USER-mapfish}"
+
 API="${API:-http://${API_CONTAINER}:8080/}"
 APP="${APP:-http://${APP_CONTAINER}/}"
 RESOURCES="${RESOURCES:-http://${RESOURCES_CONTAINER}/}"
@@ -24,11 +29,7 @@ GEOSERVER="${GEOSERVER:-http://${GEOSERVER_CONTAINER}:8080/geoserver/}"
 MAPFISH="${MAPFISH:-http://${MAPFISH_CONTAINER}:8080/}"
 SECRET="${SECRET}"
 
-container="${PROXY_CONTAINER:-$DOCKER_USER-px}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
-here=$(dirname "$0")
-
-if "$here/../start.sh" "${image}" "${container}"; then exit; fi
+if ../start.sh "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
@@ -52,7 +53,6 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-"$here/../network.sh"
 docker run --name $container \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e API=$API \
@@ -65,7 +65,7 @@ docker run --name $container \
 	-e SECRET=$SECRET \
 	-v $DOCKER_BINDS_DIR/certificates:/certificates \
 	-p $PROXY_PORT:443 \
-	--network "$NETWORK_NAME" \
+	--network "${DOCKER_USER}-net" \
 	--add-host=$(hostname):$(getip $(hostname)) \
 	--add-host="${PROXY_HOST}":$(getip $(urlhost "${API}")) \
 	-d $image proxy "$@"
