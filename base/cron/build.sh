@@ -3,7 +3,7 @@
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
-repo=$(basename "$0")
+repo=$(basename "$(pwd)")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
