@@ -3,8 +3,9 @@ set -e
 
 docker_tag="${1:-latest}"
 
-export DOCKER_USER="${DOCKER_USER}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+export DOCKER_USER="${DOCKER_USER}"
+
 export DOCKER_ENV="${DOCKER_ENV}"
 export PROXY_HOST="${PROXY_HOST:-localhost}"
 
@@ -12,10 +13,10 @@ export NETWORK_NAME="${DOCKER_USER}-net"
 export POSTGIS_PORT="${POSTGIS_PORT:-5432}"
 export POSTFIX_PORT="${POSTFIX_PORT:-25}"
 export PROXY_PORT="${PROXY_PORT:-443}"
-export SECRET='xxx'
+export SECRET='e702ca01-4b62-4c7c-a50c-4fd4e230fee9'
 export APP="${APP}"
 export API="${API}"
-export HOMEDEST="/app"
+export HOMEDEST="/app/html/main/main.html"
 
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 if [ "${DOCKER_BINDS_DIR}" == '' ]; then
@@ -47,19 +48,19 @@ HOMEDEST=${HOMEDEST}
 " | tee -a ${DOCKER_USER}.log
 
 read -n 1 -p 'Press any key to continue...'
-container="${DOCKER_USER}-run"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/run:${docker_tag}"
+container="${DOCKER_USER}-package"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/package:${docker_tag}"
 
 echo "
 Executing ${image}" | tee -a ${DOCKER_USER}.log
 
 docker container run --name "${container}" -d "${image}"
-docker container cp ${container}:/tmp/__run .
+docker container cp ${container}:/.run .
 docker container rm -f ${container}
 
-__run/${DOCKER_USER}.sh | tee -a ${DOCKER_USER}.log
+.run/${DOCKER_USER}.sh | tee -a ${DOCKER_USER}.log
 
 echo "
 $(docker container ls)" | tee -a ${DOCKER_USER}.log
 
-rm -rf __run
+rm -rf .run
