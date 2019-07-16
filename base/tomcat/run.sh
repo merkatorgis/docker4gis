@@ -15,11 +15,11 @@ DOCKER_TAG="${DOCKER_TAG}"
 DOCKER_ENV="${DOCKER_ENV}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-repo="$(basename $(pwd))"
+repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-if ../start.sh "${image}" "${container}"; then exit; fi
+if .run/start.sh "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
@@ -34,6 +34,6 @@ docker container run \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--network "${DOCKER_USER}-net" \
-	$("$here/../port.sh" "${TOMCAT_PORT}" 8080) \
+	$(.run/port.sh "${TOMCAT_PORT}" 8080) \
 	"$@" \
 	-d $image

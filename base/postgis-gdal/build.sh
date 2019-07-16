@@ -3,7 +3,7 @@
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
-repo="$(basename $(pwd))"
+repo=$(basename "$0")
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
 echo; echo "Building ${image}"

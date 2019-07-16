@@ -7,14 +7,14 @@ DOCKER_TAG="${DOCKER_TAG}"
 DOCKER_ENV="${DOCKER_ENV}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-repo="$(basename $(pwd))"
+repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
 POSTFIX_PORT="${POSTFIX_PORT:-25}"
 POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
 
-if ../start.sh "${image}" "${container}"; then exit; fi
+if .run/start.sh "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
