@@ -69,13 +69,13 @@ Then, use your _main script_ to build things, eg `./app build proxy` to build yo
 
 ## Running things
 
-When you've built all your images _and_ the `run` image, `./app run` will run your app. That is, it'll run the `latest` version of it; see the [run image](run.md) docs for details about versioning, and how to build the run image.
+When you've built all your images, create a runnable package with `./app package`, then `./app run` will run your app. That is, it'll run the `latest` version of it; see the [package](package.md) docs for details about versioning.
 
-Where `./app run` creates containers from images, `./app stop` will stop all the app's containers, and `./app start` will start existing (stopped) containers.
+Where `./app run` creates containers from images (start existing containers), `./app stop` will stop all the app's containers.
 
-When you're happy about an image, you can `docker image push` it to a Docker registry. This can be the Docker Hub, or any other public or private registry. The docker4gis `registry` base image facilitates setting up a private registry.
+When you're happy about your changes, save a version to the Docker registry with `./app package {tag}`. This can be the Docker Hub, or any other public or private registry. The docker4gis `registry` base image facilitates setting up a private registry.
 
-Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, only run. So the only thing you need there, is the little run script that runs the run image. See its [docs](run.md) for details.
+Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, only run. So the only thing you need there, is the little run script that runs the package. See its [docs](package.md) for details.
 
 ## Base images 
 
@@ -84,6 +84,7 @@ Once your images are in a registry, they're accessible there from your servers. 
 - gdal
 - geoserver
 - glassfish
+- tomcat (build from maven)
 - mapfish
 - postfix
 - [postgis](postgis.md)

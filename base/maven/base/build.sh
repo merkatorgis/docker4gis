@@ -1,12 +1,7 @@
 #!/bin/bash
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-maven}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
+image=docker4gis/maven
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+echo; echo "Building ${image}"
 
-echo; echo "Building $IMAGE"
-
-docker image build -t "${IMAGE}" .
+docker image build -t "${image}" .
