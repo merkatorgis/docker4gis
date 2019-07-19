@@ -48,7 +48,7 @@ then
 	# ./ex package dab57fa2c4220bf8e13f298feacf36d4d036d89c
 	# ./ex package 2.0.1
 	export DOCKER_TAG="$1"
-	"${DOCKER_BASE}/build.sh" "$0" .package
+	"${DOCKER_BASE}/build.sh" "$0" .package "${DOCKER_TAG}"
 elif [ "${action}" == run ]
 then
 	# Run the current package.

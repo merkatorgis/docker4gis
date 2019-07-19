@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+push="$1"
+
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
 DOCKER_TAG="${DOCKER_TAG:-latest}"
@@ -40,6 +42,9 @@ save()
 		fi
 		docker image push "${_image}:latest"
 		docker image push "${_image}:${DOCKER_TAG}"
+	elif [ "${push}" = latest ]
+	then
+		docker image push "${_image}:latest"
 	fi
 }
 
