@@ -3,11 +3,10 @@ set -e
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-elm-app}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+repo=$(basename "$(pwd)")
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
-echo; echo "Building $IMAGE"
+echo; echo "Building ${image}"
 
-docker image build -t "${IMAGE}" .
+docker image build -t "${image}" .
