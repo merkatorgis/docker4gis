@@ -1,5 +1,5 @@
 FROM alpine:3.7
 
-COPY conf /tmp/__run
+COPY conf /
 
 ENTRYPOINT ["top"]

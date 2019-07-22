@@ -2,18 +2,17 @@
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-cron}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
-CRON_CONTAINER="${CRON_CONTAINER:-$DOCKER_USER-cr}"
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+repo=$(basename "$(pwd)")
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
-echo; echo "Building $IMAGE"
-docker container rm -f "${CRON_CONTAINER}" 2>/dev/null
+echo; echo "Building $image"
+docker container rm -f "${container}" 2>/dev/null
 
 HERE=$(dirname "$0")
 
 mkdir -p conf
 cp -r "${HERE}/../plugins" "conf"
-docker image build -t "${IMAGE}" .
+docker image build -t "${image}" .
 rm -rf "conf/plugins"
