@@ -22,6 +22,8 @@ mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
+gateway=$(docker network inspect "${DOCKER_USER}-net" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
+
 docker volume create "$container"
 docker container run --name $container \
 	-e SECRET=$SECRET \
@@ -29,6 +31,7 @@ docker container run --name $container \
 	-e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
 	-e MYSQL_DATABASE=$MYSQL_DATABASE \
 	-e CONTAINER=$container \
+	-e GATEWAY=$gateway \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
@@ -38,4 +41,4 @@ docker container run --name $container \
 	-d $image
 
 # wait for db
-docker container exec "$container" mysql.sh force "${MYSQL_DATABASE}" -e "" > /dev/null
+docker container exec "$container" mysql.sh force "${MYSQL_DATABASE}" -e ""
