@@ -32,11 +32,10 @@ docker container run --name $container \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-	--mount source="$container",target=/var/lib/postgresql/data \
+	--mount source="$container",target=/var/lib/mysql \
 	-p $MYSQL_PORT:3306 \
 	--network "${DOCKER_USER}-net" \
 	-d $image
 
-sleep 1
 # wait for db
-docker container exec "$container" pg.sh -c "select" > /dev/null
+docker container exec "$container" mysql.sh -e "" > /dev/null

@@ -2,16 +2,19 @@
 
 . /secrets/.mysql
 
-while ! psql -c 'SELECT PostGIS_full_version();' "$POSTGIS_URL" 1>/dev/null 2>&1; do
+while ! mysql -h "${MYSQL_HOST}" "-p${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" -e "select 1" 1>/dev/null 2>&1
+do
 	sleep 1
 done
 
 force="$1"
-if [ "${force}" = 'force' ]; then
+if [ "${force}" = 'force' ]
+then
 	shift 1
-	while ! psql "$@" "$POSTGIS_URL"; do
+	while ! mysql -h "${MYSQL_HOST}" "-p${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" "$@"
+	do
 		sleep 1
 	done
 else
-	psql "$@" "$POSTGIS_URL"
+	mysql -h "${MYSQL_HOST}" "-p${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" "$@"
 fi
