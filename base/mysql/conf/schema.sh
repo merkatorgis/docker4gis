@@ -8,19 +8,19 @@ current=0
 
 update()
 {
-	pg.sh -c "
-		CREATE DEFINER=`root`@`%` FUNCTION `setCoordinator`() RETURNS int(11)
-			DETERMINISTIC
+	mysql.sh "${schema_name}" -e "
+		DROP FUNCTION IF EXISTS __version;
+		DELIMITER $$
+		CREATE FUNCTION __version() RETURNS int DETERMINISTIC
 		BEGIN
-
-		RETURN 0;
-		END
+			RETURN ${current};
+		END$$
 	" >/dev/null
 }
 
 query()
 {
-	echo $(pg.sh -c "SELECT ${schema_name}.__version()" --tuples-only --no-align 2>/dev/null)
+	echo $(mysql.sh "${schema_name}" -sNe "SELECT __version()" 2>/dev/null)
 }
 
 next()

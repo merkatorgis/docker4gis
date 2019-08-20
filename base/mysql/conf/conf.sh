@@ -9,6 +9,11 @@ if [ ! "${script}" ]; then
 		export MYSQL_HOST=${CONTAINER}
 		export MYSQL_DATABASE=${MYSQL_DATABASE}
 	" > /secrets/.mysql
+	echo "
+		[client]
+		password=${MYSQL_ROOT_PASSWORD}
+		host=${CONTAINER}
+	" > /secrets/.mysql.options
 
 	find $(dirname "$0") -name 'conf.sh' -mindepth 2 -exec "$0" {} \; &
 else # all lower-level conf.sh scripts (in the backgroud, allowing to wait for the db firing up)

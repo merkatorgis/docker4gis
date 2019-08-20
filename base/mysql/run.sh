@@ -38,4 +38,4 @@ docker container run --name $container \
 	-d $image
 
 # wait for db
-docker container exec "$container" mysql.sh -e "" > /dev/null
+docker container exec "$container" mysql.sh force "${MYSQL_DATABASE}" -e "" > /dev/null

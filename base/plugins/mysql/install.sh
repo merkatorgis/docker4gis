@@ -1,7 +1,8 @@
 #!/bin/bash
 
-if apk update
+if which apk
 then
+	apk update
 	apk add --no-cache mysql-client
 fi
 
