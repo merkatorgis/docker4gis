@@ -18,7 +18,7 @@ then
 		/tmp/conf/conf.sh
 		rm -rf /tmp/conf
 	fi
-	exec catalina.sh run
+	JAVA_OPTS="${JAVA_OPTS} ${EXTRA_JAVA_OPTS}" exec catalina.sh run
 fi
 
 exec "$@"
