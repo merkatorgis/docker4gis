@@ -64,6 +64,7 @@ component()
 }
 
 component postgis   "${DOCKER_BASE}/postgis" # username password dbname
+component mysql     "${DOCKER_BASE}/mysql" # password dbname
 # component api       "${DOCKER_BASE}/glassfish" 9090 5858
 component api       "${DOCKER_BASE}/tomcat" # 9090
 component geoserver "${DOCKER_BASE}/geoserver"
