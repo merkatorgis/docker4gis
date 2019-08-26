@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- Apache 9
+- Apache Tomcat 9
 - Java JDK 1.8
 
 ### Initial setup
