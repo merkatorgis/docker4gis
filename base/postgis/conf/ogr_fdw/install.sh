@@ -12,12 +12,8 @@ apk update 2>/dev/null
 apk add --upgrade apk-tools@edge 2>/dev/null
 
 apk add --no-cache --virtual .build-deps \
-	make cmake g++
-
-apk add --no-cache --virtual .build-deps \
-	gdal-dev unixodbc-dev
-
-apk add --no-cache --virtual .build-deps \
+	make cmake g++ \
+	gdal-dev unixodbc-dev \
 	postgresql-dev
 
 here=$(dirname "$0")
@@ -33,7 +29,6 @@ pushd "${src_dir}"
 make
 make install
 popd
+rm -rf "${src_dir}" "${here}"
 
 apk del .build-deps
-
-rm -rf "${src_dir}" "${here}"
