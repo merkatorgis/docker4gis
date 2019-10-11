@@ -68,12 +68,13 @@ component mysql     "${DOCKER_BASE}/mysql" # password dbname
 # component api       "${DOCKER_BASE}/glassfish" 9090 5858
 component api       "${DOCKER_BASE}/tomcat" # 9090
 component geoserver "${DOCKER_BASE}/geoserver"
+component mapserver "${DOCKER_BASE}/mapserver"
 component mapfish   "${DOCKER_BASE}/mapfish"
 component postfix   "${DOCKER_BASE}/postfix"
 component cron      "${DOCKER_BASE}/cron"
 component app       "${DOCKER_BASE}/serve"
 component resources "${DOCKER_BASE}/serve"
-component proxy     "${DOCKER_BASE}/proxy" # 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
+component proxy     "${DOCKER_BASE}/proxy" "mapserver=http://${DOCKER_USER}-mapserver" # 'extra1=http://container1' 'extra2=https://somewhere.outside.com'
 
 # component extra       "${here}/../extra"
 
