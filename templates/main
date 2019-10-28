@@ -68,6 +68,13 @@ then
 	# ./ex br app
 	"$0" build "${1}"
 	"$0" run
+elif [ "${action}" == pr ]
+then
+	# Create a runnable package (latest), and run it.
+	# Examples:
+	# ./ex br
+	"$0" package
+	"$0" run
 elif [ "${action}" == stop ]
 then
 	# Stop running containers.
