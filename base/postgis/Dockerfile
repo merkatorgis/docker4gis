@@ -12,6 +12,9 @@ RUN /tmp/odbc_fdw/install.sh
 COPY conf/tds /tmp/tds
 RUN /tmp/tds/install.sh
 
+COPY conf/plsh /tmp/plsh
+RUN /tmp/plsh/install.sh
+
 COPY conf/plugins/runner /tmp/plugins/runner
 RUN /tmp/plugins/runner/install.sh
 

@@ -55,6 +55,7 @@ subjectAltName=email:move" >> /etc/ssl/openssl.cnf
 
 	pg.sh -c 'create extension if not exists ogr_fdw' &
 	pg.sh -c 'create extension if not exists odbc_fdw' &
+	pg.sh -c 'create extension if not exists plsh' &
 	find $(dirname "$0") -name 'conf.sh' -mindepth 2 -exec "$0" {} \; &
 else # all lower-level conf.sh scripts (in the backgroud, allowing to wait for the db firing up)
 	pushd $(dirname "${script}") >/dev/null
