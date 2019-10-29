@@ -13,7 +13,7 @@ apk add --upgrade apk-tools@edge 2>/dev/null
 
 apk add --no-cache --virtual .build-deps \
 	make cmake g++ \
-	gdal-dev unixodbc-dev \
+	unixodbc-dev \
 	postgresql-dev
 
 here=$(dirname "$0")

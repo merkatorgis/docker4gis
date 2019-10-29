@@ -4,7 +4,23 @@ set -e
 scripts_dir="$1"
 schema_name="${2:-$(basename ${scripts_dir})}"
 
-current=0
+query()
+{
+	count=$(pg.sh -c "
+		select count(*)
+		from information_schema.routines
+		where routine_name = '__version'
+		and routine_schema = '${schema_name}'
+	" --tuples-only --no-align)
+	if [ $count = 0 ]
+	then
+		echo 0
+	else
+		echo $(pg.sh -c "SELECT ${schema_name}.__version()" --tuples-only --no-align)
+	fi
+}
+
+current=$(query)
 
 update()
 {
@@ -20,17 +36,10 @@ update()
 	" >/dev/null
 }
 
-query()
-{
-	echo $(pg.sh -c "SELECT ${schema_name}.__version()" --tuples-only --no-align 2>/dev/null)
-}
-
 next()
 {
 	echo $(( ${current} + 1 ))
 }
-
-if current=$(query); then true; fi
 
 pushd "${scripts_dir}" >/dev/null
 

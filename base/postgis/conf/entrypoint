@@ -3,6 +3,7 @@ set -e
 
 if [ "$1" = 'postgis' ]; then
 	/tmp/conf/conf.sh
+	export PGUSER="${POSTGRES_USER}"
 	exec docker-entrypoint.sh postgres -c 'config_file=/etc/postgresql/postgresql.conf'
 fi
 
