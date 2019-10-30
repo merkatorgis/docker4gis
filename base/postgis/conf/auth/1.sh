@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pg.sh -c "create schema auth"
+
 pushd schema/1
 
 # current_setting('app.jwt_secret')

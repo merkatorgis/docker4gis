@@ -41,7 +41,7 @@ next()
 	echo $(( ${current} + 1 ))
 }
 
-pushd "${scripts_dir}" >/dev/null
+pushd "${scripts_dir}"
 
 if [ -f 0.sh ]; then
 	./0.sh
@@ -53,4 +53,4 @@ while [ -f $(next).sh ]; do
 	update
 done 
 
-popd >/dev/null
+popd

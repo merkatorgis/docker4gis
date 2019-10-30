@@ -19,25 +19,28 @@ RUN /tmp/plsh/install.sh
 COPY conf/pgjwt /tmp/pgjwt
 RUN /tmp/pgjwt/install.sh
 
-COPY conf/plugins/runner /tmp/plugins/runner
-RUN /tmp/plugins/runner/install.sh
+COPY conf/plugins/runner /tmp/runner
+RUN /tmp/runner/install.sh
 
-COPY conf/plugins/pg /tmp/plugins/pg
-RUN /tmp/plugins/pg/install.sh
+COPY conf/plugins/pg /tmp/pg
+RUN /tmp/pg/install.sh
 
-ENV PATH=/util:$PATH
-
-COPY conf/util /util
-COPY conf/postgres /etc/postgresql
-COPY conf/conf.sh /tmp/conf/conf.sh
-
-COPY conf/auth /tmp/conf/auth
-COPY conf/plugins/mail /tmp/plugins/mail
-RUN /tmp/plugins/mail/install.sh
+COPY conf/plugins/mail /tmp/mail
+RUN /tmp/mail/install.sh
 ONBUILD ARG RELAYHOST
 ONBUILD ENV RELAYHOST $RELAYHOST
 
+COPY conf/postgres /etc/postgresql
 COPY conf/entrypoint /entrypoint
+COPY conf/conf.sh /tmp/conf.sh
+COPY conf/onstart.sh /tmp/onstart.sh
+COPY conf/subconf.sh /tmp/subconf.sh
+
+COPY conf/util/schema.sh /usr/local/bin/schema.sh
+
+COPY conf/mail /tmp/mail
+COPY conf/auth /tmp/auth
+
 ENTRYPOINT ["/entrypoint"]
 CMD ["postgis"]
 
