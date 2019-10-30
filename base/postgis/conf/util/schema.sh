@@ -4,34 +4,37 @@ set -e
 scripts_dir="$1"
 schema_name="${2:-$(basename ${scripts_dir})}"
 
-query()
-{
-	count=$(pg.sh -c "
+if [ $(pg.sh -Atc "
 		select count(*)
 		from information_schema.routines
 		where routine_name = '__version'
 		and routine_schema = '${schema_name}'
-	" --tuples-only --no-align)
-	if [ $count = 0 ]
+	 ") = 0 ]
+then
+	current=0
+	pg.sh -c "create schema if not exists ${schema_name}"
+	if [ "${schema_name}" != mail -a "${schema_name}" != auth ]
 	then
-		echo 0
-	else
-		echo $(pg.sh -c "SELECT ${schema_name}.__version()" --tuples-only --no-align)
+		pg.sh -c "grant usage on schema ${schema_name} to web_anon"
 	fi
-}
-
-current=$(query)
+else
+	current=$(pg.sh -Atc "select ${schema_name}.__version()")
+fi
 
 update()
 {
 	pg.sh -c "
-		CREATE OR REPLACE FUNCTION ${schema_name}.__version() RETURNS integer AS \$\$
+		CREATE OR REPLACE FUNCTION ${schema_name}.__version()
+		RETURNS integer
+		LANGUAGE plpgsql
+		AS \$\$
 		BEGIN
 		    RETURN ${current};
 		END;
-		\$\$ LANGUAGE plpgsql;
+		\$\$;
 		COMMENT ON FUNCTION ${schema_name}.__version() IS \$\$
-			Retourneert het versienummer van het datamodel in dit schema, zodat de migratiescripts weten waar ze moeten beginnen.
+			Retourneert het versienummer van het datamodel in dit schema,
+			zodat de migratiescripts weten waar ze moeten beginnen.
 		\$\$;
 	" >/dev/null
 }

@@ -1,8 +1,7 @@
 #!/bin/bash
 
-schema=$(basename $(pwd))
+pushd schema/1
 
-pg.sh -c "
-    create schema ${schema}
-    ;
-"
+pg.sh -f tbl_something.sql
+
+popd

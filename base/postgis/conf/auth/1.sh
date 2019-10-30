@@ -1,7 +1,5 @@
 #!/bin/bash
 
-pg.sh -c "create schema auth"
-
 pushd schema/1
 
 # current_setting('app.jwt_secret')
@@ -9,7 +7,9 @@ pushd schema/1
 jwt_secret="$(pg.sh -c 'select gen_random_uuid()' -At).$(pg.sh -c 'select gen_random_uuid()' -At)"
 pg.sh -c "ALTER DATABASE ${POSTGRES_DB} SET app.jwt_secret TO '${jwt_secret}'"
 
-pg.sh -f jwt_token.sql
+pg.sh -f roles.sql
 pg.sh -f tbl_users.sql
+pg.sh -f jwt_token.sql
+pg.sh -f fn_user_role.sql
 
 popd
