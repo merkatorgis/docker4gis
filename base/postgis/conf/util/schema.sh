@@ -51,11 +51,13 @@ next()
 
 pushd "${scripts_dir}"
 
-if [ -f 0.sh ]; then
+if [ -f 0.sh ]
+then
 	./0.sh
 fi
 
-while [ -f $(next).sh ]; do
+while [ -f $(next).sh ]
+do
 	current=$(next)
 	"./${current}.sh"
 	update
