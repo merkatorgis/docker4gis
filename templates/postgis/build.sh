@@ -1,3 +1,3 @@
 #!/bin/bash
 
-"${DOCKER_BASE}/postgis/build.sh"
+RELAYHOST="${DOCKER_USER}-postfix" "${DOCKER_BASE}/postgis/build.sh"

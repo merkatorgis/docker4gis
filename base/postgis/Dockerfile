@@ -30,7 +30,12 @@ ENV PATH=/util:$PATH
 COPY conf/util /util
 COPY conf/postgres /etc/postgresql
 COPY conf/conf.sh /tmp/conf/conf.sh
+
 COPY conf/auth /tmp/conf/auth
+COPY conf/plugins/mail /tmp/plugins/mail
+RUN /tmp/plugins/mail/install.sh
+ONBUILD ARG RELAYHOST
+ONBUILD ENV RELAYHOST $RELAYHOST
 
 COPY conf/entrypoint /entrypoint
 ENTRYPOINT ["/entrypoint"]
