@@ -32,11 +32,16 @@ update()
 		    RETURN ${current};
 		END;
 		\$\$;
-		COMMENT ON FUNCTION ${schema_name}.__version() IS \$\$
-			Retourneert het versienummer van het datamodel in dit schema,
-			zodat de migratiescripts weten waar ze moeten beginnen.
-		\$\$;
-	" >/dev/null
+	"
+	if [ ${current} = 1 ]
+	then
+		pg.sh -c "
+			COMMENT ON FUNCTION ${schema_name}.__version() IS \$\$
+				Retourneert het versienummer van het datamodel in dit schema,
+				zodat de migratiescripts weten waar ze moeten beginnen.
+			\$\$;
+		"
+	fi
 }
 
 next()
