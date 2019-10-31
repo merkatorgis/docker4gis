@@ -1,0 +1,25 @@
+
+-- login should be on your exposed schema
+-- create or replace function
+-- schema.fn_login(email text, pass text) returns auth.jwt_token as $$
+-- declare
+--   _role name;
+--   result auth.jwt_token;
+-- begin
+--   -- check email and password
+--   select auth.fn_user_role(email, pass) into _role;
+--   if _role is null then
+--     raise invalid_password using message = 'invalid user or password';
+--   end if
+--   ;
+--   select sign(
+--       row_to_json(r), current_setting('app.jwt_secret')
+--     ) as token
+--     from (
+--       select _role as role, fn_login.email as email,
+--          extract(epoch from now())::integer + 60*60 as exp
+--     ) r
+--     into result;
+--   return result;
+-- end;
+-- $$ language plpgsql security definer;
