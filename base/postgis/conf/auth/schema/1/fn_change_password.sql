@@ -16,5 +16,10 @@ begin
         raise exception 'User not found';
     end if
     ;
+    perform mail.fn_send
+        ( in_email
+        , 'Wachtwoord aanmaken'
+        , 'Hier komt een link?token=9fy39y47xrb748yfz naar de wachtwoord-pagina'
+        );
 end;
 $$;
