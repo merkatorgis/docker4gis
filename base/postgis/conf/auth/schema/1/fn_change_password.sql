@@ -7,19 +7,26 @@ as $$
 declare
 begin
     update auth.tbl_users
-    set pass = null
-    , reauth = true
-    where email = in_email
+        set pass = null
+        , reauth = true
+        where email = in_email
     ;
     if not found
     then
-        raise exception 'User not found';
+        raise exception 'user not found';
     end if
     ;
     perform mail.fn_send
         ( in_email
         , 'Wachtwoord aanmaken'
-        , 'Hier komt een link?token=9fy39y47xrb748yfz naar de wachtwoord-pagina'
+        , format
+            ( 'Hier komt een link?token=%s naar de wachtwoord-pagina'
+            , (select auth.fn_jwt_token
+                ( change_password
+                , 60 * 15 -- 15 minutes
+                ))
+
+            )
         );
 end;
 $$;

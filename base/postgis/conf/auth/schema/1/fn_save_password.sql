@@ -8,13 +8,13 @@ as $$
 declare
 begin
     update auth.tbl_users
-    set pass = crypt(in_password, gen_salt('bf'))
-    , reauth = false
-    where email = in_email
+        set pass = crypt(in_password, gen_salt('bf'))
+        , reauth = false
+        where email = in_email
     ;
     if not found
     then
-        raise exception 'User not found';
+        raise exception 'user not found';
     end if
     ;
 end;
