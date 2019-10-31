@@ -22,7 +22,7 @@ begin
         , format
             ( 'Hier komt een link?token=%s naar de wachtwoord-pagina'
             , (select auth.fn_jwt_token
-                ( change_password
+                ( 'change_password'
                 , 60 * 15 -- 15 minutes
                 ))
 
