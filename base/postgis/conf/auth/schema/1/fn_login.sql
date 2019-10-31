@@ -1,25 +1,29 @@
 
--- login should be on your exposed schema
--- create or replace function
--- schema.fn_login(email text, pass text) returns auth.jwt_token as $$
+-- login should be on your exposed schema, eg:
+
+-- create or replace function dxf.fn_login
+--     ( in_email text
+--     , in_password text
+--     )
+-- returns auth.jwt_token
+-- language plpgsql
+-- as $$
 -- declare
---   _role name;
+--   -- check email and password; throws invalid_password exception
+--   c_role name := auth.fn_user_role(in_email, in_password);
 --   result auth.jwt_token;
 -- begin
---   -- check email and password
---   select auth.fn_user_role(email, pass) into _role;
---   if _role is null then
---     raise invalid_password using message = 'invalid user or password';
---   end if
---   ;
---   select sign(
---       row_to_json(r), current_setting('app.jwt_secret')
---     ) as token
+--     select sign
+--         ( row_to_json(r)
+--         , current_setting('app.jwt_secret')
+--         ) as token
 --     from (
---       select _role as role, fn_login.email as email,
---          extract(epoch from now())::integer + 60*60 as exp
+--         select c_role as role
+--         -- , fn_login.in_email as email
+--         -- , extract(epoch from now())::integer + 60*60 as exp
+--         , extract(epoch from now())::integer as iat
 --     ) r
 --     into result;
---   return result;
+--     return result;
 -- end;
--- $$ language plpgsql security definer;
+-- $$;

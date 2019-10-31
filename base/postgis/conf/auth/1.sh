@@ -15,5 +15,7 @@ pg.sh -f roles.sql
 pg.sh -f fn_new_user.sql
 pg.sh -f fn_change_password.sql
 pg.sh -f fn_save_password.sql
+pg.sh -f fn_jwt_now.sql
+pg.sh -f fn_new_token.sql
 
 popd
