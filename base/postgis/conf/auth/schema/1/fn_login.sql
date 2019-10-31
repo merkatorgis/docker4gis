@@ -6,24 +6,17 @@
 --     , in_password text
 --     )
 -- returns auth.jwt_token
--- language plpgsql
+-- language sql
 -- as $$
--- declare
---   -- check email and password; throws invalid_password exception
---   c_role name := auth.fn_user_role(in_email, in_password);
---   result auth.jwt_token;
--- begin
---     select sign
---         ( row_to_json(r)
---         , current_setting('app.jwt_secret')
---         ) as token
---     from (
---         select c_role as role
---         -- , fn_login.in_email as email
---         -- , extract(epoch from now())::integer + 60*60 as exp
---         , extract(epoch from now())::integer as iat
---     ) r
---     into result;
---     return result;
--- end;
+-- -- Fast logins are insecure
+-- select pg_sleep(3);
+-- -- auth.fn_user_role checks email and password, returns role,
+-- -- and throws invalid_password exception
+-- select auth.fn_jwt_token
+--     ( (select auth.fn_user_role
+--         ( in_email
+--         , in_password
+--         ))
+--     , 60 * 60 -- one hour
+--     );
 -- $$;

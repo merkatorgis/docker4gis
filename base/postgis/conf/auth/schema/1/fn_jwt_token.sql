@@ -1,6 +1,6 @@
-create or replace function auth.fn_new_token
+create or replace function auth.fn_jwt_token
     ( in_role name
-    , in_seconds int
+    , in_seconds bigint
     , in_claims text[] default '{}'
     )
 returns auth.jwt_token
@@ -13,7 +13,7 @@ begin
         ( (jsonb_object
             ( array
                 [ 'role', in_role
-                , 'exp', (auth.fn_jwt_now() + in_seconds)::text
+                , 'exp', (auth.fn_jwt_time(now()) + in_seconds)::text
                 ]
             ) ||
            jsonb_object
@@ -27,4 +27,4 @@ begin
 end;
 $$;
 
--- eg: select * from auth.fn_new_token('user2', 60 * 60, '{extra1, bla, extra2, 64}');
+-- eg: select * from auth.fn_jwt_token('user2', 60 * 60, '{extra1, bla, extra2, 64}');
