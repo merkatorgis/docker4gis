@@ -27,8 +27,6 @@ RUN /tmp/pg/install.sh
 
 COPY conf/plugins/mail /tmp/mail
 RUN /tmp/mail/install.sh
-ONBUILD ARG RELAYHOST
-ONBUILD ENV RELAYHOST $RELAYHOST
 
 COPY conf/postgres /etc/postgresql
 COPY conf/entrypoint /entrypoint

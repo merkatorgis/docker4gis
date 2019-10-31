@@ -1,17 +1,14 @@
-#!/bin/bash
-
-export RELAYHOST="${1:-${DOCKER_USER}-postfix}"
+#!/bin/sh
 
 apk update; apk add --no-cache \
-	mailx rsyslog postfix
+	mailx rsyslog postfix shadow
 
 # postdrop: warning: unable to look up public/pickup: No such file or directory
 mkfifo /var/spool/postfix/public/pickup
 
-echo '#!/bin/sh
-from=$1
-to=$2
-subject=$3
-mail -s "$subject" $to - -f $from
-' > /usr/local/bin/mail.sh
-chmod +x /usr/local/bin/mail.sh
+here=$(dirname "$0")
+cp "${here}/addmailbox.sh" /usr/local/bin
+cp "${here}/mail.sh" /usr/local/bin
+
+echo 'NOTICE: Run `postfix start` on container startup'
+echo 'NOTICE: Run eg `addmailbox.sh noreply "Merkator DXF-service"` on image build or later'

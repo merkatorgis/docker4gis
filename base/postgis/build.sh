@@ -1,7 +1,5 @@
 #!/bin/bash
 
-RELAYHOST="${RELAYHOST-merkator.com}"
-
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
@@ -17,6 +15,5 @@ HERE=$(dirname "$0")
 mkdir -p conf
 cp -r "${HERE}/../plugins" "conf"
 docker image build \
-    --build-arg RELAYHOST="${RELAYHOST}" \
     -t "${image}" .
 rm -rf "conf/plugins"
