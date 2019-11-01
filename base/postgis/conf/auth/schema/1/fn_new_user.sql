@@ -5,7 +5,7 @@ create or replace function auth.fn_new_user
     ( in_email text
     , in_administrator boolean default false
     )
-returns void
+returns name
 language plpgsql
 as $$
 declare
@@ -29,7 +29,7 @@ begin
     values
         ( in_email
         , c_role
-        )
-    ;
+        );
+	return c_role;
 end;
 $$;
