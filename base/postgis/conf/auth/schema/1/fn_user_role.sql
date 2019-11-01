@@ -16,7 +16,7 @@ declare
     ;
 begin
     -- Fast logins are insecure
-    perform pg_sleep(3)
+    perform pg_sleep(1)
     ;
     if c_role is null
     then
