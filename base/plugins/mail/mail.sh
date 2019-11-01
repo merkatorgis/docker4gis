@@ -1,17 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
-to=$1
-subject=$2
-login=$3
+to="$1"
+subject="$2"
+login="${3:-noreply}"
 
 message=$(mktemp)
 cat > "${message}"
 
-if [ "${login}" ]
-then
-    sudo -S -u "${login}" mail -s "$subject" $to < "${message}"
-else
-    mail -s "$subject" $to < "${message}"
-fi
+sudo -u "${login}" mail -s "$subject" "$to" < "${message}"
 
 rm -f "${message}"

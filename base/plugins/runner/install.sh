@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-apk update; apk add --no-cache coreutils
+apk update; apk add --no-cache \
+    coreutils bash
 
 HERE=$(dirname "$0")
 mkdir -p /util/runner/log
