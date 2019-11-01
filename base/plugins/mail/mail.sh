@@ -1,11 +1,11 @@
 #!/bin/bash
 
 to="$1"
-subject="$2"
+subject=$(echo "$2" | envsubst)
 login="${3:-noreply}"
 
 message=$(mktemp)
-cat > "${message}"
+cat | envsubst > "${message}"
 
 sudo -u "${login}" mail -s "$subject" "$to" < "${message}"
 

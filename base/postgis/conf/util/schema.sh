@@ -16,6 +16,8 @@ then
 	if [ "${SCHEMA}" != mail -a "${SCHEMA}" != auth ]
 	then
 		pg.sh -c "grant usage on schema ${SCHEMA} to web_anon"
+		pg.sh -c "grant usage on schema ${SCHEMA} to save_password"
+		pg.sh -c "grant usage on schema ${SCHEMA} to users"
 	fi
 else
 	current=$(pg.sh -Atc "select ${SCHEMA}.__version()")

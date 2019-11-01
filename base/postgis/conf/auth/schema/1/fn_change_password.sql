@@ -1,5 +1,8 @@
 create or replace function auth.fn_change_password
     ( in_email text
+    , in_url text
+    , in_subject text default 'Create password'
+    , in_template text default 'Please follow this link to create your password: %s'
     )
 returns void
 language plpgsql
@@ -18,14 +21,19 @@ begin
     ;
     perform mail.fn_send
         ( in_email
-        , 'Wachtwoord aanmaken'
+        , in_subject
         , format
-            ( 'Hier komt een link?token=%s naar de wachtwoord-pagina'
-            , (select auth.fn_jwt_token
-                ( 'change_password'
-                , 60 * 15 -- 15 minutes
-                ))
+            ( in_template
+            , format
+                ( '%s?changepassword&token=%s'
+                , in_url
+                , (select * from auth.fn_jwt_token
+                    ( 'save_password' -- role
+                    , 60 * 15 -- expire in 15 minutes
+                    , format('{email, %s}', in_email)::text[] -- extra claim
+                    ))
 
+                )
             )
         );
 end;

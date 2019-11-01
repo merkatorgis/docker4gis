@@ -10,16 +10,18 @@ declare
   result auth.jwt_token;
 begin
     select sign
-        ( (jsonb_object
-            ( array
-                [ 'role', in_role
-                , 'exp', (auth.fn_jwt_time(now()) + in_seconds)::text
-                ]
-            ) ||
-           jsonb_object
-            ( in_claims
-            )
-          )::json
+        ( (select
+            (
+                row_to_json(r)::jsonb
+                || jsonb_object
+                    ( in_claims
+                    )
+            )::json
+            from (
+                select in_role as role
+                , auth.fn_jwt_time(now()) + in_seconds as exp
+            ) r
+          )
         , current_setting('app.jwt_secret')
         ) as token
     into result;

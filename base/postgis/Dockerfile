@@ -30,6 +30,7 @@ RUN /tmp/mail/install.sh
 
 COPY conf/postgres /etc/postgresql
 COPY conf/entrypoint /entrypoint
+COPY conf/init.sh /tmp/init.sh
 COPY conf/conf.sh /tmp/conf.sh
 COPY conf/onstart.sh /tmp/onstart.sh
 COPY conf/subconf.sh /tmp/subconf.sh
