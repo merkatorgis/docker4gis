@@ -1,8 +1,8 @@
 create table if not exists
 auth.tbl_users
-  ( email text primary key check ( email ~* '^.+@.+\..+$' )
-  , role  name not null unique check ( length(role) < 512 )
-  , pass  text default null check ( length(pass) < 512 )
+  ( email  text primary key check ( email ~* '^.+@.+\..+$' )
+  , role   name not null unique check ( length(role) < 512 )
+  , pass   text default null check ( length(pass) < 512 )
   , reauth boolean default true
 );
 
@@ -22,7 +22,7 @@ begin
 end
 $$ language plpgsql;
 
-create constraint trigger tr_check_role_exists
+create constraint trigger tr_check_user_role_exists
   after insert or update on auth.tbl_users
   for each row
-  execute procedure auth.tr_check_role_exists();
+  execute function auth.tr_check_role_exists();
