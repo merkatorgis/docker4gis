@@ -17,7 +17,7 @@ PGRST_JWT_SECRET=$(docker container exec "${DOCKER_USER}-postgis" pg.sh force -A
 
 docker run --name "${container}" \
 	--network "${DOCKER_USER}-net" \
-	-e PGRST_DB_URI=postgresql://authenticator:postgrest@${DOCKER_USER}-postgis/${DOCKER_USER} \
+	-e PGRST_DB_URI=postgresql://web_authenticator:postgrest@${DOCKER_USER}-postgis/${DOCKER_USER} \
 	-e PGRST_DB_SCHEMA=${DOCKER_USER} \
 	-e PGRST_JWT_SECRET=${PGRST_JWT_SECRET} \
 	"$@" \

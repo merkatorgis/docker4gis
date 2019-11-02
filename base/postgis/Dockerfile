@@ -38,7 +38,7 @@ COPY conf/subconf.sh /tmp/subconf.sh
 COPY conf/util/schema.sh /usr/local/bin/schema.sh
 
 COPY conf/mail /tmp/mail
-COPY conf/auth /tmp/auth
+COPY conf/web /tmp/web
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["postgis"]

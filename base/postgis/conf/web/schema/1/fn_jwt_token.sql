@@ -1,13 +1,13 @@
-create or replace function auth.fn_jwt_token
-    ( in_role name
+create or replace function web.fn_jwt_token
+    ( in_role    name
     , in_seconds bigint
-    , in_claims text[] default '{}'
+    , in_claims  text[] default '{}'
     )
-returns auth.jwt_token
+returns web.jwt_token
 language plpgsql
 as $$
 declare
-  result auth.jwt_token;
+  result web.jwt_token;
 begin
     select sign
         ( (select
@@ -19,7 +19,7 @@ begin
             )::json
             from (
                 select in_role as role
-                , auth.fn_jwt_time(now()) + in_seconds as exp
+                , web.fn_jwt_time(now()) + in_seconds as exp
             ) r
           )
         , current_setting('app.jwt_secret')
@@ -29,4 +29,4 @@ begin
 end;
 $$;
 
--- eg: select * from auth.fn_jwt_token('user2', 60 * 60, '{extra1, bla, extra2, 64}');
+-- eg: select * from web.fn_jwt_token('user2', 60 * 60, '{extra1, bla, extra2, 64}');

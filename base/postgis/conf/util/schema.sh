@@ -13,11 +13,11 @@ if [ $(pg.sh -Atc "
 then
 	current=0
 	pg.sh -c "create schema if not exists ${SCHEMA}"
-	if [ "${SCHEMA}" != mail -a "${SCHEMA}" != auth ]
+	if [ "${SCHEMA}" != mail -a "${SCHEMA}" != web ]
 	then
 		pg.sh -c "grant usage on schema ${SCHEMA} to web_anon"
-		pg.sh -c "grant usage on schema ${SCHEMA} to save_password"
-		pg.sh -c "grant usage on schema ${SCHEMA} to users"
+		pg.sh -c "grant usage on schema ${SCHEMA} to web_passwd"
+		pg.sh -c "grant usage on schema ${SCHEMA} to web_user"
 	fi
 else
 	current=$(pg.sh -Atc "select ${SCHEMA}.__version()")

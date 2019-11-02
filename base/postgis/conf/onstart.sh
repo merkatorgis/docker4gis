@@ -7,6 +7,6 @@ pg.sh -c "create extension if not exists pgcrypto"
 pg.sh -c "create extension if not exists pgjwt"
 
 /tmp/subconf.sh /tmp/mail/conf.sh
-/tmp/subconf.sh /tmp/auth/conf.sh
+/tmp/subconf.sh /tmp/web/conf.sh
 
 find /tmp/conf -name "conf.sh" -exec /tmp/subconf.sh {} \;

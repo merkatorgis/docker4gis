@@ -2,17 +2,17 @@
 -- encrypted column. It returns the database role for a user if the email and
 -- password are correct.
 
-create or replace function auth.fn_user_role
-    ( email text
-    , pass text
+create or replace function web.fn_user_role
+    ( in_email text
+    , in_pass  text
 )
 returns name
 language plpgsql
 as $$
 declare
-    c_role name := role from auth.tbl_users
-        where tbl_users.email = fn_user_role.email
-        and tbl_users.pass = crypt(fn_user_role.pass, tbl_users.pass)
+    c_role name := role from web.tbl_user
+        where email = in_email
+        and pass = crypt(in_pass, pass)
     ;
 begin
     -- Fast logins are insecure
