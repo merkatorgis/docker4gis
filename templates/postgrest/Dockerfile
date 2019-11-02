@@ -1,8 +1,8 @@
 FROM postgrest/postgrest:v6.0.2
 
 ENV PGRST_DB_URI= \
-    PGRST_DB_SCHEMA=public \
-    PGRST_DB_ANON_ROLE= \
+    PGRST_DB_SCHEMA= \
+    PGRST_DB_ANON_ROLE=web_anon \
     PGRST_DB_POOL=100 \
     PGRST_DB_EXTRA_SEARCH_PATH=public \
     PGRST_SERVER_HOST=*4 \
