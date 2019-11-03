@@ -13,3 +13,8 @@ begin
     end if;
 end;
 $$;
+
+grant all on function public.fn_pre_request
+    ( )
+to public
+;

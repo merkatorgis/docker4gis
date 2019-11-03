@@ -8,6 +8,14 @@ pushd schema/1
 PGRST_JWT_SECRET=$(pg.sh -Atc 'select gen_random_uuid()::text || gen_random_uuid()::text')
 pg.sh -c "ALTER DATABASE ${POSTGRES_DB} SET app.jwt_secret TO '${PGRST_JWT_SECRET}'"
 
+# Unlike tables/views, functions privileges work as a blacklist, so they’re
+# executable for all the roles by default. You can workaround this by revoking
+# the PUBLIC privileges of the function and then granting privileges to specific
+# roles.
+# Also to avoid doing REVOKE on every function you can enable this behavior by
+# default with:
+pg.sh -c "ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC"
+
 pg.sh -f jwt_token.sql
 pg.sh -f fn_jwt_time.sql
 pg.sh -f fn_jwt_token.sql
