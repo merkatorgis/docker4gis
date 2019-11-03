@@ -1,30 +1,30 @@
 create or replace function web.fn_jwt_token
     ( in_role    name
-    , in_seconds bigint
+    , in_seconds bigint default 0
     , in_claims  text[] default '{}'
     )
 returns web.jwt_token
 language plpgsql
 as $$
 declare
-  result web.jwt_token;
+    token jsonb := row_to_json(r)::jsonb
+        from (
+            select in_role as role
+            , web.fn_jwt_time(now()) + in_seconds as exp
+        ) r;
+    result web.jwt_token;
 begin
+    if in_seconds is null
+    then
+        token := token - 'exp';
+    end if
+    ;
     select sign
-        ( (select
-            (
-                row_to_json(r)::jsonb
-                || jsonb_object
-                    ( in_claims
-                    )
-            )::json
-            from (
-                select in_role as role
-                , web.fn_jwt_time(now()) + in_seconds as exp
-            ) r
-          )
+        ( (token || jsonb_object(in_claims))::json
         , current_setting('app.jwt_secret')
         ) as token
-    into result;
+    into result
+    ;
     return result;
 end;
 $$;

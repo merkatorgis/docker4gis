@@ -13,13 +13,3 @@ begin
     end if;
 end;
 $$;
-
-revoke all on function public.fn_pre_request
-    ( )
-from public
-;
-
-grant execute on function public.fn_pre_request
-    ( )
-to web_user
-;
