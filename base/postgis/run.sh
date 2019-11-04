@@ -46,7 +46,7 @@ docker run --name $container \
 	-d $image
 
 # wait for db
-while [ ! $(docker container exec "$container" pg.sh -Atc "select current_setting('app.ddl_done')") = true ]
+while [ $(docker container exec "$container" pg.sh -Atc "select current_setting('app.ddl_done', true)") != true ]
 do
 	sleep 1
 done
