@@ -9,17 +9,18 @@ create table if not exists web.tbl_user
 -- PostgreSQL does not support these constraints against the pg_roles table.
 -- We’ll use a trigger to manually enforce it.
 
-create or replace function web.tr_check_role_exists
-    ( )
+create or replace function web.tr_check_role_exists()
 returns trigger
 language plpgsql
 as $$
 begin
-    if not exists (select from pg_roles as r where r.rolname = new.role) then
+    if not exists (select from pg_roles as r where r.rolname = new.role)
+    then
         raise foreign_key_violation using message =
-            'unknown database role: ' || new.role
+        'unknown database role: ' || new.role
         ;
-    end if;
+    end if
+    ;
     return new;
 end;
 $$;

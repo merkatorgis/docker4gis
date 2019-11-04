@@ -1,4 +1,4 @@
-create or replace function public.fn_set_user_exp
+create or replace function web.fn_set_user_exp
     ( in_role name
     )
 returns void
@@ -10,9 +10,3 @@ as $$
     where role = in_role
     ;
 $$;
-
-grant execute on function public.fn_set_user_exp
-    ( name
-    )
-to web_user
-;

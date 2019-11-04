@@ -19,5 +19,5 @@ end;
 $$;
 
 grant execute on function public.fn_pre_request()
-    to public
+to public
 ;
