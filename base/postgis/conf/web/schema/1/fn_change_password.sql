@@ -11,7 +11,6 @@ declare
 begin
     update web.tbl_user
         set pass = null
-        , reauth = true
         where email = in_email
     ;
     if not found

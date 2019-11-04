@@ -26,6 +26,7 @@ pg.sh -f fn_new_user.sql
 pg.sh -f fn_user_role.sql
 pg.sh -f fn_change_password.sql
 pg.sh -f fn_save_password.sql
+pg.sh -f fn_logout.sql
 
 pg.sh -f fn_pre_request.sql
 

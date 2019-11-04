@@ -1,14 +1,15 @@
 create or replace function web.fn_logout
-    ( in_role name
-    )
+    ( )
 returns void
-language plpgsql
+language sql
 as $$
-declare
-begin
-    update web.tbl_user
-    set reauth = true
-    where role = in_role
-    ;
-end;
+update web.tbl_user
+set exp = now()
+where role = current_user
+;
 $$;
+
+grant execute on function web.fn_logout
+    ( )
+to web_user
+;

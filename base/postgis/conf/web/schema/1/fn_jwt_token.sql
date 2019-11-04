@@ -10,6 +10,7 @@ declare
     token jsonb := row_to_json(r)::jsonb
         from (
             select in_role as role
+            , web.fn_jwt_time(now()) as iat
             , web.fn_jwt_time(now()) + in_seconds as exp
         ) r;
     result web.jwt_token;

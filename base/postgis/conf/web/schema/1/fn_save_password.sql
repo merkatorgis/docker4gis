@@ -9,8 +9,9 @@ declare
 begin
     update web.tbl_user
         set pass = crypt(in_password, gen_salt('bf'))
-        , reauth = false
+        , exp = now()
         where email = in_email
+        and email = current_setting('request.jwt.claim.email')
     ;
     if not found
     then

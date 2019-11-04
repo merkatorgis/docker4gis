@@ -1,8 +1,8 @@
 create table if not exists web.tbl_user
-    ( email  text primary key check ( email ~* '^.+@.+\..+$' )
-    , role   name not null unique check ( length(role) < 512 )
-    , pass   text default null check ( length(pass) < 512 )
-    , reauth boolean default true
+    ( email text primary key check ( email ~* '^.+@.+\..+$' )
+    , role  name not null unique check ( length(role) < 512 )
+    , pass  text default null check ( length(pass) < 512 )
+    , exp   timestamp with time zone default null
 );
 
 -- We would like the role to be a foreign key to actual database roles, however
