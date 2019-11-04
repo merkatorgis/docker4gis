@@ -3,7 +3,7 @@ FROM postgrest/postgrest:v6.0.2
 ENV PGRST_DB_URI= \
     PGRST_DB_SCHEMA= \
     PGRST_JWT_SECRET= \
-    PGRST_PRE_REQUEST=web.fn_pre_request \
+    PGRST_PRE_REQUEST=public.fn_pre_request \
     PGRST_DB_ANON_ROLE=web_anon \
     PGRST_DB_POOL=100 \
     PGRST_DB_EXTRA_SEARCH_PATH=public \

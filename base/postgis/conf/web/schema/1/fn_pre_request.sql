@@ -1,4 +1,4 @@
-create or replace function web.fn_pre_request()
+create or replace function public.fn_pre_request()
 returns void
 language plpgsql
 as $$
@@ -7,10 +7,10 @@ declare
         current_setting('request.jwt.claim.iat', true)
     ;
     user_exp timestamp with time zone :=
-        exp from web.tbl_user
+        public.fn_get_user_exp(current_user)
     ;
 begin
-    if claim_iat <> '""' and to_timestamp(claim_iat::int) < user_exp
+    if claim_iat = '' or to_timestamp(claim_iat::int) < user_exp
     then
         raise invalid_authorization_specification
         using message = 'please reauthenticate';
@@ -18,8 +18,6 @@ begin
 end;
 $$;
 
-grant execute on function web.fn_pre_request()
-    to web_anon
-    , web_passwd
-    , web_user
+grant execute on function public.fn_pre_request()
+    to public
 ;
