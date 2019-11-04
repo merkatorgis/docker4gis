@@ -29,3 +29,26 @@ after insert or update on web.tbl_user
 for each row
 execute function web.tr_check_role_exists()
 ;
+
+alter table web.tbl_user
+enable row level security
+;
+
+grant select on web.tbl_user to web_anon
+;
+create policy pol_user_web_anon on web.tbl_user to web_anon
+using (false)
+;
+
+grant select on web.tbl_user to web_passwd
+;
+create policy pol_user_web_passwd on web.tbl_user to web_passwd
+using (false)
+;
+
+grant select, update on web.tbl_user to web_user
+;
+create policy pol_user_web_user on web.tbl_user to web_user
+using (role = current_user)
+with check (role = current_user)
+;

@@ -18,6 +18,7 @@ then
 		pg.sh -c "grant usage on schema ${SCHEMA} to web_anon"
 		pg.sh -c "grant usage on schema ${SCHEMA} to web_passwd"
 		pg.sh -c "grant usage on schema ${SCHEMA} to web_user"
+		pg.sh -c "grant usage on schema ${SCHEMA} to web_admin"
 	fi
 else
 	current=$(pg.sh -Atc "select ${SCHEMA}.__version()")
