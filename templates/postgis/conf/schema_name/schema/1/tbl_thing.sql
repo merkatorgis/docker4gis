@@ -2,6 +2,7 @@ create table schema_name.tbl_thing
     ( id serial primary key
     , web_user name not null default current_user references web.tbl_user(role)
     , naam text not null
+    , constraint uk_thing_web_user_naam unique (web_user, naam)
     )
 ;
 

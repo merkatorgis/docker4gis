@@ -11,7 +11,7 @@ declare
 begin
     execute format
         ( $$
-            create policy pol_thing_%s on schema_name.tbl_thing to %s
+            create policy pol_thing_%s on tbl_thing to %s
             using (web_user = '%s')
             with check (web_user = '%s')
           $$

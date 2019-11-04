@@ -1,7 +1,4 @@
-set search_path to schema_name, public
-;
-
-select * from schema_name.fn_new_user
+select * from fn_new_user
     ( 'a@b.c'
     , true
     )
@@ -9,16 +6,64 @@ select * from schema_name.fn_new_user
 
 set session request.jwt.claim.email = 'a@b.c'
 ;
-select * from schema_name.fn_save_password
+select * from fn_save_password
     ( 'a@b.c'
     , 'abc'
     )
 ;
 
-insert into schema_name.tbl_something
-    ( naam
+insert into tbl_thing
+    ( web_user
+    , naam
     )
 values
-    ( 'test'
+    ( 'web_user1'
+    , 'test'
+    )
+;
+
+insert into tbl_thing
+    ( web_user
+    , naam
+    )
+values
+    ( 'web_user1'
+    , 'test2'
+    )
+;
+
+
+
+select * from fn_new_user
+    ( 'aa@bb.cc'
+    , true
+    )
+;
+
+set session request.jwt.claim.email = 'aa@bb.cc'
+;
+select * from fn_save_password
+    ( 'aa@bb.cc'
+    , 'aabbcc'
+    )
+;
+
+insert into tbl_thing
+    ( web_user
+    , naam
+    )
+values
+    ( 'web_user2'
+    , 'test'
+    )
+;
+
+insert into tbl_thing
+    ( web_user
+    , naam
+    )
+values
+    ( 'web_user2'
+    , 'test2'
     )
 ;
