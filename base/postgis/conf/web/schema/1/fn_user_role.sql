@@ -16,7 +16,8 @@ declare
     ;
 begin
     -- Fast logins are insecure
-    perform pg_sleep(1)
+    -- Also, ensure any token is dated as after the possibly just-set user exp
+    perform pg_sleep(2)
     ;
     if c_role is null
     then
