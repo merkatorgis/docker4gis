@@ -26,17 +26,17 @@ pushd schema/1
 
     pg.sh -f fn_new_user.sql
 
-    pushd fn_change_password
+    pushd fn_login
+        pg.sh -f fn_user_role.sql
         pushd fn_jwt_token
             pg.sh -f jwt_token.sql
             pg.sh -f fn_jwt_time.sql
         popd
         pg.sh -f fn_jwt_token.sql
     popd
+    pg.sh -f fn_login.sql
     pg.sh -f fn_change_password.sql
-
     pg.sh -f fn_save_password.sql
-    pg.sh -f fn_user_role.sql
 
     pushd fn_logout
         pg.sh -f fn_set_user_exp.sql

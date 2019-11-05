@@ -1,7 +1,7 @@
 create or replace function public.fn_get_user_exp
     ( in_role name
     )
-returns timestamptz
+returns bigint
 language sql
 security definer
 as $$

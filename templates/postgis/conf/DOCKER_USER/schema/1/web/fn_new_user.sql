@@ -7,6 +7,7 @@ language plpgsql
 security definer
 as $body$
 declare
+    -- web.fn_new_user returns the new role name
     c_web_user name := web.fn_new_user(in_email, in_admin);
 begin
     execute format

@@ -6,7 +6,7 @@ language sql
 security definer
 as $$
     update web.tbl_user
-    set exp = now()
+    set exp = web.fn_jwt_now() - 1 -- -1 to ensure before iat new token
     where role = in_role
     ;
 $$;

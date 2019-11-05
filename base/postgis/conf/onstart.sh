@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pg.sh -c "alter database dxf set app.ddl_done to false"
+pg.sh -c "alter database ${POSTGRES_DB} set app.ddl_done to false"
 
 pg.sh -c "create extension if not exists ogr_fdw"
 pg.sh -c "create extension if not exists odbc_fdw"
@@ -13,4 +13,4 @@ pg.sh -c "create extension if not exists pgjwt"
 
 find /tmp/conf -name "conf.sh" -exec /tmp/subconf.sh {} \;
 
-pg.sh -c "alter database dxf set app.ddl_done to true"
+pg.sh -c "alter database ${POSTGRES_DB} set app.ddl_done to true"

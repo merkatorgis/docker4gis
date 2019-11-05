@@ -6,11 +6,11 @@ declare
     claim_iat text :=
         current_setting('request.jwt.claim.iat', true)
     ;
-    user_exp timestamp with time zone :=
+    user_exp bigint :=
         public.fn_get_user_exp(current_user)
     ;
 begin
-    if claim_iat = '' or to_timestamp(claim_iat::int) < user_exp
+    if claim_iat = '' or claim_iat::bigint < user_exp
     then
         raise invalid_authorization_specification
         using message = 'please reauthenticate';
