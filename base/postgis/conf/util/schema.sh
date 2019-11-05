@@ -40,8 +40,8 @@ update()
 	then
 		pg.sh -c "
 			COMMENT ON FUNCTION ${SCHEMA}.__version() IS \$\$
-				Retourneert het versienummer van het datamodel in dit schema,
-				zodat de migratiescripts weten waar ze moeten beginnen.
+				Returns the version number of this schema's data model,
+				for the migration scripts to know where the should start.
 			\$\$;
 		"
 	fi
