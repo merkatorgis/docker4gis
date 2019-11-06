@@ -20,6 +20,7 @@ docker run --name "${container}" \
 	-e PGRST_DB_URI=postgresql://web_authenticator:postgrest@${DOCKER_USER}-postgis/${DOCKER_USER} \
 	-e PGRST_DB_SCHEMA=${DOCKER_USER} \
 	-e PGRST_JWT_SECRET=${PGRST_JWT_SECRET} \
+	-p 58081:3000 \
 	"$@" \
 	-d "${image}"
 
@@ -28,6 +29,6 @@ if ! docker container rm -f "${DOCKER_USER}-swagger" 2>/dev/null; then true; fi
 
 docker run --name "${DOCKER_USER}-swagger" \
 	--network "${DOCKER_USER}-net" \
-	-e API_URL=https://$PROXY_HOST:$PROXY_PORT/postgrest \
-	-p 58081:8080 \
+	-e API_URL=http://localhost:58081 \
+	-p 58082:8080 \
 	-d swaggerapi/swagger-ui
