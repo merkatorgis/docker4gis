@@ -22,3 +22,12 @@ docker run --name "${container}" \
 	-e PGRST_JWT_SECRET=${PGRST_JWT_SECRET} \
 	"$@" \
 	-d "${image}"
+
+
+if ! docker container rm -f "${DOCKER_USER}-swagger" 2>/dev/null; then true; fi
+
+docker run --name "${DOCKER_USER}-swagger" \
+	--network "${DOCKER_USER}-net" \
+	-e API_URL=https://$PROXY_HOST:$PROXY_PORT/postgrest \
+	-p 58081:8080 \
+	-d swaggerapi/swagger-ui
