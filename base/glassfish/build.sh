@@ -7,13 +7,12 @@ war="${2}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-api}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
-API_CONTAINER="${API_CONTAINER:-$DOCKER_USER-api}"
 
-IMAGE="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
+repo=$(basename "$(pwd)")
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
-echo; echo "Building $IMAGE"
+echo; echo "Building ${image}"
 
 if [ "${war}" != 'war' ]; then
     echo; echo "Compiling from '${src_dir}'..."
@@ -35,13 +34,13 @@ if [ "${war}" != 'war' ]; then
                 -Dmaven.ext.class.path=/usr/local/netbeans/java/maven-nblib/netbeans-eventspy.jar \
                 -Dfile.encoding=UTF-8 \
                 clean \
-                install \
+                package \
             ; \
         '
 fi
 
 echo; echo "Building server from binaries..."
-if docker container rm -f "${API_CONTAINER}" 2>/dev/null; then true; fi
+if docker container rm -f "${container}" 2>/dev/null; then true; fi
 
 read -r -a artifact_id <<< $(grep -oPm1 '(?<=<artifactId>)[^<]+' "${src_dir}/pom.xml")
 read -r -a version <<< $(grep -oPm1 '(?<=<version>)[^<]+' "${src_dir}/pom.xml")
@@ -60,11 +59,11 @@ mkdir -p conf
 cp -r conf Dockerfile "${HERE}/conf/admin.sh" "${build_dir}"
 pushd "${build_dir}"
 cp -r "${HERE}/../plugins" "conf"
-docker image build -t "${IMAGE}" .
+docker image build -t "${image}" .
 rm -rf conf Dockerfile admin.sh
 popd
-docker container run -d --name tmp-glassfish-conf "${IMAGE}"
+docker container run -d --name tmp-glassfish-conf "${image}"
 sleep 15
 docker container exec tmp-glassfish-conf /var/app/admin.sh
-docker container commit tmp-glassfish-conf "${IMAGE}"
+docker container commit tmp-glassfish-conf "${image}"
 docker container rm -f tmp-glassfish-conf

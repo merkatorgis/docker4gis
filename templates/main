@@ -1,105 +1,91 @@
 #!/bin/bash
 set -e
 
-# edit here
-export DOCKER_USER='template'
+# edit here:
+export DOCKER_USER=template
 
 # Fork the merkatorgis/docker4gis repo and set the environment variable
-# to the docker4gis/base directory
+# to the docker4gis/base directory:
 export DOCKER_BASE="${DOCKER_BASE}"
 
-# Either empty for Docker Hub
-# or eg docker.merkator.com/ (including the trailing slash)
+# Either empty for Docker Hub:
+# export DOCKER_REGISTRY=''
+# or a registry location (including the trailing slash), eg:
+# export DOCKER_REGISTRY=docker.merkator.com/
+# or set en enivronment variable:
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 
 export DOCKER_ENV=DEVELOPMENT
-
-action="${1:-start}"
-shift 1
-
-export NETWORK_NAME="${DOCKER_USER}-net"
 export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
 
-export POSTGIS_CONTAINER="${DOCKER_USER}-pg"
-export API_CONTAINER="${DOCKER_USER}-api"
-export GEOSERVER_CONTAINER="${DOCKER_USER}-gs"
-export MAPFISH_CONTAINER="${DOCKER_USER}-mf"
-export POSTFIX_CONTAINER="${DOCKER_USER}-pf"
-export CRON_CONTAINER="${DOCKER_USER}-cr"
-export APP_CONTAINER="${DOCKER_USER}-app"
-export PROXY_CONTAINER="${DOCKER_USER}-px"
+export MSYS_NO_PATHCONV=1
 
 export PROXY_HOST='localhost.merkator.com'
 export PROXY_PORT="${PROXY_PORT:-7443}"
 export APP="${APP}"
 export API="${API}"
 
-export MSYS_NO_PATHCONV=1
+action="${1:-start}"
+shift 1
 
-if [ "${action}" == 'build' ]; then
+if [ "${action}" == build ]
+then
+	# Build new image for component.
 	# Examples:
+	# ./ex build proxy
+	# ./ex build postgis
+	# ./ex build geoserver
 	# ./ex build app
-	# ./ex build run
-	# ./ex tag 627 app
-	# APP_TAG=627 ./ex build run 38
-	# ./ex build api; ./ex br app
-	export POSTGIS_TAG="${POSTGIS_TAG}"
-	export API_TAG="${API_TAG}"
-	export GEOSERVER_TAG="${GEOSERVER_TAG}"
-	export MAPFISH_TAG="${MAPFISH_TAG}"
-	export POSTFIX_TAG="${POSTFIX_TAG}"
-	export CRON_TAG="${CRON_TAG}"
-	export APP_TAG="${APP_TAG}"
-	export PROXY_TAG="${PROXY_TAG}"
 	"${DOCKER_BASE}/build.sh" "$0" "$@"
-elif [ "${action}" == 'run' ]; then
+elif [ "${action}" == package ]
+then
+	# Create a runnable package.
+	# With a name, all images are pushed with that tag, and latest.
+	# Without a name all latest versions are used, and nothing gets pushed.
+	# Examples:
+	# ./ex package
+	# ./ex package 33282
+	# ./ex package dab57fa2c4220bf8e13f298feacf36d4d036d89c
+	# ./ex package 2.0.1
+	export DOCKER_TAG="$1"
+	"${DOCKER_BASE}/build.sh" "$0" .package "${DOCKER_TAG}"
+elif [ "${action}" == run ]
+then
+	# Run the current package.
 	# Examples:
 	# ./ex run
-	# ./ex run 38
-	"${DOCKER_BASE}/run.sh" "$0" "$@"
-elif [ "${action}" == 'br' ]; then
+	# ./ex run 33282
+	# ./ex run dab57fa2c4220bf8e13f298feacf36d4d036d89c
+	# ./ex run 2.0.1
+	"${DOCKER_BASE}/run.sh" "$0" "$1"
+elif [ "${action}" == br ]
+then
+	# Build new image for component, and run existing package.
 	# Examples:
-	# ./ex br app
+	# ./ex br proxy
 	# ./ex br postgis
-	# ./ex br run
+	# ./ex br geoserver
+	# ./ex br app
 	"$0" build "${1}"
 	"$0" run
-elif [ "${action}" == 'stop' ]; then
-	"${DOCKER_BASE}/stop.sh" "${PROXY_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${APP_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${CRON_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${POSTFIX_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${MAPFISH_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${GEOSERVER_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${API_CONTAINER}"
-	"${DOCKER_BASE}/stop.sh" "${POSTGIS_CONTAINER}"
-elif [ "${action}" == 'latest' ]; then
-	"${DOCKER_BASE}/latest.sh" postgis "${POSTGIS_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" api "${API_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" geoserver "${GEOSERVER_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" mapfish "${MAPFISH_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" postfix "${POSTFIX_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" cron "${CRON_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" app "${APP_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" proxy "${PROXY_CONTAINER}"
-	"${DOCKER_BASE}/latest.sh" run no_container
-
-	"$0" run
-elif [ "${action}" == 'binds' ]; then
+elif [ "${action}" == stop ]
+then
+	# Stop running containers.
+	# Examples:
+	# ./ex stop
+	"${DOCKER_BASE}/stop.sh" "$0"
+elif [ "${action}" == 'latest' ]
+then
+	# Fetch latest images from the registry, and run the package.
+	# Examples:
+	# ./ex latest
+	"${DOCKER_BASE}/latest.sh" "$0"
+elif [ "${action}" == binds ]
+then
+	# Echo the DOCKER_BINDS_DIR.
 	# Examples:
 	# ls -la $(./ex binds)
 	echo "${DOCKER_BINDS_DIR}"
-elif [ "${action}" == 'tag' ]; then
-	# Labels latest with the specified tag
-	# Examples:
-	# ./ex tag 627 app
-	# ./ex tag -push 12 postgis
-	"${DOCKER_BASE}/tag.sh" "$@"
-elif [ "${action}" == 'push' ]; then
-	# Pushes the specified tag AND latest to the registry
-	# Examples:
-	# ./ex push 38 run
-	"${DOCKER_BASE}/push.sh" "$@"
 else
 	echo "Unknown action: ${action}"
 fi

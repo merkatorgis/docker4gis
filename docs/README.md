@@ -55,9 +55,9 @@ Create a fork*) of [the main docker4gis repo](https://github.com/merkatorgis/doc
 
 ### Setup app directory
 
-Create a directory for your app's code on your local file system. Make a directory `docker` inside it. Copy the template [run](/templates/run) directory and the template [main script](/templates/script/app) to this `docker` directory.
+Create a directory for your app's code on your local file system. Make a directory `docker` inside it. Copy the template [.package](/templates/.package) directory and the template [main script](/templates/main) to this `docker` directory.
 
-Rename the main script to a short name for your specific app (yor're going to type that name quite a lot in the terminal). Then edit the main script to set the `DOCKER_USER` variable. If you're on a specific Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your Bash profile).
+Rename the main script to a short name for your specific app (your're going to type that name quite a lot in the terminal). Then edit the main script to set the `DOCKER_USER` variable. If you're on a specific Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your Bash profile).
 
 Make your main script executable with `chmod +x app` (where app it the script's file name).
 
@@ -69,13 +69,13 @@ Then, use your _main script_ to build things, eg `./app build proxy` to build yo
 
 ## Running things
 
-When you've built all your images _and_ the `run` image, `./app run` will run your app. That is, it'll run the `latest` version of it; see the [run image](run.md) docs for details about versioning, and how to build the run image.
+When you've built all your images, create a runnable package with `./app package`, then `./app run` will run your app. That is, it'll run the `latest` version of it; see the [package](package.md) docs for details about versioning.
 
-Where `./app run` creates containers from images, `./app stop` will stop all the app's containers, and `./app start` will start existing (stopped) containers.
+Where `./app run` creates containers from images (start existing containers), `./app stop` will stop all the app's containers.
 
-When you're happy about an image, you can `docker image push` it to a Docker registry. This can be the Docker Hub, or any other public or private registry. The docker4gis `registry` base image facilitates setting up a private registry.
+When you're happy about your changes, save a version to the Docker registry with `./app package {tag}`. This can be the Docker Hub, or any other public or private registry. The docker4gis `registry` base image facilitates setting up a private registry.
 
-Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, only run. So the only thing you need there, is the little run script that runs the run image. See its [docs](run.md) for details.
+Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, only run. So the only thing you need there, is the little run script that runs the package. See its [docs](package.md) for details.
 
 ## Base images 
 
@@ -84,6 +84,7 @@ Once your images are in a registry, they're accessible there from your servers. 
 - gdal
 - geoserver
 - glassfish
+- tomcat (build from maven)
 - mapfish
 - postfix
 - [postgis](postgis.md)

@@ -1,31 +1,31 @@
 #!/bin/bash
 
-POSTGIS_PORT="${POSTGIS_PORT:-5432}"
-PROXY_HOST="${PROXY_HOST:-localhost.merkator.com}"
-PROXY_PORT="${PROXY_PORT:-8080}"
-SECRET="${SECRET}"
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-postgis}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
-DOCKER_ENV="${DOCKER_ENV}"
-
 POSTGRES_USER="${1:-postgres}"
 POSTGRES_PASSWORD="${2:-postgres}"
 POSTGRES_DB="${3:-$DOCKER_USER}"
 
-container="${POSTGIS_CONTAINER:-$DOCKER_USER-pg}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
-here=$(dirname "$0")
+DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+DOCKER_USER="${DOCKER_USER}"
+DOCKER_TAG="${DOCKER_TAG}"
+DOCKER_ENV="${DOCKER_ENV}"
+DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-if "$here/../start.sh" "${image}" "${container}"; then exit; fi
+repo=$(basename "$0")
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+
+POSTGIS_PORT="${POSTGIS_PORT:-5432}"
+PROXY_HOST="${PROXY_HOST:-localhost.merkator.com}"
+PROXY_PORT="${PROXY_PORT:-8080}"
+SECRET="${SECRET}"
+
+if .run/start.sh "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
-"$here/../network.sh"
 docker volume create "$container"
 docker run --name $container \
 	-e PROXY=https://$PROXY_HOST:$PROXY_PORT \
@@ -42,7 +42,7 @@ docker run --name $container \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="$container",target=/var/lib/postgresql/data \
 	-p $POSTGIS_PORT:5432 \
-	--network "$NETWORK_NAME" \
+	--network "${DOCKER_USER}-net" \
 	-d $image
 
 sleep 1

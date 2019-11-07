@@ -1,9 +1,19 @@
 #!/bin/bash
 
-CONTAINER="$1"
+DOCKER_USER="${DOCKER_USER}"
 
-echo "Stopping $CONTAINER..."
+main=$(dirname "$1")
 
-set +e
-docker stop "$CONTAINER" 2>/dev/null
-set -e
+for file in "${main}"/*
+do
+    if [ -d "${file}" ]
+    then
+        repo=$(basename "${file}")
+        container="${DOCKER_USER}-${repo}"
+        echo "Stopping ${container}..."
+
+        set +e
+        docker stop "${container}" 2>/dev/null
+        set -e
+    fi
+done

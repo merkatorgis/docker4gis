@@ -7,4 +7,4 @@ ENV DESTINATION=example.com
 # RUN addmailbox.sh {login} 'Full Name'
 
 # To process incoming mail by a script:
-# RUN api.sh {login} /tmp/conf/script_name.sh
+# RUN api.sh {login} /tmp/conf/script_name.sh param1 param2

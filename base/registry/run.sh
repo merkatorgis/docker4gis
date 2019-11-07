@@ -4,16 +4,18 @@ export MSYS_NO_PATHCONV=1
 
 REGISTRY_HOST="${REGISTRY_HOST:-localhost}"
 REGISTRY_PORT="${REGISTRY_PORT:-443}"
+
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
-DOCKER_REPO="${DOCKER_REPO:-registry}"
-DOCKER_TAG="${DOCKER_TAG:-latest}"
+DOCKER_USER="${DOCKER_USER}"
+DOCKER_TAG="${DOCKER_TAG}"
+DOCKER_ENV="${DOCKER_ENV}"
+DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-container="$DOCKER_REPO"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${DOCKER_REPO}:${DOCKER_TAG}"
-here=$(dirname "$0")
+repo=$(basename "$0")
+container="${DOCKER_USER}-${repo}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-if "$here/../start.sh" "${image}" "${container}"; then exit; fi
+if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker volume create certificates
 docker volume create registry

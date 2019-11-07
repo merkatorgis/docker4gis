@@ -3,7 +3,7 @@
 # In verschillende sessies:
 # $ top
 # $ docker container exec -ti myapp-pg top
-# $ tail -f /docker/binds/runner/util/runner/util/refresh.sh.2018-07-03.log
+# $ tail -f /root/docker-binds/runner/util/refresh.sh.2019-05-29.log
 # $ docker container exec myapp-pg refresh.sh run schema.mv_matviewname &
 
 refresh()

@@ -9,6 +9,9 @@ if [ "$1" = 'postfix' ]; then
 	sed -i -e "s/{{DESTINATION}}/${DESTINATION}/g" /etc/postfix/transport
 	postmap /etc/postfix/transport
 
+	touch /onstart
+	. /onstart
+
 	rsyslogd
 	postfix start
 	exec tail -f /var/log/maillog
