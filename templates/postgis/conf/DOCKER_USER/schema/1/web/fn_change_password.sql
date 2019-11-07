@@ -16,4 +16,5 @@ grant execute on function fn_change_password
     ( text
     )
 to web_anon
+, web_user
 ;
