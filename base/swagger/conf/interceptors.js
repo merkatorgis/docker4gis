@@ -7,7 +7,7 @@ responseInterceptor: response => {
     { name: "Authorization"
     , in:   "header"
     , type: "apiKey"
-    , description: 'Submit value "Bearer $token", then execute the Introspection request, then click Explore button (top right).'
+    , description: 'Submit value "Bearer $token", then execute the Introspection request, then click the Explore button (top right).'
     }
   };
   obj.security = [{ AuthorizationHeader: [] }];
@@ -19,8 +19,8 @@ responseInterceptor: response => {
 },
 requestInterceptor: request => {
  \n
- window.AuthorizationHeader = window.AuthorizationHeader \|\| request.headers.Authorization;
- request.headers.Authorization = request.headers.Authorization \|\| window.AuthorizationHeader;
+ window.authorizationHeader = window.authorizationHeader \|\| request.headers.Authorization;
+ request.headers.Authorization = request.headers.Authorization \|\| window.authorizationHeader;
  \n
  return request;
 },
