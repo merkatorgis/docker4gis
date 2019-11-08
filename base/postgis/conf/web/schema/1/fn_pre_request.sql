@@ -3,18 +3,22 @@ returns void
 language plpgsql
 as $$
 declare
-    claim_iat text :=
+    claim_iat text;
+begin
+	if current_user = 'web_anon'
+	then
+		return;
+	end if
+	;
+	claim_iat :=
         current_setting('request.jwt.claim.iat', true)
     ;
-    user_exp bigint :=
-        public.fn_get_user_exp(current_user)
-    ;
-begin
-    if claim_iat = '' or claim_iat::bigint < user_exp
+    if claim_iat = '' or claim_iat::bigint < public.fn_get_user_exp(current_user)
     then
         raise invalid_authorization_specification
         using message = 'please reauthenticate';
-    end if;
+    end if
+	;
 end;
 $$;
 

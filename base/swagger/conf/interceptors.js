@@ -6,7 +6,7 @@ responseInterceptor: response => {\n
  }
  if (response.status === 401 \|\| response.url.endsWith('logout')) {\n
   localStorage.removeItem('Authorization');\n
-  // location.reload(); doesn't work -> manually click the Explore button to refresh \n
+  location.reload();\n
  }\n
  return response;\n
 },\n
