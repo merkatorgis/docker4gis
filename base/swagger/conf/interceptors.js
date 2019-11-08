@@ -1,26 +1,30 @@
-responseInterceptor: response => {
- \n
- const obj = response.obj;
- if (obj \&\& obj.swagger) {
-  obj.securityDefinitions = {
-   AuthorizationHeader:
-    { name: "Authorization"
-    , in:   "header"
-    , type: "apiKey"
-    , description: 'Submit value "Bearer $token", then execute the Introspection request, then click the Explore button (top right).'
-    }
-  };
-  obj.security = [{ AuthorizationHeader: [] }];
-  response.text = JSON.stringify(obj);
-  response.data = response.text;
+responseInterceptor: response => {\n
+ if ((response.url.endsWith('login') \|\| response.url.endsWith('save_password')) \&\& response.ok) {\n
+  const obj = response.obj[0] ? response.obj[0] : response.obj;\n
+  localStorage.setItem('Authorization', 'Bearer ' + obj.token);\n
+  location.reload();\n
  }
- \n
- return response;
-},
-requestInterceptor: request => {
- \n
- window.authorizationHeader = window.authorizationHeader \|\| request.headers.Authorization;
- request.headers.Authorization = request.headers.Authorization \|\| window.authorizationHeader;
- \n
- return request;
+ if (response.status === 401 \|\| response.url.endsWith('logout')) {\n
+  localStorage.removeItem('Authorization');\n
+  // location.reload(); doesn't work -> manually click the Explore button to refresh \n
+ }\n
+ return response;\n
+},\n
+requestInterceptor: request => {\n
+ const url = new URL(location);\n
+ const searchParams = url.searchParams;\n
+ if (searchParams.has('changepassword')) {\n
+  const token = searchParams.get('token');\n
+  if (token) {\n
+   localStorage.setItem('Authorization', 'Bearer ' + token);\n
+   searchParams.delete('changepassword');\n
+   searchParams.delete('token');\n
+   location.replace(url.href);\n
+  }\n
+ }\n
+ request.headers.Authorization = localStorage.getItem('Authorization');\n
+ if (request.headers.Authorization === null) {\n
+  delete request.headers.Authorization;\n
+ }\n
+ return request;\n
 },
