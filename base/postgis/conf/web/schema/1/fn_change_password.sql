@@ -15,7 +15,8 @@ begin
     ;
     if not found
     then
-        raise exception 'user not found';
+        raise 'user "%" not found', in_email
+        using errcode = 'foreign_key_violation';
     end if
     ;
     perform mail.fn_send
