@@ -9,12 +9,12 @@ DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
 repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+image="docker4gis/swagger"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker run --name "${container}" \
 	--network "${DOCKER_USER}-net" \
-	-e API_URL=http://localhost:58081 \
-	-p 58082:8080 \
-	-d docker4gis/swagger
+	-e API_URL="https://${PROXY_HOST}:${PROXY_PORT}/api" \
+	"$@" \
+	-d "${image}"

@@ -64,11 +64,11 @@ component()
 }
 
 component postgis   "${DOCKER_BASE}/postgis" # username password dbname
-component postgrest "${DOCKER_BASE}/postgrest"
-component swagger   "${DOCKER_BASE}/swagger"
 component mysql     "${DOCKER_BASE}/mysql" # password dbname
 # component api       "${DOCKER_BASE}/glassfish" 9090 5858
-component api       "${DOCKER_BASE}/tomcat" # 9090
+# component api       "${DOCKER_BASE}/tomcat" # 9090
+component api "${DOCKER_BASE}/postgrest"
+component swagger   "${DOCKER_BASE}/swagger"
 component geoserver "${DOCKER_BASE}/geoserver"
 component mapserver "${DOCKER_BASE}/mapserver"
 component mapfish   "${DOCKER_BASE}/mapfish"
@@ -76,9 +76,16 @@ component postfix   "${DOCKER_BASE}/postfix"
 component cron      "${DOCKER_BASE}/cron"
 component app       "${DOCKER_BASE}/serve"
 component resources "${DOCKER_BASE}/serve"
-component proxy     "${DOCKER_BASE}/proxy" \
+
+swagger="http://${DOCKER_USER}-swagger:8080"
+component proxy "${DOCKER_BASE}/proxy" \
 	"mapserver=http://${DOCKER_USER}-mapserver" \
-	"postgrest=http://${DOCKER_USER}-postgrest:3000"
+	"swagger=${swagger}" \
+	"swagger-ui.css=${swagger}/swagger-ui.css" \
+	"swagger-ui-bundle.js=${swagger}/swagger-ui-bundle.js" \
+	"swagger-ui-standalone-preset.js=${swagger}/swagger-ui-standalone-preset.js" \
+	"favicon-32x32.png=${swagger}/favicon-32x32.png" \
+	"favicon-16x16.png=${swagger}/favicon-16x16.png"
 
 # component extra       "${here}/../extra"
 
