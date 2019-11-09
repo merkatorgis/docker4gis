@@ -1,4 +1,4 @@
-create table if not exists web.users
+create table if not exists web.user
     ( email text primary key check ( email ~* '^.+@.+\..+$' )
     , role  name not null unique check ( length(role) < 512 )
     , pass  text default null check ( length(pass) < 512 )
@@ -26,7 +26,7 @@ end;
 $$;
 
 create constraint trigger tr_check_user_role_exists
-after insert or update on web.users
+after insert or update on web.user
 for each row
 execute function web.tr_check_role_exists()
 ;

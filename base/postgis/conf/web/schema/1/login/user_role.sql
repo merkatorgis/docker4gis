@@ -10,7 +10,7 @@ returns name
 language plpgsql
 as $$
 declare
-    c_role name := role from web.users
+    c_role name := role from web.user
         where email = in_email
         and pass = crypt(in_pass, pass)
     ;

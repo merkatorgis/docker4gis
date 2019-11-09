@@ -22,7 +22,7 @@ begin
         execute format('grant web_user to %s', c_role);
     end if
     ;
-    insert into web.users
+    insert into web.user
         ( email
         , role
         )

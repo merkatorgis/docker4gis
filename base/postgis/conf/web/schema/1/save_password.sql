@@ -7,7 +7,7 @@ language plpgsql
 as $$
 declare
 begin
-    update web.users
+    update web.user
         set pass = crypt(in_password, gen_salt('bf'))
         , exp = web.fn_jwt_now() - 1 -- -1 to ensure before iat new token
         where email = in_email

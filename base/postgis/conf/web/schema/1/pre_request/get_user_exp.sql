@@ -5,7 +5,7 @@ returns bigint
 language sql
 security definer
 as $$
-    select exp from web.users
+    select exp from web.user
     where role = in_role
     ;
 $$;

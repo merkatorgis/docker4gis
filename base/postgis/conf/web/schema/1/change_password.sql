@@ -9,7 +9,7 @@ language plpgsql
 as $$
 declare
 begin
-    update web.users
+    update web.user
         set pass = null
         where email = in_email
     ;

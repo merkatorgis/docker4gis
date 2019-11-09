@@ -3,9 +3,12 @@ set -e
 
 pushd schema/1
 
+    pg.sh -c "comment on schema ${SCHEMA} is
+        \$\$${SCHEMA}: Data on things\$\$"
+
     pg.sh \
         -c "set search_path to ${SCHEMA}, public" \
-        -f things.sql
+        -f thing.sql
 
     # PostgREST stuff
     pushd web

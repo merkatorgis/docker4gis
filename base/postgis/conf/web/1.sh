@@ -17,7 +17,7 @@ pushd schema/1
     pg.sh -c "alter default privileges revoke execute on functions from public"
 
     pg.sh -f roles.sql
-    pg.sh -f users.sql
+    pg.sh -f user.sql
 
     pushd pre_request
         pg.sh -f get_user_exp.sql

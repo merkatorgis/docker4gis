@@ -5,7 +5,7 @@ returns void
 language sql
 security definer
 as $$
-    update web.users
+    update web.user
     set exp = web.fn_jwt_now() - 1 -- -1 to ensure before iat new token
     where role = in_role
     ;

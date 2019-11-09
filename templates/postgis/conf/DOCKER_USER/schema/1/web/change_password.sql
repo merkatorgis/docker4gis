@@ -18,3 +18,7 @@ grant execute on function change_password
 to web_anon
 , web_user
 ;
+
+comment on function change_password is
+$$Email a link to a form that can change the password.
+$$;

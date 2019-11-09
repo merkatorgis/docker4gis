@@ -9,8 +9,8 @@ select save_password
     , 'abc'
     );
 
-insert into things
-    ( web_user
+insert into thing
+    ( role
     , what
     )
 values
@@ -18,8 +18,8 @@ values
     , 'test1'
     );
 
-insert into things
-    ( web_user
+insert into thing
+    ( role
     , what
     )
 values
@@ -40,8 +40,8 @@ select save_password
     , 'aabbcc'
     );
 
-insert into things
-    ( web_user
+insert into thing
+    ( role
     , what
     )
 values
@@ -49,8 +49,8 @@ values
     , 'test3'
     );
 
-insert into things
-    ( web_user
+insert into thing
+    ( role
     , what
     )
 values

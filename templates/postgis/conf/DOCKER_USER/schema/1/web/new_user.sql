@@ -12,9 +12,9 @@ declare
 begin
     execute format
         ( $$
-            create policy thing_%s on things to %s
-            using (web_user = '%s')
-            with check (web_user = '%s')
+            create policy thing_%s on thing to %s
+            using (role = '%s')
+            with check (role = '%s')
           $$
         , role, role, role, role
         );
