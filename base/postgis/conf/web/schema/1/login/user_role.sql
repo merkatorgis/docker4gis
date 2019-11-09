@@ -2,7 +2,7 @@
 -- encrypted column. It returns the database role for a user if the email and
 -- password are correct.
 
-create or replace function web.fn_user_role
+create or replace function web.user_role
     ( in_email text
     , in_pass  text
 )
@@ -10,7 +10,7 @@ returns name
 language plpgsql
 as $$
 declare
-    c_role name := role from web.tbl_user
+    c_role name := role from web.users
         where email = in_email
         and pass = crypt(in_pass, pass)
     ;

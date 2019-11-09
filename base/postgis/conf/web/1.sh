@@ -17,30 +17,30 @@ pushd schema/1
     pg.sh -c "alter default privileges revoke execute on functions from public"
 
     pg.sh -f roles.sql
-    pg.sh -f tbl_user.sql
+    pg.sh -f users.sql
 
-    pushd fn_pre_request
-        pg.sh -f fn_get_user_exp.sql
+    pushd pre_request
+        pg.sh -f get_user_exp.sql
     popd
-    pg.sh -f fn_pre_request.sql
+    pg.sh -f pre_request.sql
 
-    pg.sh -f fn_new_user.sql
+    pg.sh -f new_user.sql
 
-    pushd fn_login
-        pg.sh -f fn_user_role.sql
-        pushd fn_jwt_token
+    pushd login
+        pg.sh -f user_role.sql
+        pushd jwt_token
             pg.sh -f jwt_token.sql
             pg.sh -f fn_jwt_time.sql
         popd
-        pg.sh -f fn_jwt_token.sql
+        pg.sh -f jwt_token.sql
     popd
-    pg.sh -f fn_login.sql
-    pg.sh -f fn_change_password.sql
-    pg.sh -f fn_save_password.sql
+    pg.sh -f login.sql
+    pg.sh -f change_password.sql
+    pg.sh -f save_password.sql
 
-    pushd fn_logout
-        pg.sh -f fn_set_user_exp.sql
+    pushd logout
+        pg.sh -f set_user_exp.sql
     popd
-    pg.sh -f fn_logout.sql
+    pg.sh -f logout.sql
 
 popd

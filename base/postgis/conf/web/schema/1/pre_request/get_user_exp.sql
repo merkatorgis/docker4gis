@@ -1,16 +1,16 @@
-create or replace function public.fn_get_user_exp
+create or replace function public.get_user_exp
     ( in_role name
     )
 returns bigint
 language sql
 security definer
 as $$
-    select exp from web.tbl_user
+    select exp from web.users
     where role = in_role
     ;
 $$;
 
-grant execute on function public.fn_get_user_exp
+grant execute on function public.get_user_exp
     ( name
     )
 to public

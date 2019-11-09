@@ -1,73 +1,59 @@
-select fn_new_user
+select new_user
     ( 'a@b.c'
     , true
-    )
-;
+    );
 
-set session request.jwt.claim.email = 'a@b.c'
-;
-select 'curl https://localhost.merkator.com:7443/postgrest/tbl_thing -H "Authorization: Bearer '
-    || (select * from fn_save_password
-        ( 'a@b.c'
-        , 'abc'
-        ))
-    || '"'
-;
+set session request.jwt.claim.email = 'a@b.c';
+select save_password
+    ( 'a@b.c'
+    , 'abc'
+    );
 
-insert into tbl_thing
+insert into things
     ( web_user
     , what
     )
 values
     ( 'web_user1'
-    , 'test'
-    )
-;
+    , 'test1'
+    );
 
-insert into tbl_thing
+insert into things
     ( web_user
     , what
     )
 values
     ( 'web_user1'
     , 'test2'
-    )
-;
+    );
 
 
 
-select fn_new_user
+select new_user
     ( 'aa@bb.cc'
     , true
-    )
-;
+    );
 
-set session request.jwt.claim.email = 'aa@bb.cc'
-;
-select 'curl https://localhost.merkator.com:7443/postgrest/tbl_thing -H "Authorization: Bearer '
-    || (select * from fn_save_password
-        ( 'aa@bb.cc'
-        , 'aabbcc'
-        ))
-    || '"'
-;
+set session request.jwt.claim.email = 'aa@bb.cc';
+select save_password
+    ( 'aa@bb.cc'
+    , 'aabbcc'
+    );
 
-insert into tbl_thing
+insert into things
     ( web_user
     , what
     )
 values
     ( 'web_user2'
-    , 'test'
-    )
-;
+    , 'test3'
+    );
 
-insert into tbl_thing
+insert into things
     ( web_user
     , what
     )
 values
     ( 'web_user2'
-    , 'test2'
-    )
-;
+    , 'test4'
+    );

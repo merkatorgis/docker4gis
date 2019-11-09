@@ -6,8 +6,8 @@ schema()
     pg.sh -c "set schema '${SCHEMA}'" "$@"
 }
 
-schema -f fn_new_user.sql
-schema -f fn_change_password.sql
-schema -f fn_login.sql
-schema -f fn_save_password.sql
-schema -f fn_logout.sql
+schema -f new_user.sql
+schema -f change_password.sql
+schema -f login.sql
+schema -f save_password.sql
+schema -f logout.sql

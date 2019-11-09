@@ -1,4 +1,4 @@
-create or replace function public.fn_pre_request()
+create or replace function public.pre_request()
 returns void
 language plpgsql
 as $$
@@ -13,7 +13,7 @@ begin
 	claim_iat :=
         current_setting('request.jwt.claim.iat', true)
     ;
-    if claim_iat = '' or claim_iat::bigint < public.fn_get_user_exp(current_user)
+    if claim_iat = '' or claim_iat::bigint < public.get_user_exp(current_user)
     then
         raise invalid_authorization_specification
         using message = 'please reauthenticate';
@@ -22,6 +22,6 @@ begin
 end;
 $$;
 
-grant execute on function public.fn_pre_request()
+grant execute on function public.pre_request()
 to public
 ;

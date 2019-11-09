@@ -9,7 +9,7 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 
 echo; echo "Building ${image}"
 docker container rm -f "${container}" 2>/dev/null
-docker container rm -f "${DOCKER_USER}-postgrest" 2>/dev/null
+docker container rm -f "${DOCKER_USER}-api" 2>/dev/null
 
 HERE=$(dirname "$0")
 

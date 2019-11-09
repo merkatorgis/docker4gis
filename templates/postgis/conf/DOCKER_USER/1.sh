@@ -5,7 +5,7 @@ pushd schema/1
 
     pg.sh \
         -c "set search_path to ${SCHEMA}, public" \
-        -f tbl_thing.sql
+        -f things.sql
 
     # PostgREST stuff
     pushd web

@@ -1,7 +1,7 @@
 create sequence web.role_web_user_seq
 ;
 
-create or replace function web.fn_new_user
+create or replace function web.new_user
     ( in_email text
     , in_admin boolean default false
     )
@@ -22,7 +22,7 @@ begin
         execute format('grant web_user to %s', c_role);
     end if
     ;
-    insert into web.tbl_user
+    insert into web.users
         ( email
         , role
         )

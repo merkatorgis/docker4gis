@@ -1,4 +1,4 @@
-create or replace function web.fn_jwt_token
+create or replace function web.jwt_token
     ( in_role    name
     , in_seconds bigint default 0
     , in_claims  text[] default '{}'
@@ -30,4 +30,4 @@ begin
 end;
 $$;
 
--- eg: select * from web.fn_jwt_token('user2', 60 * 60, '{extra1, bla, extra2, 64}');
+-- eg: select * from web.jwt_token('user2', 60 * 60, '{extra1, bla, extra2, 64}');

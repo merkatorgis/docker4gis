@@ -1,4 +1,4 @@
-create or replace function web.fn_login
+create or replace function web.login
     ( in_email    text
     , in_password text
     , in_seconds  bigint default 0
@@ -7,10 +7,10 @@ create or replace function web.fn_login
 returns web.jwt_token
 language sql
 as $$
--- web.fn_user_role checks email and password, returns role,
+-- web.user_role checks email and password, returns role,
 -- and throws invalid_password exception
-select web.fn_jwt_token
-    ( (select web.fn_user_role
+select web.jwt_token
+    ( (select web.user_role
         ( in_email
         , in_password
         ))

@@ -20,11 +20,9 @@ docker run --name "${container}" \
 	-e PGRST_DB_URI="postgresql://web_authenticator:postgrest@${DOCKER_USER}-postgis/${DOCKER_USER}" \
 	-e PGRST_DB_SCHEMA="${DOCKER_USER}" \
 	-e PGRST_JWT_SECRET="${PGRST_JWT_SECRET}" \
-    -e PGRST_PRE_REQUEST="public.fn_pre_request" \
+    -e PGRST_PRE_REQUEST="public.pre_request" \
     -e PGRST_DB_ANON_ROLE="web_anon" \
     -e PGRST_SERVER_PROXY_URI="https://${PROXY_HOST}:${PROXY_PORT}/api" \
 	-e PGRST_SERVER_PORT="8080" \
 	"$@" \
 	-d "${image}"
-
-if docker container restart "${DOCKER_USER}-swagger"; then true; fi
