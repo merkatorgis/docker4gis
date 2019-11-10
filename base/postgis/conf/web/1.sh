@@ -36,11 +36,11 @@ pushd schema/1
     popd
     pg.sh -f login.sql
     pg.sh -f change_password.sql
-    pg.sh -f save_password.sql
 
-    pushd logout
+    pushd save_password
         pg.sh -f set_user_exp.sql
     popd
+    pg.sh -f save_password.sql
     pg.sh -f logout.sql
 
 popd

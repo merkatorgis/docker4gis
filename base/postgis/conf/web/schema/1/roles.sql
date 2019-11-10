@@ -16,6 +16,8 @@ create role web_user nologin
 ;
 grant web_user to web_authenticator
 ;
+grant usage on schema web to web_user
+;
 
 create role web_admin nologin
 ;

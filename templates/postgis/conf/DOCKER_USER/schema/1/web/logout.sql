@@ -1,7 +1,6 @@
 create or replace function logout()
 returns void
 language sql
-security definer
 as $$
     -- This will invalidate all user's tokens everywhere.
     -- To only logout locally on the client, just ditch that token there.
