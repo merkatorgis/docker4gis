@@ -29,7 +29,6 @@ begin
                     , 60 * 15 -- expire in 15 minutes
                     , format('{email, %s}', change_password.email)::text[] -- extra claim
                     ))
-
                 )
             )
         );

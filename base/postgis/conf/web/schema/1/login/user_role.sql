@@ -5,7 +5,7 @@
 create or replace function web.user_role
     ( email text
     , pass  text
-)
+    )
 returns name
 language plpgsql
 as $$
