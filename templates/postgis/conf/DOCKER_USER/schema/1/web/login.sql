@@ -20,3 +20,7 @@ grant execute on function login
     )
 to web_anon
 ;
+
+comment on function login is
+$$Verify credentials to return a token gaining access to your privileges.
+$$;

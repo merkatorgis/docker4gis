@@ -20,5 +20,5 @@ to web_anon
 ;
 
 comment on function change_password is
-$$Email a link to a form that can change the password.
+$$Email a link to a form that lets you change your password.
 $$;

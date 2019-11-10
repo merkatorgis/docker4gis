@@ -11,3 +11,7 @@ $$;
 grant execute on function logout()
 to web_user
 ;
+
+comment on function logout is
+$$Disqualify all existing tokens for your account.
+$$;
