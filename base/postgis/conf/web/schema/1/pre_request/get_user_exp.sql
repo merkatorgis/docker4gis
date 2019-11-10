@@ -1,12 +1,12 @@
 create or replace function public.get_user_exp
-    ( in_role name
+    ( role name
     )
 returns bigint
 language sql
 security definer
 as $$
-    select exp from web.user
-    where role = in_role
+    select exp from web.users
+    where users.role = get_user_exp.role
     ;
 $$;
 

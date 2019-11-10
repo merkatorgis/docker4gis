@@ -9,7 +9,7 @@ select save_password
     , 'abc'
     );
 
-insert into thing
+insert into things
     ( role
     , what
     )
@@ -18,7 +18,7 @@ values
     , 'test1'
     );
 
-insert into thing
+insert into things
     ( role
     , what
     )
@@ -40,7 +40,7 @@ select save_password
     , 'aabbcc'
     );
 
-insert into thing
+insert into things
     ( role
     , what
     )
@@ -49,7 +49,7 @@ values
     , 'test3'
     );
 
-insert into thing
+insert into things
     ( role
     , what
     )

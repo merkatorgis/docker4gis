@@ -1,35 +1,35 @@
-create sequence web.role_web_user_seq
+create sequence web.web_user_seq
 ;
 
 create or replace function web.new_user
-    ( in_email text
-    , in_admin boolean default false
+    ( email text
+    , admin boolean default false
     )
 returns name
 language plpgsql
 as $$
 declare
-    c_role text := 'web_user' || nextval('web.role_web_user_seq');
+    role text := 'web_user' || nextval('web.web_user_seq');
 begin
-    execute format('create role %s nologin', c_role)
+    execute format('create role %s nologin', role)
     ;
-    execute format('grant %s to web_authenticator', c_role)
+    execute format('grant %s to web_authenticator', role)
     ;
-    if in_admin
+    if admin
     then
-        execute format('grant web_admin to %s', c_role);
+        execute format('grant web_admin to %s', role);
     else
-        execute format('grant web_user to %s', c_role);
+        execute format('grant web_user to %s', role);
     end if
     ;
-    insert into web.user
+    insert into web.users
         ( email
         , role
         )
     values
-        ( in_email
-        , c_role
+        ( email
+        , role
         );
-	return c_role;
+	return role;
 end;
 $$;

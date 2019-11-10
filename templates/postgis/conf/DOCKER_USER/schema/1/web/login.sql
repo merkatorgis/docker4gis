@@ -23,4 +23,6 @@ to web_anon
 
 comment on function login is
 $$Verify credentials to return a token gaining access to your privileges.
+Pass in the token with any following requests using the Authorization header;
+the header's value should be: 'Bearer ${token}'
 $$;

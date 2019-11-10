@@ -1,4 +1,4 @@
-create or replace function web.fn_jwt_now()
+create or replace function web.jwt_now()
 returns bigint
 language sql
 as $$

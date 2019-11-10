@@ -17,7 +17,7 @@ pushd schema/1
     pg.sh -c "alter default privileges revoke execute on functions from public"
 
     pg.sh -f roles.sql
-    pg.sh -f user.sql
+    pg.sh -f users.sql
 
     pushd pre_request
         pg.sh -f get_user_exp.sql
@@ -30,7 +30,7 @@ pushd schema/1
         pg.sh -f user_role.sql
         pushd jwt_token
             pg.sh -f jwt_token.sql
-            pg.sh -f fn_jwt_time.sql
+            pg.sh -f jwt_now.sql
         popd
         pg.sh -f jwt_token.sql
     popd

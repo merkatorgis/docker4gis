@@ -3,27 +3,27 @@
 -- password are correct.
 
 create or replace function web.user_role
-    ( in_email text
-    , in_pass  text
+    ( email text
+    , pass  text
 )
 returns name
 language plpgsql
 as $$
 declare
-    c_role name := role from web.user
-        where email = in_email
-        and pass = crypt(in_pass, pass)
+    role name := role from web.users
+        where users.email = user_role.email
+        and users.pass = crypt(user_role.pass, users.pass)
     ;
 begin
     -- Fast logins are insecure
     perform pg_sleep(1)
     ;
-    if c_role is null
+    if role is null
     then
         raise invalid_password
         using message = 'invalid user or password';
     else
-        return c_role;
+        return role;
     end if;
 end;
 $$;

@@ -1,4 +1,4 @@
-create table if not exists web.user
+create table if not exists web.users
     ( email text primary key check ( email ~* '^.+@.+\..+$' )
     , role  name not null unique check ( length(role) < 512 )
     , pass  text default null check ( length(pass) < 512 )
@@ -9,7 +9,7 @@ create table if not exists web.user
 -- PostgreSQL does not support these constraints against the pg_roles table.
 -- We’ll use a trigger to manually enforce it.
 
-create or replace function web.tr_check_role_exists()
+create or replace function web.check_users_role_exists()
 returns trigger
 language plpgsql
 as $$
@@ -25,8 +25,8 @@ begin
 end;
 $$;
 
-create constraint trigger tr_check_user_role_exists
-after insert or update on web.user
+create constraint trigger check_users_role_exists
+after insert or update on web.users
 for each row
-execute function web.tr_check_role_exists()
+execute function web.check_users_role_exists()
 ;

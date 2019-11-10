@@ -12,7 +12,7 @@ declare
 begin
     execute format
         ( $$
-            create policy thing_%s on thing to %s
+            create policy things_%s on things to %s
             using (role = '%s')
             with check (role = '%s')
           $$
@@ -29,5 +29,6 @@ to web_admin
 ;
 
 comment on function new_user is
-$$Create a new user account. Use change_password to verify the email address.
+$$Create a new user account.
+Use change_password to verify the email address.
 $$;

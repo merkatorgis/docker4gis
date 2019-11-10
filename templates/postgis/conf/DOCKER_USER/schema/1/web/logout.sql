@@ -13,5 +13,5 @@ to web_user
 ;
 
 comment on function logout is
-$$Disqualify all existing tokens for your account.
+$$Invalidate all existing tokens for your account.
 $$;
