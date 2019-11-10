@@ -1,13 +1,14 @@
 #!/bin/bash
 
+if ! which runner.sh
+then
+	echo "ERROR: install the runner plugin, required by the pg plugin" >&2
+	exit 1
+fi
+
 apk update; apk add --no-cache postgresql-client
 
 here=$(dirname "$0")
-mkdir -p /util
 
-if ! [ -f /util/runner.sh ]; then
-	"${here}/../runner/install.sh"
-fi
-
-mv "${here}/pg.sh" "${here}/refresh.sh" /util/
+mv "${here}/pg.sh" "${here}/refresh.sh" /usr/local/bin
 rm -rf "${here}"

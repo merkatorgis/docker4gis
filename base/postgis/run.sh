@@ -45,6 +45,8 @@ docker run --name $container \
 	--network "${DOCKER_USER}-net" \
 	-d $image
 
-sleep 1
 # wait for db
-docker container exec "$container" pg.sh -c "select" > /dev/null
+while [ ! $(docker container exec "$container" pg.sh -Atc "select current_setting('app.ddl_done', true)") = true ]
+do
+	sleep 1
+done
