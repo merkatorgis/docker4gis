@@ -8,8 +8,7 @@ as $$
     -- web.change_password throws user not found exception
     select web.change_password
         ( email
-        )
-    ;
+        );
 $$;
 
 grant execute on function change_password
