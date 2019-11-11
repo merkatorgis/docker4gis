@@ -28,7 +28,6 @@ mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
 docker volume create "$container"
 docker run --name $container \
-	-e PROXY=https://$PROXY_HOST:$PROXY_PORT \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \

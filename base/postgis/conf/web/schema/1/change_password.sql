@@ -1,19 +1,23 @@
 create or replace function web.change_password
     ( email    text
-    , url      text default '${PROXY}/app'
     , subject  text default 'Create password'
     , template text default 'Within the next 15 minutes, please follow this link to create your password: %s'
+    , url      text default current_setting('request.header.referer')
     )
 returns void
 language plpgsql
 as $$
 declare
 begin
-    if not exists
-        (select from web.users
-        where users.email = change_password.email)
+    select users.email
+    into change_password.email
+    from web.users
+    where users.email = change_password.email
+    ;
+    if not found
     then
-        return;
+        raise foreign_key_violation
+        using message = 'user not found';
     end if
     ;
     perform mail.fn_send
