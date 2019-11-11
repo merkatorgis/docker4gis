@@ -19,6 +19,14 @@ RUN /tmp/plsh/install.sh
 COPY conf/pgjwt /tmp/pgjwt
 RUN /tmp/pgjwt/install.sh
 
+COPY conf/postgres /etc/postgresql
+
+COPY conf/pgxn /tmp/pgxn
+RUN /tmp/pgxn/install.sh
+
+COPY conf/safeupdate /tmp/safeupdate
+RUN /tmp/safeupdate/install.sh
+
 COPY conf/plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
 
@@ -28,7 +36,6 @@ RUN /tmp/pg/install.sh
 COPY conf/plugins/mail /tmp/mail
 RUN /tmp/mail/install.sh
 
-COPY conf/postgres /etc/postgresql
 COPY conf/entrypoint /entrypoint
 COPY conf/init.sh /tmp/init.sh
 COPY conf/conf.sh /tmp/conf.sh

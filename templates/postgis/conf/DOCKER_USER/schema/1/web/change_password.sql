@@ -1,6 +1,4 @@
-create or replace function change_password
-    ( email text
-    )
+create or replace function change_password(email text)
 returns void
 language sql
 security definer
@@ -8,12 +6,13 @@ as $$
     -- web.change_password throws user not found exception
     select web.change_password
         ( email
+        -- , subject  text default 'Create password'
+        -- , template text default 'Within the next 15 minutes, please follow this link to create your password: %s'
+        -- , url      text default current_setting('request.header.referer')
         );
 $$;
 
-grant execute on function change_password
-    ( text
-    )
+grant execute on function change_password(text)
 to web_anon
 , web_user
 ;
