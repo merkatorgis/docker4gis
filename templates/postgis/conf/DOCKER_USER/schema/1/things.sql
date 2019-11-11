@@ -2,15 +2,17 @@ create table things
     ( id   serial primary key
     , role name not null default current_user references web.users(role)
     , what text not null
-    , constraint role_what_key unique (role, what)
+    , constraint things_role_what_key unique (role, what)
     );
 
 alter table things
 enable row level security
 ;
+
 grant all on things
 to web_user
 ;
+
 grant usage, select on sequence things_id_seq
 to web_user
 ;
