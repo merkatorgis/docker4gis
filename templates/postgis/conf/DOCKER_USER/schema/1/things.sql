@@ -17,6 +17,13 @@ grant usage, select on sequence things_id_seq
 to web_user
 ;
 
+create policy things_web_user on things to web_user
+using
+    (role = current_user)
+with check
+    (role = current_user)
+;
+
 comment on table things is
 $$Just a bunch of things.
 i.e. things you can see, following the policy, based on the role of the
