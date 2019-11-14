@@ -1,6 +1,6 @@
 create table things
     ( id   serial primary key
-    , role name not null default current_user references web.users(role)
+    , role name not null default current_user
     , what text not null
     , constraint things_role_what_key unique (role, what)
     );
@@ -18,11 +18,12 @@ to web_user
 ;
 
 create policy things_web_user on things to web_user
-using
-    (role = current_user)
-with check
-    (role = current_user)
-;
+using (
+    pg_has_role(role, 'member')
+)
+with check (
+    pg_has_role(role, 'member')
+);
 
 comment on table things is
 $$Just a bunch of things.
