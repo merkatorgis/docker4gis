@@ -4,7 +4,7 @@ responseInterceptor: response => {\n
   localStorage.setItem('Authorization', 'Bearer ' + obj.token);\n
   location.reload();\n
  }
- if (response.status === 401 \|\| response.url.endsWith('logout')) {\n
+ if (response.status === 401 \|\| response.status === 403 \|\| response.url.endsWith('logout')) {\n
   localStorage.removeItem('Authorization');\n
   location.reload();\n
  }\n
