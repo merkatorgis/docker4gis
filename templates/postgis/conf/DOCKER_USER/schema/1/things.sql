@@ -19,10 +19,10 @@ to web_user
 
 create policy things_web_user on things to web_user
 using (
-    pg_has_role(role, 'member')
+    i_am(role)
 )
 with check (
-    pg_has_role(role, 'member')
+    i_am(role)
 );
 
 comment on table things is

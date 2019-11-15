@@ -2,6 +2,6 @@
 
 pushd schema/1
 
-pg.sh -f fn_send.sql
+pg.sh -f send.sql
 
 popd

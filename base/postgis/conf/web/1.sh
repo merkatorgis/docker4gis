@@ -23,6 +23,7 @@ pushd schema/1
         pg.sh -f get_user_exp.sql
     popd
     pg.sh -f pre_request.sql
+    pg.sh -f i_am.sql
 
     pg.sh -f new_user.sql
 
