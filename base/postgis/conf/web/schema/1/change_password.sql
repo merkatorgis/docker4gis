@@ -20,7 +20,7 @@ begin
         using message = 'user not found';
     end if
     ;
-    perform mail.fn_send
+    perform mail.send
         ( change_password.email
         , change_password.subject
         , format
@@ -31,7 +31,10 @@ begin
                 , (select * from web.jwt_token
                     ( 'web_passwd' -- role
                     , 60 * 15 -- expire in 15 minutes
-                    , format('{email, %s}', change_password.email)::text[] -- extra claim
+                    , format
+                        ( '{email, %s}'
+                        , change_password.email
+                        )::text[] -- extra claim
                     ))
                 )
             )

@@ -1,7 +1,7 @@
-create or replace function mail.fn_send
-	( in_to text
-	, in_subject text
-	, in_message text
+create or replace function mail.send
+	( "to"      text
+	, "subject" text
+	, "message" text
 	)
 returns text
 language plsh

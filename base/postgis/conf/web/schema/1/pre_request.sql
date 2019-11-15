@@ -10,10 +10,10 @@ begin
 		return;
 	end if
 	;
-	claim_iat :=
-        current_setting('request.jwt.claim.iat', true)
+	claim_iat := current_setting('request.jwt.claim.iat', true)
     ;
-    if claim_iat = '' or claim_iat::bigint < public.get_user_exp(current_user)
+    if claim_iat = ''
+    or claim_iat::bigint < get_user_exp(current_user)
     then
         raise invalid_authorization_specification
         using message = 'please reauthenticate';
