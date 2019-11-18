@@ -27,7 +27,7 @@ fi
 echo "
 $(date)
 
-About to run ${DOCKER_USER} version: ${docker_tag}
+About to run '${DOCKER_USER}' version: ${docker_tag}
 
 With these settings:
 
