@@ -15,12 +15,15 @@ ENV GEOSERVER_USER=admin \
 
 ADD conf /tmp/conf
 
+ENV GEOSERVER_VERSION=2.16.0
+
 RUN mv /tmp/conf/base/conf/server.xml $CATALINA_HOME/conf/server.xml; \
     mv /tmp/conf/base/conf/web.xml    $CATALINA_HOME/conf/web.xml; \
 	mkdir -p /usr/local/tomcat/webapps/geoserver; \
-	unzip -qo /tmp/conf/base/geoserver/geoserver-*-war.zip -d /tmp/conf/base; \
+	unzip -qo /tmp/conf/base/geoserver/geoserver-${GEOSERVER_VERSION}-war.zip -d /tmp/conf/base; \
 	unzip -qo /tmp/conf/base/geoserver.war -d $CATALINA_HOME/webapps/geoserver; \
 	mv /tmp/conf/base/entrypoint/* /; \
+	/tmp/conf/plugins/runner/install.sh; \
 	/tmp/conf/plugins/pg/install.sh
 
 ADD conf/base/jai/* /jai/
