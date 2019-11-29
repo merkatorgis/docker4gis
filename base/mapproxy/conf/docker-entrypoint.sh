@@ -7,9 +7,10 @@ if [ "$1" = 'mapproxy' ]; then
   if [ ! -f /srv/mapproxy/mapproxy.yaml ] ;then
     mapproxy-util create -t base-config /srv/mapproxy  
   fi 
-#  echo "get some  info"
-#  mapproxy-util grids -l  -f /srv/mapproxy/mapproxy.yaml
-#   mapproxy-util grids -g belgiumgrid --mapproxy-config mapproxy.yaml
+
+  mkdir -p /srv/mapproxy/cache
+  mkdir -p /srv/mapproxy/cache/locks
+  mkdir -p /srv/mapproxy/cache/tile_locks
 
   echo "Start mapproxy"
   if [ -f /srv/mapproxy/newmapproxy.yaml ]; then
