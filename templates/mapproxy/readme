@@ -1,0 +1,2 @@
+change newmapproxy.yaml and newseeds.yaml in the conf folder, add your own configuration
+these will be used to overrule the default generated mapproxy.yaml and seeds.yaml
