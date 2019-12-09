@@ -1,39 +1,5 @@
-FROM python:3.7-slim-buster
-LABEL maintainer="Merkator (Maureen van Driel-Rengelink)"
+FROM pdok/mapproxy
 
-RUN apt-get -y update \
-    && apt-get install -y \
-        python-pil \
-        python-yaml \
-        libproj-dev \
-        libgeos-dev \
-        python-lxml \
-        libgdal-dev \
-        python-shapely \
-        git \
-    && rm -rf /var/lib/apt/lists/* 
+COPY conf /srv/mapproxy/config
 
-
-# latest master  (put master behind the @) for now latest version1.12.0
-RUN pip install git+https://github.com/mapproxy/mapproxy.git@1.12.0 
-
-# when overwriting the CMD with a uwsgi command it's good practice to not run it as root
-# RUN groupadd -g 1337 mapproxy \
-#     && useradd --shell /bin/bash --gid 1337 -m mapproxy \
-#     && usermod -a -G sudo mapproxy
-
-RUN apt-get clean
-
-# default dir needed for the cached mapdata
-RUN mkdir -p /srv/mapproxy/cache
-RUN chmod a+rwx /srv/mapproxy/cache
-
-WORKDIR /srv/mapproxy/
-
-COPY conf ./
-
-ENTRYPOINT ["/srv/mapproxy/docker-entrypoint.sh"]
-CMD ["mapproxy"]
-
-EXPOSE 8080
-
+ONBUILD COPY conf /srv/mapproxy/config
