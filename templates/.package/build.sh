@@ -87,6 +87,7 @@ component proxy "${DOCKER_BASE}/proxy" \
 	"favicon-32x32.png=${swagger}/favicon-32x32.png" \
 	"favicon-16x16.png=${swagger}/favicon-16x16.png"
 
+component mapproxy "${DOCKER_BASE}/mapproxy"
 # component extra       "${here}/../extra"
 
 docker image build -t "${image}" .
