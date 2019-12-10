@@ -1,0 +1,46 @@
+# -------------------------------
+# MapProxy configuration.
+#
+# OSM example based on https://wiki.openstreetmap.org/wiki/MapProxy
+# -------------------------------
+services:
+  demo:
+  wmts:
+    kvp: true
+    restful: true
+
+layers:
+  - name: osm
+    title: Open Streetmap Tiles
+    sources: [osm_cache]
+
+caches:
+  osm_cache:
+    sources: [osm_tiles]
+    grids: [GLOBAL_MERCATOR]
+    format: image/png
+    cache:
+      type: geopackage
+      filename: /srv/mapproxy/cache_data/osm.gpkg
+      table_name: osm_tiles
+
+sources:
+   osm_tiles:
+     type: tile
+     url: http://c.tile.openstreetmap.org/%(tms_path)s.%(format)s
+     grid: osm_grid 
+
+grids:
+  osm_grid:
+    srs: EPSG:900913
+    origin: nw
+
+globals:
+  cache:
+    base_dir: '/srv/mapproxy/cache_data'
+    lock_dir: '/srv/mapproxy/cache_data/locks'
+    tile_lock_dir: '/srv/mapproxy/cache_data/tile_locks'
+
+  image:
+      resampling_method: bilinear
+      jpeg_quality: 90
