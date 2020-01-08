@@ -1,0 +1,266 @@
+2020-01-08 08:39:58,920 INFO [org.geoserver] - GeoServer configuration lock is enabled
+2020-01-08 08:39:59,010 INFO [org.geoserver] - Loading catalog...
+2020-01-08 08:39:59,118 INFO [org.geoserver] - Loaded style 'green'
+2020-01-08 08:39:59,119 INFO [org.geoserver] - Loaded style 'grass'
+2020-01-08 08:39:59,119 INFO [org.geoserver] - Loaded style 'population'
+2020-01-08 08:39:59,120 INFO [org.geoserver] - Loaded style 'simple_roads'
+2020-01-08 08:39:59,122 INFO [org.geoserver] - Loaded style 'generic'
+2020-01-08 08:39:59,123 INFO [org.geoserver] - Loaded style 'simple_streams'
+2020-01-08 08:39:59,124 INFO [org.geoserver] - Loaded style 'restricted'
+2020-01-08 08:39:59,126 INFO [org.geoserver] - Loaded style 'pophatch'
+2020-01-08 08:39:59,127 INFO [org.geoserver] - Loaded style 'burg'
+2020-01-08 08:39:59,128 INFO [org.geoserver] - Loaded style 'cite_lakes'
+2020-01-08 08:39:59,129 INFO [org.geoserver] - Loaded style 'poly_landmarks'
+2020-01-08 08:39:59,130 INFO [org.geoserver] - Loaded style 'line'
+2020-01-08 08:39:59,132 INFO [org.geoserver] - Loaded style 'raster'
+2020-01-08 08:39:59,133 INFO [org.geoserver] - Loaded style 'rain'
+2020-01-08 08:39:59,134 INFO [org.geoserver] - Loaded style 'dem'
+2020-01-08 08:39:59,136 INFO [org.geoserver] - Loaded style 'point'
+2020-01-08 08:39:59,137 INFO [org.geoserver] - Loaded style 'tiger_roads'
+2020-01-08 08:39:59,138 INFO [org.geoserver] - Loaded style 'polygon'
+2020-01-08 08:39:59,139 INFO [org.geoserver] - Loaded style 'capitals'
+2020-01-08 08:39:59,140 INFO [org.geoserver] - Loaded style 'poi'
+2020-01-08 08:39:59,142 INFO [org.geoserver] - Loaded style 'giant_polygon'
+2020-01-08 08:39:59,146 INFO [org.geoserver] - Loaded default workspace cite
+2020-01-08 08:39:59,231 INFO [org.geoserver] - Loaded workspace 'cite'
+2020-01-08 08:39:59,241 INFO [org.geoserver] - Loaded workspace 'sf'
+2020-01-08 08:39:59,246 INFO [org.geoserver] - Loaded workspace 'sde'
+2020-01-08 08:39:59,250 INFO [org.geoserver] - Loaded workspace 'tiger'
+2020-01-08 08:39:59,254 INFO [org.geoserver] - Loaded workspace 'GeoWEP'
+2020-01-08 08:39:59,282 INFO [org.geoserver] - Loaded style 'labels_css_300'
+2020-01-08 08:39:59,282 INFO [org.geoserver] - Loaded style 'meetpuntstatus'
+2020-01-08 08:39:59,283 INFO [org.geoserver] - Loaded style 'jaar'
+2020-01-08 08:39:59,284 INFO [org.geoserver] - Loaded style 'meetpuntstatus_300'
+2020-01-08 08:39:59,285 INFO [org.geoserver] - Loaded style 'labels_css_250'
+2020-01-08 08:39:59,287 INFO [org.geoserver] - Loaded style 'WEPproject'
+2020-01-08 08:39:59,288 INFO [org.geoserver] - Loaded style 'labels'
+2020-01-08 08:39:59,291 INFO [org.geoserver] - Loaded style 'meetpuntstatus_150'
+2020-01-08 08:39:59,294 INFO [org.geoserver] - Loaded style 'meetpuntstatus_100'
+2020-01-08 08:39:59,297 INFO [org.geoserver] - Loaded style 'diepte_klasse'
+2020-01-08 08:39:59,299 INFO [org.geoserver] - Loaded style 'Monumenten'
+2020-01-08 08:39:59,300 INFO [org.geoserver] - Loaded style 'meetpuntstatus_72'
+2020-01-08 08:39:59,301 INFO [org.geoserver] - Loaded style 'meetpuntstatus_200'
+2020-01-08 08:39:59,303 INFO [org.geoserver] - Loaded style 'labels_css_100'
+2020-01-08 08:39:59,304 INFO [org.geoserver] - Loaded style 'notities'
+2020-01-08 08:39:59,309 INFO [org.geoserver] - Loaded style 'labels_css_200'
+2020-01-08 08:39:59,312 INFO [org.geoserver] - Loaded style 'plantekening'
+2020-01-08 08:39:59,314 INFO [org.geoserver] - Loaded style 'labels_css_150'
+2020-01-08 08:39:59,315 INFO [org.geoserver] - Loaded style 'project'
+2020-01-08 08:39:59,315 INFO [org.geoserver] - Loaded style 'labels_css'
+2020-01-08 08:39:59,316 INFO [org.geoserver] - Loaded style 'labels_72'
+2020-01-08 08:39:59,317 INFO [org.geoserver] - Loaded style 'labels_300'
+2020-01-08 08:39:59,318 INFO [org.geoserver] - Loaded style 'meetpuntstatus_250'
+2020-01-08 08:39:59,318 INFO [org.geoserver] - Loaded style 'meetpunten_labels'
+2020-01-08 08:39:59,319 INFO [org.geoserver] - Loaded style 'labels_css_72'
+2020-01-08 08:39:59,320 INFO [org.geoserver] - Loaded workspace 'it.geosolutions'
+2020-01-08 08:39:59,323 INFO [org.geoserver] - Loaded workspace 'dynamic'
+2020-01-08 08:39:59,329 INFO [org.geoserver] - Loaded style 'klic-png'
+2020-01-08 08:39:59,330 INFO [org.geoserver] - Loaded workspace 'topp'
+2020-01-08 08:39:59,332 INFO [org.geoserver] - Loaded workspace 'nurc'
+2020-01-08 08:39:59,334 INFO [org.geoserver] - Loaded workspace 'klic'
+2020-01-08 08:39:59,337 INFO [org.geoserver] - Loaded style 'klic-levering'
+2020-01-08 08:39:59,655 INFO [org.geoserver] - Loaded data store 'sf', enabled
+2020-01-08 08:40:00,764 INFO [org.geoserver] - Loaded feature type 'streams', enabled
+2020-01-08 08:40:00,781 INFO [org.geoserver] - Loaded layer 'streams'
+2020-01-08 08:40:00,785 INFO [org.geoserver] - Loaded feature type 'bugsites', enabled
+2020-01-08 08:40:00,787 INFO [org.geoserver] - Loaded layer 'bugsites'
+2020-01-08 08:40:00,793 INFO [org.geoserver] - Loaded feature type 'archsites', enabled
+2020-01-08 08:40:00,795 INFO [org.geoserver] - Loaded layer 'archsites'
+2020-01-08 08:40:00,802 INFO [org.geoserver] - Loaded feature type 'restricted', enabled
+2020-01-08 08:40:00,808 INFO [org.geoserver] - Loaded layer 'restricted'
+2020-01-08 08:40:00,827 INFO [org.geoserver] - Loaded feature type 'roads', enabled
+2020-01-08 08:40:00,830 INFO [org.geoserver] - Loaded layer 'roads'
+2020-01-08 08:40:00,839 INFO [org.geoserver] - Loaded coverage store 'sfdem', enabled
+2020-01-08 08:40:00,885 INFO [org.geoserver] - Loaded coverage 'sfdem', enabled
+2020-01-08 08:40:00,887 INFO [org.geoserver] - Loaded layer 'sfdem'
+2020-01-08 08:40:00,896 INFO [org.geoserver] - Loaded data store 'nyc', enabled
+2020-01-08 08:40:00,902 INFO [org.geoserver] - Loaded feature type 'giant_polygon', enabled
+2020-01-08 08:40:00,906 INFO [org.geoserver] - Loaded layer 'giant_polygon'
+2020-01-08 08:40:00,913 INFO [org.geoserver] - Loaded feature type 'poly_landmarks', enabled
+2020-01-08 08:40:00,918 INFO [org.geoserver] - Loaded layer 'poly_landmarks'
+2020-01-08 08:40:00,923 INFO [org.geoserver] - Loaded feature type 'tiger_roads', enabled
+2020-01-08 08:40:00,927 INFO [org.geoserver] - Loaded layer 'tiger_roads'
+2020-01-08 08:40:00,931 INFO [org.geoserver] - Loaded feature type 'poi', enabled
+2020-01-08 08:40:00,933 INFO [org.geoserver] - Loaded layer 'poi'
+2020-01-08 08:40:00,964 INFO [org.geoserver] - Loaded data store 'GeoWEP', enabled
+2020-01-08 08:40:01,008 INFO [org.geoserver] - Loaded feature type 'projecten', enabled
+2020-01-08 08:40:01,009 INFO [org.geoserver] - Loaded layer 'projecten'
+2020-01-08 08:40:01,012 INFO [org.geoserver] - Loaded feature type 'vw_plantekening', enabled
+2020-01-08 08:40:01,013 INFO [org.geoserver] - Loaded layer 'vw_plantekening'
+2020-01-08 08:40:01,063 INFO [org.geoserver] - Loaded feature type 'meetpunten_labels', enabled
+2020-01-08 08:40:01,064 INFO [org.geoserver] - Loaded layer 'meetpunten_labels'
+2020-01-08 08:40:01,069 INFO [org.geoserver] - Loaded feature type 'notities', enabled
+2020-01-08 08:40:01,070 INFO [org.geoserver] - Loaded layer 'notities'
+2020-01-08 08:40:01,076 INFO [org.geoserver] - Loaded feature type 'meetpunten', enabled
+2020-01-08 08:40:01,078 INFO [org.geoserver] - Loaded layer 'meetpunten'
+2020-01-08 08:40:01,090 INFO [org.geoserver] - Loaded wmtsstore 'ngr-cascade-wmts'
+2020-01-08 08:40:01,125 INFO [org.geoserver] - Loaded resource 'brtachtergrondkaartgrijs', enabled
+2020-01-08 08:40:01,129 INFO [org.geoserver] - Loaded layer 'brtachtergrondkaartgrijs'
+2020-01-08 08:40:01,132 INFO [org.geoserver] - Loaded resource '2016_ortho25', enabled
+2020-01-08 08:40:01,134 INFO [org.geoserver] - Loaded layer '2016_ortho25'
+2020-01-08 08:40:01,136 INFO [org.geoserver] - Loaded resource 'brtachtergrondkaart', enabled
+2020-01-08 08:40:01,138 INFO [org.geoserver] - Loaded layer 'brtachtergrondkaart'
+2020-01-08 08:40:01,144 INFO [org.geoserver] - Loaded resource 'kadastralekaartv3', enabled
+2020-01-08 08:40:01,145 INFO [org.geoserver] - Loaded layer 'kadastralekaartv3'
+2020-01-08 08:40:01,153 INFO [org.geoserver] - Loaded data store 'taz_shapes', enabled
+2020-01-08 08:40:01,162 INFO [org.geoserver] - Loaded feature type 'tasmania_state_boundaries', enabled
+2020-01-08 08:40:01,163 INFO [org.geoserver] - Loaded layer 'tasmania_state_boundaries'
+2020-01-08 08:40:01,169 INFO [org.geoserver] - Loaded feature type 'tasmania_cities', enabled
+2020-01-08 08:40:01,172 INFO [org.geoserver] - Loaded layer 'tasmania_cities'
+2020-01-08 08:40:01,177 INFO [org.geoserver] - Loaded feature type 'tasmania_water_bodies', enabled
+2020-01-08 08:40:01,179 INFO [org.geoserver] - Loaded layer 'tasmania_water_bodies'
+2020-01-08 08:40:01,182 INFO [org.geoserver] - Loaded feature type 'tasmania_roads', enabled
+2020-01-08 08:40:01,184 INFO [org.geoserver] - Loaded layer 'tasmania_roads'
+2020-01-08 08:40:01,190 INFO [org.geoserver] - Loaded data store 'states_shapefile', enabled
+2020-01-08 08:40:01,197 INFO [org.geoserver] - Loaded feature type 'states', enabled
+2020-01-08 08:40:01,199 INFO [org.geoserver] - Loaded layer 'states'
+2020-01-08 08:40:01,214 INFO [org.geoserver] - Loaded coverage store 'img_sample2', enabled
+2020-01-08 08:40:01,232 INFO [org.geoserver] - Loaded coverage 'Pk50095', enabled
+2020-01-08 08:40:01,233 INFO [org.geoserver] - Loaded layer 'Pk50095'
+2020-01-08 08:40:01,234 INFO [org.geoserver] - Loaded coverage store 'mosaic', enabled
+2020-01-08 08:40:01,242 INFO [org.geoserver] - Loaded coverage 'mosaic', enabled
+2020-01-08 08:40:01,244 INFO [org.geoserver] - Loaded layer 'mosaic'
+2020-01-08 08:40:01,246 INFO [org.geoserver] - Loaded coverage store 'arcGridSample', enabled
+2020-01-08 08:40:01,250 INFO [org.geoserver] - Loaded coverage 'Arc_Sample', enabled
+2020-01-08 08:40:01,252 INFO [org.geoserver] - Loaded layer 'Arc_Sample'
+2020-01-08 08:40:01,255 INFO [org.geoserver] - Loaded coverage store 'worldImageSample', enabled
+2020-01-08 08:40:01,262 INFO [org.geoserver] - Loaded coverage 'Img_Sample', enabled
+2020-01-08 08:40:01,264 INFO [org.geoserver] - Loaded layer 'Img_Sample'
+2020-01-08 08:40:01,272 INFO [org.geoserver] - Loaded data store 'klic-pg', enabled
+2020-01-08 08:40:01,281 INFO [org.geoserver] - Loaded feature type 'klic-gp-all', enabled
+2020-01-08 08:40:01,284 INFO [org.geoserver] - Loaded layer 'klic-gp-all'
+2020-01-08 08:40:01,314 INFO [org.geoserver] - Loaded layer group 'spearfish'
+2020-01-08 08:40:01,318 INFO [org.geoserver] - Loaded layer group 'tasmania'
+2020-01-08 08:40:01,320 INFO [org.geoserver] - Loaded layer group 'tiger-ny'
+2020-01-08 08:40:01,331 INFO [org.geoserver] - Read catalog in 2.317 s
+2020-01-08 08:40:01,459 INFO [org.geoserver] - Loaded service 'wcs', enabled
+2020-01-08 08:40:01,462 INFO [org.geoserver] - Loaded service 'WMTSInfoImpl-6afe357d:16f844f84b6:-8000', enabled
+2020-01-08 08:40:01,481 INFO [org.geoserver] - Loaded service 'wfs', enabled
+2020-01-08 08:40:01,512 INFO [org.geoserver] - Loaded service 'wms', enabled
+2020-01-08 08:40:01,540 INFO [org.geoserver] - Loaded service 'WFSInfoImpl--44495347:1583f1dd832:-7ff0', enabled
+2020-01-08 08:40:01,545 INFO [org.geoserver] - Loaded service 'WMSInfoImpl--44495347:1583f1dd832:-7fef', enabled
+2020-01-08 08:40:01,577 INFO [config.GeoserverXMLResourceProvider] - Will look for 'geowebcache.xml' in directory '/geoserver/cache'.
+2020-01-08 08:40:01,636 INFO [config.GeoserverXMLResourceProvider] - Found configuration file in /geoserver/cache
+2020-01-08 08:40:01,636 INFO [config.GeoserverXMLResourceProvider] - Found configuration file in /geoserver/cache
+2020-01-08 08:40:01,636 INFO [config.GeoserverXMLResourceProvider] - Found configuration file in /geoserver/cache
+2020-01-08 08:40:01,733 WARN [config.XMLConfiguration] - ********************************************************************************
+2020-01-08 08:40:01,733 WARN [config.XMLConfiguration] - *** GWC configuration validation error: cvc-elt.1.a: Cannot find the declaration of element 'gwcConfiguration'.
+2020-01-08 08:40:01,733 WARN [config.XMLConfiguration] - *** Will try to use configuration anyway. Please check the order of declared elements against the schema.
+2020-01-08 08:40:01,733 WARN [config.XMLConfiguration] - ********************************************************************************
+2020-01-08 08:40:01,792 INFO [config.XMLConfiguration] - Initializing GridSets from /geoserver/cache
+2020-01-08 08:40:01,794 INFO [config.XMLConfiguration] - Read GridSet EPSG:28992
+2020-01-08 08:40:01,794 INFO [config.XMLConfiguration] - Initializing layers from /geoserver/cache
+2020-01-08 08:40:01,851 INFO [gwc.layer] - Initializing GWC configuration based on GeoServer's Catalog
+2020-01-08 08:40:01,851 INFO [gwc.layer] - GeoServer TileLayer store base directory is: gwc-layers
+2020-01-08 08:40:01,851 INFO [gwc.layer] - Loading tile layers from gwc-layers
+2020-01-08 08:40:01,854 INFO [gwc.layer] - Loaded 0 tile layers in 2.331 ms
+2020-01-08 08:40:01,872 INFO [storage.BlobStoreAggregator] - BlobStoreConfiguration /geoserver/cache contained no blob store infos.
+2020-01-08 08:40:01,884 INFO [storage.DefaultStorageFinder] - ************************************************************************************************************************
+2020-01-08 08:40:01,884 INFO [storage.DefaultStorageFinder] - *** Found System environment variable GEOWEBCACHE_CACHE_DIR set to /geoserver/cache, using it as the default prefix. ***
+2020-01-08 08:40:01,884 INFO [storage.DefaultStorageFinder] - ************************************************************************************************************************
+2020-01-08 08:40:01,963 INFO [gwc.config] - Initializing GeoServer specific GWC configuration from gwc-gs.xml
+2020-01-08 08:40:03,739 WARN [gce.imagemosaic] - Unable to set ordering between tiff readers spi
+2020-01-08 08:40:04,456 INFO [util.GWCVars] - Found system environment variable  for GWC_SEED_RETRY_COUNT set to 10
+2020-01-08 08:40:04,474 INFO [config.GeoserverXMLResourceProvider] - Will look for 'geowebcache-diskquota.xml' in directory '/geoserver/cache'.
+2020-01-08 08:40:04,488 INFO [config.GeoserverXMLResourceProvider] - Will look for 'geowebcache-diskquota-jdbc.xml' in directory '/geoserver/cache'.
+2020-01-08 08:40:04,499 INFO [diskquota.ConfigLoader] - DiskQuota configuration is not readable: /geoserver/cache/geowebcache-diskquota.xml
+2020-01-08 08:40:04,517 INFO [diskquota.ConfigLoader] - DiskQuota configuration is not readable: /geoserver/cache/geowebcache-diskquota.xml
+2020-01-08 08:40:04,520 INFO [diskquota.DiskQuotaMonitor] - Setting up disk quota periodic enforcement task
+2020-01-08 08:40:04,521 INFO [diskquota.DiskQuotaMonitor] - 0 layers configured with their own quotas. 
+2020-01-08 08:40:04,545 INFO [diskquota.DiskQuotaMonitor] - 32 layers attached to global quota 500.0 MB
+2020-01-08 08:40:04,604 INFO [diskquota.DiskQuotaMonitor] - Disk quota periodic enforcement task set up every 10 SECONDS
+2020-01-08 08:40:04,679 INFO [geowebcache.GeoWebCacheDispatcher] - Invoked setServletPrefix(gwc)
+2020-01-08 08:40:04,700 INFO [georss.GeoRSSPoller] - Initializing GeoRSS poller in a background job...
+2020-01-08 08:40:04,718 INFO [georss.GeoRSSPoller] - No enabled GeoRSS feeds found, poller will not run.
+2020-01-08 08:40:04,787 INFO [wms.WMSService] - Will recombine tiles for non-tiling clients.
+2020-01-08 08:40:04,788 INFO [wms.WMSService] - Will proxy requests to backend that are not getmap or getcapabilities.
+2020-01-08 08:40:09,125 INFO [geoserver.security] - AuthenticationCache Initialized with 1000 Max Entries, 300 seconds idle time, 600 seconds time to live and 3 concurrency level
+2020-01-08 08:40:09,126 INFO [geoserver.security] - AuthenticationCache Eviction Task created to run every 600 seconds
+2020-01-08 08:40:09,433 INFO [geoserver.security] - Start reloading user/groups for service named default
+2020-01-08 08:40:09,438 INFO [geoserver.security] - Reloading user/groups successful for service named default
+2020-01-08 08:40:35,130 INFO [geoserver.wms] - 
+Request: getServiceInfo
+2020-01-08 08:40:35,132 INFO [geoserver.wfs] - 
+Request: getServiceInfo
+2020-01-08 08:40:35,892 INFO [geoserver.wfs] - 
+Request: getFeature
+    service = WFS
+    version = 1.0.0
+    baseUrl = http://geowep-geoserver:8080/geoserver/
+    query[0]:
+        filter = [[[ 1 = 1 ] AND [ geom bbox ReferencedEnvelope[245056.44598569407 : 246316.1549182927, 588934.0241310288 : 590204.3859932901] ]] AND [[ categorie_bron = 5 ] OR [ categorie_bron = 2 ] OR [ categorie_bron = 1 ]]]
+        srsName = EPSG:28992
+        typeName[0] = {GeoWEP}meetpunten
+    outputFormat = json
+    resultType = results
+    viewParams[0] = {1=1, MAXX=588934.0241310288, MAXY=590204.3859932901, MINX=245056.44598569407, MINY=246316.1549182927, SRID=28992}
+2020-01-08 08:40:35,940 INFO [wfs.json] - about to encode JSON
+2020-01-08 08:40:37,368 INFO [geoserver.wms] - 
+Request: getMap
+	Angle = 0.0
+	BaseUrl = http://geowep-geoserver:8080/geoserver/
+	Bbox = SRSEnvelope[245189.34128323462 : 246183.25962075216, 589066.9194285694 : 590071.4906957495]
+	BgColor = java.awt.Color[r=255,g=255,b=255]
+	Buffer = 0
+	CQLFilter = [[ 1 = 1 ]]
+	Crs = PROJCS["Amersfoort / RD New", 
+  GEOGCS["Amersfoort", 
+    DATUM["Amersfoort", 
+      SPHEROID["Bessel 1841", 6377397.155, 299.1528128, AUTHORITY["EPSG","7004"]], 
+      TOWGS84[565.2369, 50.0087, 465.658, -0.4068573303223975, -0.3507326765425626, 1.8703473836067956, 4.0812], 
+      AUTHORITY["EPSG","6289"]], 
+    PRIMEM["Greenwich", 0.0, AUTHORITY["EPSG","8901"]], 
+    UNIT["degree", 0.017453292519943295], 
+    AXIS["Geodetic latitude", NORTH], 
+    AXIS["Geodetic longitude", EAST], 
+    AUTHORITY["EPSG","4289"]], 
+  PROJECTION["Oblique_Stereographic", AUTHORITY["EPSG","9809"]], 
+  PARAMETER["central_meridian", 5.387638888888891], 
+  PARAMETER["latitude_of_origin", 52.15616055555556], 
+  PARAMETER["scale_factor", 0.9999079], 
+  PARAMETER["false_easting", 155000.0], 
+  PARAMETER["false_northing", 463000.0], 
+  UNIT["m", 1.0], 
+  AXIS["Easting", EAST], 
+  AXIS["Northing", NORTH], 
+  AUTHORITY["EPSG","28992"]]
+	Elevation = []
+	Env = {}
+	Exceptions = SE_XML
+	FeatureId = null
+	FeatureVersion = null
+	Filter = [[ 1 = 1 ]]
+	Format = image/png8
+	FormatOptions = {DPI=113}
+	Get = true
+	Height = 943
+	Interpolations = []
+	Layers = [org.geoserver.wms.MapLayerInfo@cc854e87]
+	MaxFeatures = null
+	Palette = null
+	RawKvp = {FORMAT=image/png8, CRS=EPSG:28992, STYLES=, WIDTH=933, HEIGHT=943, LAYERS=GeoWEP:meetpunten_labels, 1=1, REQUEST=GetMap, FORMAT_OPTIONS=dpi:113, BBOX=245189.34128323462,589066.9194285694,246183.25962075216,590071.4906957495, VIEWPARAMS=1:1;bronnen:5\,2\,1, TIMESTAMP=2020-01-08T08:40:34.634Z, VERSION=1.3.0, SERVICE=WMS, TRANSPARENT=true, CQL_FILTER=1=1, SECRET=e702ca01-4b62-4c7c-a50c-4fd4e230fee9}
+	RemoteOwsType = null
+	RemoteOwsURL = null
+	Request = GetMap
+	RequestCharset = UTF-8
+	ScaleMethod = null
+	Sld = null
+	SldBody = null
+	SldVersion = null
+	SortBy = null
+	SortByArrays = null
+	SRS = urn:ogc:def:crs:EPSG:28992
+	StartIndex = null
+	StyleBody = null
+	StyleFormat = sld
+	Styles = [StyleImpl[ name=labels_css]]
+	StyleUrl = null
+	StyleVersion = null
+	Tiled = false
+	TilesOrigin = null
+	Time = []
+	Transparent = true
+	ValidateSchema = false
+	Version = 1.3.0
+	ViewParams = [{1=1, BRONNEN=5,2,1}]
+	Width = 933
