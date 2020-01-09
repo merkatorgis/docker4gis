@@ -3,15 +3,14 @@ FROM alpine:3.7
 RUN apk update; apk add --no-cache \
 	ca-certificates wget
 
-ADD conf /tmp/conf
-
 COPY goproxy/goproxy /goproxy
+COPY conf/certificates /certificates
+COPY conf/entrypoint /entrypoint
 
-RUN mv /tmp/conf/entrypoint/* /
-
-EXPOSE 8080
+EXPOSE 80 443
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["proxy"]
 
-ONBUILD ADD conf /tmp/conf
+ONBUILD COPY conf /tmp/conf
+ONBUILD COPY conf/certificates /certificates
