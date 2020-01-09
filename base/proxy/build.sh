@@ -12,19 +12,12 @@ docker container rm -f "${container}" 2>/dev/null
 
 HERE=$(dirname "$0")
 
-if [ -d goproxy ]; then # building base
+if [ -d ./goproxy ]; then # building base
 	if (which go 1>/dev/null 2>&1); then
 
-		pushd goproxy
-		export MSYS_NO_PATHCONV=1
-		docker container run --rm \
-			-v "$PWD":/usr/src/goproxy \
-			-w /usr/src/goproxy \
-			-e CGO_ENABLED=0 \
-			-e GOOS=linux \
-			golang \
-			go build -v -a -tags netgo -ldflags '-w' .
-		popd
+		cd ./goproxy
+		CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -ldflags '-w' .
+		cd ..
 
 		docker image build -t "${image}" .
 	else

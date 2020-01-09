@@ -63,6 +63,7 @@ docker run --name $container \
 	-e GEOSERVER=$GEOSERVER \
 	-e MAPFISH=$MAPFISH \
 	-e SECRET=$SECRET \
+	-v $DOCKER_BINDS_DIR/certificates:/certificates \
 	-p $PROXY_PORT:443 \
 	--network "${DOCKER_USER}-net" \
 	--add-host=$(hostname):$(getip $(hostname)) \
