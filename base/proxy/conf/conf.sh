@@ -22,7 +22,6 @@ index=${APP}index
 html=${APP}html/
 geoserver=${GEOSERVER}
 mapfish=${MAPFISH}
-print=${MAPFISH}/print
 resources=${RESOURCES}
 mapserver=${MAPSERVER}
 mapproxy=${MAPPROXY}

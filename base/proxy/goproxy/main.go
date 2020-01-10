@@ -17,7 +17,7 @@ var secret = os.Getenv("SECRET")
 
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
-var proxies = make(map[string]*url.URL)
+var proxies = make(map[string]map[string]*url.URL)
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
@@ -39,6 +39,7 @@ func main() {
 	}
 	defer file.Close()
 
+	proxies[user] = make(map[string]*url.URL)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		split := strings.Split(scanner.Text(), "=")
@@ -87,7 +88,7 @@ func defineProxy(app, key, target_ string) {
 		target.Path = "/"
 	}
 	key = "/" + key + "/"
-	proxies[key] = target
+	proxies[app][key] = target
 	log.Printf("reversing: %s%s -> %v", app, key, target)
 }
 
@@ -95,16 +96,18 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	path := "/"
 	requestParts := strings.Split(r.URL.Path, "/")
 	app := requestParts[1]
-	if app == user {
+	if _, ok := proxies[app]; ok {
 		if len(requestParts) > 2 {
 			path += strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
 		}
+		// log.Printf("app=%s path=%s", app, path)
 	} else {
 		referer, _ := url.Parse(r.Referer() + "/") //  + "/" to cater for empty Referer
 		app = strings.Split(referer.Path, "/")[1]
 		path = r.URL.Path
+		// log.Printf("referer app=%s path=%s", app, path)
 	}
-	for key, target := range proxies {
+	for key, target := range proxies[app] {
 		if path+"/" == key {
 			path = path + "/"
 		}
