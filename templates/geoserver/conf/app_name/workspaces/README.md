@@ -4,5 +4,5 @@ Update this directory with the results of what you configured with the web admin
 1. Start the web admin: `http://localhost:58080/geoserver`
 1. Login: `admin/geoserver`
 1. Configure things in the web admin.
-1. `docker container cp {geoserver_container}:/geoserver/data/workspaces/{app_name} geoserver/conf/{app_name}/workspaces`
+1. `./main geoserver app_name` (or just `./main geoserver` if you renamed `app_name` to `${DOCKER_USER}`)
 1. Build and run again.
