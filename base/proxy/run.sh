@@ -14,20 +14,11 @@ repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-API_CONTAINER="${API_CONTAINER:-$DOCKER_USER-api}"
-APP_CONTAINER="${APP_CONTAINER:-$DOCKER_USER-app}"
-RESOURCES_CONTAINER="${RESOURCES_CONTAINER:-$DOCKER_USER-resources}"
-GEOSERVER_CONTAINER="${GEOSERVER_CONTAINER:-$DOCKER_USER-geoserver}"
-MAPFISH_CONTAINER="${MAPFISH_CONTAINER:-$DOCKER_USER-mapfish}"
-
-API="${API:-http://${API_CONTAINER}:8080/}"
-APP="${APP:-http://${APP_CONTAINER}/}"
-RESOURCES="${RESOURCES:-http://${RESOURCES_CONTAINER}/}"
 HOMEDEST="${HOMEDEST}"
-NGR="${NGR:-https://geodata.nationaalgeoregister.nl}"
-GEOSERVER="${GEOSERVER:-http://${GEOSERVER_CONTAINER}:8080/geoserver/}"
-MAPFISH="${MAPFISH:-http://${MAPFISH_CONTAINER}:8080/}"
 SECRET="${SECRET}"
+
+API="${API:-http://${DOCKER_USER}-api:8080}"
+APP="${APP:-http://${DOCKER_USER}-app}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
@@ -53,18 +44,17 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-docker run --name $container \
+docker volume create docker4gis-proxy
+docker run --name "${container}" \
 	-e PROXY_HOST=$PROXY_HOST \
-	-e API=$API \
-	-e APP=$APP \
-	-e RESOURCES=$RESOURCES \
 	-e HOMEDEST=$HOMEDEST \
-	-e NGR=$NGR \
-	-e GEOSERVER=$GEOSERVER \
-	-e MAPFISH=$MAPFISH \
+	-e DOCKER_USER=$DOCKER_USER \
 	-e SECRET=$SECRET \
+	-e API=${API} \
+	-e APP=${APP} \
+	--mount source=docker4gis-proxy,target=/config \
 	-p $PROXY_PORT:443 \
 	--network "${DOCKER_USER}-net" \
 	--add-host=$(hostname):$(getip $(hostname)) \
 	--add-host="${PROXY_HOST}":$(getip $(urlhost "${API}")) \
-	-d $image proxy "$@"
+	-d $image proxy	"$@"

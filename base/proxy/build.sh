@@ -20,7 +20,7 @@ if [ -d goproxy ]; then # building base
 			-w /usr/src/goproxy \
 			-e CGO_ENABLED=0 \
 			-e GOOS=linux \
-			golang \
+			golang:1.13.5 \
 			go build -v -a -tags netgo -ldflags '-w' .
 	popd
 	docker image build -t "${image}" .

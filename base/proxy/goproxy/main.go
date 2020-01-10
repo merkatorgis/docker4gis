@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/tls"
+	"bufio"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -11,28 +11,13 @@ import (
 )
 
 var host = os.Getenv("PROXY_HOST")
-var api = os.Getenv("API")
-var app = os.Getenv("APP")
 var homedest = os.Getenv("HOMEDEST")
-var resources = os.Getenv("RESOURCES")
-var ngr = os.Getenv("NGR")
-var geoserver = os.Getenv("GEOSERVER")
-var mapfish = os.Getenv("MAPFISH")
+var user = os.Getenv("DOCKER_USER")
 var secret = os.Getenv("SECRET")
+
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
-var reverseProxyInsecure *httputil.ReverseProxy
 var proxies = make(map[string]*url.URL)
-
-func defineProxy(key, target string) {
-	u, _ := url.Parse(target)
-	if u.Path == "" {
-		u.Path = "/"
-	}
-	key = "/" + key + "/"
-	proxies[key] = u
-	log.Printf("reversing: %s -> %v", key, u)
-}
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
@@ -43,43 +28,28 @@ func init() {
 		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
 	}
-	transportInsecure := http.DefaultTransport.(*http.Transport)
-	configInsecure := &tls.Config{InsecureSkipVerify: true}
-	transportInsecure.TLSClientConfig = configInsecure
-	reverseProxyInsecure = &httputil.ReverseProxy{
-		Director:       reverseDirector,
-		ModifyResponse: modifyResponse,
-		Transport:      transportInsecure,
-	}
-	// goproxy thfghhj=http://www.dhghdsfgh.com jlkvflk=http://www.vsoiihffvh.com
-	for _, proxy := range os.Args[1:] {
-		split := strings.Split(proxy, "=")
-		defineProxy(split[0], split[1])
-	}
-	defineProxy("ngr", ngr)
-
-	defineProxy("geoserver", geoserver)
-
-	defineProxy("mapfish", mapfish)
-	defineProxy("print", mapfish+"print/")
-
-	defineProxy("api", api)
-
-	defineProxy("app", app)
-	defineProxy("static", app+"static/")
-	defineProxy("favicon.ico", app+"favicon.ico")
-	defineProxy("manifest.json", app+"manifest.json")
-	defineProxy("service-worker.js", app+"service-worker.js")
-	defineProxy("index.html", app+"index.html")
-	defineProxy("index", app+"index")
-	defineProxy("html", app+"html/")
-
-	defineProxy("resources", resources)
 
 	log.Printf("homedest: %s", homedest)
 }
 
 func main() {
+	file, err := os.Open("/config/" + user)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		split := strings.Split(scanner.Text(), "=")
+		if len(split) == 2 {
+			defineProxy(split[0], split[1])
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 
 	// Redirect http to https
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +81,29 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func defineProxy(key, target_ string) {
+	target, _ := url.Parse(target_)
+	if target.Path == "" {
+		target.Path = "/"
+	}
+	key = "/" + key + "/"
+	proxies[key] = target
+	log.Printf("reversing: %s -> %v", key, target)
+}
+
 func reverse(w http.ResponseWriter, r *http.Request) {
+	path := "/"
+	requestParts := strings.Split(r.URL.Path, "/")
+	app := requestParts[1]
+	if app == user {
+		if len(requestParts) > 2 {
+			path += strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
+		}
+	} else {
+		referer, _ := url.Parse(r.Referer() + "/") //  + "/" to cater for empty Referer
+		app = strings.Split(referer.Path, "/")[1]
+		path = r.URL.Path
+	}
 	for key, target := range proxies {
 		if r.URL.Path+"/" == key {
 			r.URL.Path = r.URL.Path + "/"
@@ -120,25 +112,9 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = target.Scheme
 			r.URL.Host = target.Host
 			r.URL.Path = target.Path + strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
-			referer, _ := url.Parse(r.Referer())
-			if key == "/api/" {
-				r.Host = host
-				if target.Port() != "" {
-					r.Host += ":" + target.Port()
-				}
-				reverseProxyInsecure.ServeHTTP(w, r)
-			} else if (r.FormValue("secret") != secret) && (key == "/print/" ||
-				key == "/mapfish/" ||
-				(key == "/geoserver/" && r.FormValue("service") != "" && !strings.HasPrefix(referer.Path, key))) {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			} else {
-				r.Host = target.Host
-				if strings.Contains(target.Hostname(), ".") {
-					reverseProxy.ServeHTTP(w, r)
-				} else {
-					reverseProxyInsecure.ServeHTTP(w, r)
-				}
-			}
+			// referer, _ := url.Parse(r.Referer())
+			r.Host = target.Host
+			reverseProxy.ServeHTTP(w, r)
 			return
 		}
 	}

@@ -6,6 +6,7 @@ RUN apk update; apk add --no-cache \
 COPY goproxy/goproxy /goproxy
 COPY conf/certificates /certificates
 COPY conf/entrypoint /entrypoint
+COPY conf/conf.sh /conf.sh
 
 EXPOSE 80 443
 
