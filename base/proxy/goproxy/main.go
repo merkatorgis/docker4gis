@@ -43,7 +43,7 @@ func main() {
 	for scanner.Scan() {
 		split := strings.Split(scanner.Text(), "=")
 		if len(split) == 2 {
-			defineProxy(split[0], split[1])
+			defineProxy(user, split[0], split[1])
 		}
 	}
 
@@ -81,14 +81,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func defineProxy(key, target_ string) {
+func defineProxy(app, key, target_ string) {
 	target, _ := url.Parse(target_)
 	if target.Path == "" {
 		target.Path = "/"
 	}
 	key = "/" + key + "/"
 	proxies[key] = target
-	log.Printf("reversing: %s -> %v", key, target)
+	log.Printf("reversing: %s%s -> %v", app, key, target)
 }
 
 func reverse(w http.ResponseWriter, r *http.Request) {
@@ -105,14 +105,13 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 		path = r.URL.Path
 	}
 	for key, target := range proxies {
-		if r.URL.Path+"/" == key {
-			r.URL.Path = r.URL.Path + "/"
+		if path+"/" == key {
+			path = path + "/"
 		}
-		if strings.HasPrefix(r.URL.Path, key) {
+		if strings.HasPrefix(path, key) {
 			r.URL.Scheme = target.Scheme
 			r.URL.Host = target.Host
-			r.URL.Path = target.Path + strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
-			// referer, _ := url.Parse(r.Referer())
+			r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
 			r.Host = target.Host
 			reverseProxy.ServeHTTP(w, r)
 			return
