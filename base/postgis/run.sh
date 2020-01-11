@@ -28,7 +28,6 @@ mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
 docker volume create "$container"
 docker run --name $container \
-	-e PROXY=https://$PROXY_HOST:$PROXY_PORT \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
@@ -45,6 +44,8 @@ docker run --name $container \
 	--network "${DOCKER_USER}-net" \
 	-d $image
 
-sleep 1
 # wait for db
-docker container exec "$container" pg.sh -c "select" > /dev/null
+while [ ! $(docker container exec "$container" pg.sh -Atc "select current_setting('app.ddl_done', true)") = true ]
+do
+	sleep 1
+done

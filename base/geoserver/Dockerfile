@@ -1,37 +1,30 @@
-FROM tomcat:9.0.2-alpine
-
-RUN apk update; apk add --no-cache \
-	curl wget unzip grep sed \
-	postgresql-client \
-	ttf-freefont
+FROM docker4gis/tomcat
 
 ENV GEOSERVER_USER=admin \
 	GEOSERVER_PASSWORD=geoserver \
-	GEOSERVER_DATA_DIR=/geoserver/data \
+	GEOSERVER_DATA_DIR="${CATALINA_HOME}/webapps/geoserver/data" \
 	GEOWEBCACHE_CACHE_DIR=/geoserver/cache \
-	GWC_SEED_RETRY_COUNT=10 \
-	PATH=/util:$PATH \
-	JAVA_OPTS='-Xms2g -Xmx2g -XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseParNewGC -XX:NewRatio=2 -XX:+AggressiveOpts'
+	GWC_SEED_RETRY_COUNT=10
 
-ADD conf /tmp/conf
+ENV GEOSERVER_VERSION=2.16.0
+# ENV GEOSERVER_VERSION=2.12.1
 
-RUN mv /tmp/conf/base/conf/server.xml $CATALINA_HOME/conf/server.xml; \
-    mv /tmp/conf/base/conf/web.xml    $CATALINA_HOME/conf/web.xml; \
-	mkdir -p /usr/local/tomcat/webapps/geoserver; \
-	unzip -qo /tmp/conf/base/geoserver/geoserver-*-war.zip -d /tmp/conf/base; \
-	unzip -qo /tmp/conf/base/geoserver.war -d $CATALINA_HOME/webapps/geoserver; \
-	mv /tmp/conf/base/entrypoint/* /; \
-	/tmp/conf/plugins/pg/install.sh
+# The Tomcat image deploys the /tmp/conf/webapps/webapps
+RUN mkdir -p /tmp/conf/webapps/geoserver; \
+	unzip -qo /tmp/conf/geoserver/dist/geoserver-${GEOSERVER_VERSION}-war.zip -d /tmp/conf/geoserver/dist; \
+	unzip -qo /tmp/conf/geoserver/dist/geoserver.war -d /tmp/conf/webapps/geoserver; \
+	mv /tmp/conf/geoserver/logging.xml /tmp/conf/webapps/geoserver/data; \
+	mv /tmp/conf/geoserver/logs /tmp/conf/webapps/geoserver/data
 
-ADD conf/base/jai/* /jai/
-RUN mv /jai/jai-1_1_3/lib/*.jar       $JAVA_HOME/lib/ext/; \
-	mv /jai/jai-1_1_3/lib/*.so        $JAVA_HOME/lib/amd64/; \
-	mv /jai/jai_imageio-1_1/lib/*.jar $JAVA_HOME/lib/ext/; \
-	mv /jai/jai_imageio-1_1/lib/*.so  $JAVA_HOME/lib/amd64/; \
-	rm $CATALINA_HOME/webapps/geoserver/WEB-INF/lib/jai_*.jar; \
-	rm -rf /jai
+RUN mkdir -p "${GEOWEBCACHE_CACHE_DIR}"; \
+	mv /tmp/conf/geoserver/geowebcache.xml "${GEOWEBCACHE_CACHE_DIR}"
 
-ENTRYPOINT ["/entrypoint"]
-CMD ["geoserver"]
+# The ADD command takes care of unzip & tar
+ADD conf/geoserver/jai/* /tmp/conf/geoserver/jai/
+RUN rm /tmp/conf/webapps/geoserver/WEB-INF/lib/jai_*.jar; \
+    mv /tmp/conf/geoserver/jai/jai-1_1_3/lib/*.jar       $JAVA_HOME/lib/ext/; \
+	mv /tmp/conf/geoserver/jai/jai-1_1_3/lib/*.so        $JAVA_HOME/lib/amd64/; \
+	mv /tmp/conf/geoserver/jai/jai_imageio-1_1/lib/*.jar $JAVA_HOME/lib/ext/; \
+	mv /tmp/conf/geoserver/jai/jai_imageio-1_1/lib/*.so  $JAVA_HOME/lib/amd64/
 
-ONBUILD ADD conf /tmp/conf
+ONBUILD COPY conf /tmp/conf

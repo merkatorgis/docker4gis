@@ -68,13 +68,20 @@ then
 	# ./ex br app
 	"$0" build "${1}"
 	"$0" run
+elif [ "${action}" == pr ]
+then
+	# Create a runnable package (latest), and run it.
+	# Examples:
+	# ./ex br
+	"$0" package
+	"$0" run
 elif [ "${action}" == stop ]
 then
 	# Stop running containers.
 	# Examples:
 	# ./ex stop
 	"${DOCKER_BASE}/stop.sh" "$0"
-elif [ "${action}" == 'latest' ]
+elif [ "${action}" == latest ]
 then
 	# Fetch latest images from the registry, and run the package.
 	# Examples:
@@ -86,6 +93,24 @@ then
 	# Examples:
 	# ls -la $(./ex binds)
 	echo "${DOCKER_BINDS_DIR}"
+elif [ "${action}" == geoserver ]
+then
+	# Write the GeoServer container's config to your working directory.
+	# Examples:
+	# ./ex geoserver
+	# ./ex geoserver app_name
+	app_name="${1:-${DOCKER_USER}}"
+	container="${DOCKER_USER}-geoserver"
+	data_dir=$(docker container exec "${container}" bash -c 'echo "${GEOSERVER_DATA_DIR}"')
+	from="${container}:${data_dir}/workspaces/${app_name}"
+	to="geoserver/conf/${app_name}/workspaces"
+	echo "About to overwrite
+ './${to}/${app_name}' with
+ '${from}'"
+	read -n 1 -p 'Press any key to continue (or Ctrl-C to cancel)...'
+	echo
+	rm -rf "${to}/${app_name}"
+	docker container cp "${from}" "${to}"
 else
 	echo "Unknown action: ${action}"
 fi
