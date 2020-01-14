@@ -3,9 +3,9 @@
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
-repo=$(basename "$(pwd)")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
+# repo=$(basename "$(pwd)")
+container=docker4gis-proxy
+image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy"
 
 echo; echo "Building ${image}"
 docker container rm -f "${container}" 2>/dev/null
@@ -14,16 +14,16 @@ HERE=$(dirname "$0")
 
 if [ -d goproxy ]; then # building base
 	export MSYS_NO_PATHCONV=1
-	pushd goproxy
-		docker container run --rm \
-			-v "$PWD":/usr/src/goproxy \
-			-w /usr/src/goproxy \
-			-e CGO_ENABLED=0 \
-			-e GOOS=linux \
-			golang:1.13.5 \
-			go build -v -a -tags netgo -ldflags '-w' .
-	popd
-	docker image build -t "${image}" .
+	if docker container run --rm \
+		-v "$PWD"/goproxy:/usr/src/goproxy \
+		-w /usr/src/goproxy \
+		-e CGO_ENABLED=0 \
+		-e GOOS=linux \
+		golang:1.13.5 \
+		go build -v -a -tags netgo -ldflags '-w' .
+	then
+		docker image build -t "${image}" .
+	fi
 else # building upon base
 	mkdir -p conf
 	cp -r "${HERE}/../plugins" "conf"

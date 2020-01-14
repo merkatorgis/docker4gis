@@ -10,9 +10,9 @@ DOCKER_TAG="${DOCKER_TAG}"
 DOCKER_ENV="${DOCKER_ENV}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-repo=$(basename "$0")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+# repo=$(basename "$0")
+container=docker4gis-proxy
+image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy:${DOCKER_TAG}"
 
 HOMEDEST="${HOMEDEST}"
 SECRET="${SECRET}"

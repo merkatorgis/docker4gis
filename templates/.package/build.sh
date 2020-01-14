@@ -77,17 +77,7 @@ component postfix   "${DOCKER_BASE}/postfix"
 component cron      "${DOCKER_BASE}/cron"
 component app       "${DOCKER_BASE}/serve"
 component resources "${DOCKER_BASE}/serve"
-
-swagger="http://${DOCKER_USER}-swagger:8080"
-component proxy "${DOCKER_BASE}/proxy" \
-	"mapserver=http://${DOCKER_USER}-mapserver" \
-	"mapproxy=http://${DOCKER_USER}-mapproxy" \
-	"swagger=${swagger}" \
-	"swagger-ui.css=${swagger}/swagger-ui.css" \
-	"swagger-ui-bundle.js=${swagger}/swagger-ui-bundle.js" \
-	"swagger-ui-standalone-preset.js=${swagger}/swagger-ui-standalone-preset.js" \
-	"favicon-32x32.png=${swagger}/favicon-32x32.png" \
-	"favicon-16x16.png=${swagger}/favicon-16x16.png"
+component proxy     "${DOCKER_BASE}/proxy"
 
 # component extra "${here}/../extra"
 

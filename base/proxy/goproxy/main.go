@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -12,7 +13,6 @@ import (
 
 var host = os.Getenv("PROXY_HOST")
 var homedest = os.Getenv("HOMEDEST")
-var user = os.Getenv("DOCKER_USER")
 var secret = os.Getenv("SECRET")
 
 var passThroughProxy *httputil.ReverseProxy
@@ -33,23 +33,31 @@ func init() {
 }
 
 func main() {
-	file, err := os.Open("/config/" + user)
+	fileInfos, err := ioutil.ReadDir("/config")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
 
-	proxies[user] = make(map[string]*url.URL)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		split := strings.Split(scanner.Text(), "=")
-		if len(split) == 2 {
-			defineProxy(user, split[0], split[1])
+	for _, fileInfo := range fileInfos {
+		app := fileInfo.Name()
+		file, err := os.Open("/config/" + app)
+		if err != nil {
+			log.Fatal(err)
 		}
-	}
+		defer file.Close()
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		proxies[app] = make(map[string]*url.URL)
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			split := strings.Split(scanner.Text(), "=")
+			if len(split) == 2 {
+				defineProxy(app, split[0], split[1])
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Redirect http to https
