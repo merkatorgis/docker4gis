@@ -16,7 +16,7 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker run --name "${container}" \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	$(.run/port.sh "${MAPPROXY_PORT}" 80) \
 	"$@" \
 	-d "${image}"

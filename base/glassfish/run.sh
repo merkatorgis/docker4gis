@@ -19,7 +19,7 @@ if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker volume create "${container}"
 docker run --name "${container}" \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	--mount source="${container}",target=/host \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	$(.run/port.sh "${app_port}" 8080) \

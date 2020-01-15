@@ -22,7 +22,7 @@ mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
-gateway=$(docker network inspect "${DOCKER_USER}-net" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
+gateway=$(docker network inspect "${DOCKER_USER}" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
 
 docker volume create "$container"
 docker container run --name $container \
@@ -37,7 +37,7 @@ docker container run --name $container \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="$container",target=/var/lib/mysql \
 	$(.run/port.sh "${MYSQL_PORT}" 3306) \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	-d $image
 
 # wait for db

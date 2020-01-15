@@ -33,7 +33,7 @@ docker run --name "${container}" \
 	-v $DOCKER_BINDS_DIR/gwc:/geoserver/cache \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="${container}",target=/geoserver/data/workspaces/dynamic \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	-e "GEOSERVER_USER=${GEOSERVER_USER}" \
 	-e "GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD}" \
 	$(.run/port.sh "${GEOSERVER_PORT}" 8080) \

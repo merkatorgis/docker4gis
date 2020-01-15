@@ -44,7 +44,12 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-docker volume create docker4gis-proxy
+network=docker4gis
+.run/network.sh "${network}"
+
+volume="${container}"
+docker volume create "${volume}"
+
 docker run --name "${container}" \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e HOMEDEST=$HOMEDEST \
@@ -52,9 +57,15 @@ docker run --name "${container}" \
 	-e SECRET=$SECRET \
 	-e API=${API} \
 	-e APP=${APP} \
-	--mount source=docker4gis-proxy,target=/config \
+	--mount source="${volume}",target=/config \
 	-p $PROXY_PORT:443 \
-	--network "${DOCKER_USER}-net" \
+	--network "${network}" \
 	--add-host=$(hostname):$(getip $(hostname)) \
 	--add-host="${PROXY_HOST}":$(getip $(urlhost "${API}")) \
 	-d $image proxy	"$@"
+
+for network in $(docker container exec "${container}" ls /config)
+do
+	.run/network.sh "${network}"
+	docker network connect "${network}" "${container}"
+done

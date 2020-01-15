@@ -27,7 +27,7 @@ docker container run \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	$(.run/port.sh "${TOMCAT_PORT}" 8080) \
 	"$@" \
 	-d $image
