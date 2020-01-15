@@ -12,6 +12,7 @@ import (
 )
 
 var host = os.Getenv("PROXY_HOST")
+var user = os.Getenv("DOCKER_USER")
 var homedest = os.Getenv("HOMEDEST")
 var secret = os.Getenv("SECRET")
 
@@ -105,15 +106,21 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	requestParts := strings.Split(r.URL.Path, "/")
 	app := requestParts[1]
 	if _, ok := proxies[app]; ok {
+		// Normal case: path starts with app directory
 		if len(requestParts) > 2 {
 			path += strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
 		}
 		// log.Printf("app=%s path=%s", app, path)
 	} else {
+		// Naughty components case: missing app directory; try referer
 		referer, _ := url.Parse(r.Referer() + "/") //  + "/" to cater for empty Referer
 		app = strings.Split(referer.Path, "/")[1]
 		path = r.URL.Path
 		// log.Printf("referer app=%s path=%s", app, path)
+	}
+	if _, ok := proxies[app]; !ok {
+		// Last resort (also helping old single-proxy clients): try DOCKER_USER
+		app = user
 	}
 	for key, target := range proxies[app] {
 		if path+"/" == key {
