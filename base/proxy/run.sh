@@ -44,7 +44,7 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-network=docker4gis
+network="${container}"
 .run/network.sh "${network}"
 
 volume="${container}"
@@ -66,6 +66,8 @@ docker run --name "${container}" \
 
 for network in $(docker container exec "${container}" ls /config)
 do
-	.run/network.sh "${network}"
-	docker network connect "${network}" "${container}"
+	if docker network inspect "${network}" 1>/dev/null 2>&1
+	then
+		docker network connect "${network}" "${container}"
+	fi
 done
