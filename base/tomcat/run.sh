@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ $1 ]
-then
-	TOMCAT_PORT="$1"
-	shift 1
-else
-	TOMCAT_PORT="${TOMCAT_PORT}"
-fi
+TOMCAT_PORT="${TOMCAT_PORT:-9090}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"

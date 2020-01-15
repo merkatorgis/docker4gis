@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-app_port="${1:-8080}"
-admin_port="${2:-4848}"
+app_port="${1:-9090}"
+admin_port="${2:-5858}"
 shift 2
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
@@ -22,7 +22,7 @@ docker run --name "${container}" \
 	--network "${DOCKER_USER}-net" \
 	--mount source="${container}",target=/host \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
-	-p "${app_port}":8080 \
-	-p "${admin_port}":4848 \
+	$(.run/port.sh "${app_port}" 8080) \
+	$(.run/port.sh "${admin_port}" 4848) \
 	"$@" \
 	-d "${image}"

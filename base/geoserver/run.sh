@@ -36,6 +36,6 @@ docker run --name "${container}" \
 	--network "${DOCKER_USER}-net" \
 	-e "GEOSERVER_USER=${GEOSERVER_USER}" \
 	-e "GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD}" \
-	-p "${GEOSERVER_PORT}":8080 \
+	$(.run/port.sh "${GEOSERVER_PORT}" 8080) \
 	"$@" \
 	-d "${image}"

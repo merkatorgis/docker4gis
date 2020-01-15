@@ -27,7 +27,7 @@ fi
 docker run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-	-p $POSTFIX_PORT:25 \
-		${destination} \
+	$(.run/port.sh "${POSTFIX_PORT}" 25) \
+	${destination} \
 	--network "${DOCKER_USER}-net" \
 	-d $image

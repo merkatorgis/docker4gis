@@ -40,7 +40,7 @@ docker run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="$container",target=/var/lib/postgresql/data \
-	-p $POSTGIS_PORT:5432 \
+	$(.run/port.sh "${POSTGIS_PORT}" 5432) \
 	--network "${DOCKER_USER}-net" \
 	-d $image
 

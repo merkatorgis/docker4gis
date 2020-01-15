@@ -65,13 +65,13 @@ component()
 
 component postgis   "${DOCKER_BASE}/postgis" # username password dbname
 component mysql     "${DOCKER_BASE}/mysql" # password dbname
-# component api       "${DOCKER_BASE}/glassfish" 9090 5858
-# component api       "${DOCKER_BASE}/tomcat" # 9090
+# component api       "${DOCKER_BASE}/glassfish"
+# component api       "${DOCKER_BASE}/tomcat"
 component api       "${DOCKER_BASE}/postgrest"
 component swagger   "${DOCKER_BASE}/swagger"
 component geoserver "${DOCKER_BASE}/geoserver"
 component mapserver "${DOCKER_BASE}/mapserver"
-component mapproxy  "${DOCKER_BASE}/mapproxy" 58081
+component mapproxy  "${DOCKER_BASE}/mapproxy"
 component mapfish   "${DOCKER_BASE}/mapfish"
 component postfix   "${DOCKER_BASE}/postfix"
 component cron      "${DOCKER_BASE}/cron"

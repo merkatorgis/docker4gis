@@ -36,7 +36,7 @@ docker container run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="$container",target=/var/lib/mysql \
-	-p $MYSQL_PORT:3306 \
+	$(.run/port.sh "${MYSQL_PORT}" 3306) \
 	--network "${DOCKER_USER}-net" \
 	-d $image
 

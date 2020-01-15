@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ $1 ]
-then
-	MAPPROXY_PORT="$1"
-	shift 1
-else
-	MAPPROXY_PORT="${MAPPROXY_PORT}"
-fi
+MAPPROXY_PORT="${MAPPROXY_PORT:-58081}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
