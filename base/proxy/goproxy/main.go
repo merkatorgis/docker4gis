@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -25,9 +26,18 @@ func init() {
 		Director:       passThroughDirector,
 		ModifyResponse: modifyResponse,
 	}
+	transportInsecure := http.DefaultTransport.(*http.Transport)
+	configInsecure := &tls.Config{InsecureSkipVerify: true}
+	transportInsecure.TLSClientConfig = configInsecure
+	// reverseProxyInsecure = &httputil.ReverseProxy{
+	// 	Director:       reverseDirector,
+	// 	ModifyResponse: modifyResponse,
+	// 	Transport:      transportInsecure,
+	// }
 	reverseProxy = &httputil.ReverseProxy{
 		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
+		Transport:      transportInsecure,
 	}
 
 	log.Printf("homedest: %s", homedest)
