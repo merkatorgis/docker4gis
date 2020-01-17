@@ -13,13 +13,18 @@ import (
 )
 
 type proxy struct {
-	secret      string
 	target      *url.URL
 	impersonate bool
 	insecure    bool
 }
 
-var proxies = make(map[string]map[string]*proxy)
+type config struct {
+	secret   string
+	homedest string
+	proxies  map[string]*proxy
+}
+
+var configs = make(map[string]*config)
 var host = os.Getenv("PROXY_HOST")
 var user = os.Getenv("DOCKER_USER")
 var homedest = os.Getenv("HOMEDEST")
@@ -62,17 +67,18 @@ func main() {
 		}
 		defer file.Close()
 
-		proxies[app] = make(map[string]*proxy)
+		configs[app] = &config{
+			proxies: make(map[string]*proxy),
+		}
 		scanner := bufio.NewScanner(file)
-		secret := ""
 		for scanner.Scan() {
 			split := strings.Split(scanner.Text(), "=")
 			if len(split) == 2 {
 				key, value := split[0], split[1]
 				if key == "secret" {
-					secret = value
+					configs[app].secret = value
 				} else {
-					defineProxy(app, secret, key, value)
+					defineProxy(app, key, value)
 				}
 			}
 		}
@@ -112,7 +118,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func defineProxy(app, secret, key, value string) {
+func defineProxy(app, key, value string) {
 	impersonate, insecure := false, false
 	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
 		split := strings.SplitN(value, ",", 2)
@@ -131,8 +137,7 @@ func defineProxy(app, secret, key, value string) {
 		target.Path = "/"
 	}
 	key = "/" + key + "/"
-	proxies[app][key] = &proxy{
-		secret:      secret,
+	configs[app].proxies[key] = &proxy{
 		target:      target,
 		impersonate: impersonate,
 		insecure:    insecure,
@@ -144,7 +149,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	path := "/"
 	requestParts := strings.Split(r.URL.Path, "/")
 	app := requestParts[1]
-	if _, ok := proxies[app]; ok {
+	if _, ok := configs[app]; ok {
 		// Normal case: path starts with app directory
 		if len(requestParts) > 2 {
 			path += strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
@@ -157,67 +162,69 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 		path = r.URL.Path
 		log.Printf("Trying referer: app=%s path=%s", app, path)
 	}
-	if _, ok := proxies[app]; !ok {
+	if _, ok := configs[app]; !ok {
 		// Last resort (also helping old single-proxy clients): try DOCKER_USER
 		app = user
 		log.Printf("Trying DOCKER_USER: app=%s path=%s", app, path)
 	}
-	for key, proxy := range proxies[app] {
-		if path+"/" == key {
-			path = path + "/"
-		}
-		if strings.HasPrefix(path, key) {
-			if (key == "/geoserver/" || key == "/mapfish/") && r.FormValue("secret") != proxy.secret {
-				log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), proxy.secret)
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
+	if config, ok := configs[app]; !ok {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	} else {
+		for key, proxy := range config.proxies {
+			if path+"/" == key {
+				path = path + "/"
 			}
-			target := proxy.target
-			r.URL.Scheme = target.Scheme
-			r.URL.Host = target.Host
-			r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
-			if proxy.impersonate {
-				r.Host = host
-				if target.Port() != "" {
-					r.Host += ":" + target.Port()
+			if strings.HasPrefix(path, key) {
+				if (key == "/geoserver/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
+					log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), config.secret)
+					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				} else {
+					target := proxy.target
+					r.URL.Scheme = target.Scheme
+					r.URL.Host = target.Host
+					r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
+					if proxy.impersonate {
+						r.Host = host
+						if target.Port() != "" {
+							r.Host += ":" + target.Port()
+						}
+					} else {
+						r.Host = target.Host
+					}
+					if proxy.insecure {
+						reverseProxyInsecure.ServeHTTP(w, r)
+					} else {
+						reverseProxy.ServeHTTP(w, r)
+					}
 				}
-			} else {
-				r.Host = target.Host
 			}
-			if proxy.insecure {
-				reverseProxyInsecure.ServeHTTP(w, r)
-			} else {
-				reverseProxy.ServeHTTP(w, r)
-			}
-			return
+			// if strings.HasPrefix(r.URL.Path, key) {
+			// 	r.URL.Scheme = target.Scheme
+			// 	r.URL.Host = target.Host
+			// 	r.URL.Path = target.Path + strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
+			// 	referer, _ := url.Parse(r.Referer())
+			// 	if key == "/api/" {
+			// 		r.Host = host
+			// 		if target.Port() != "" {
+			// 			r.Host += ":" + target.Port()
+			// 		}
+			// 		reverseProxyInsecure.ServeHTTP(w, r)
+			// 	} else if (r.FormValue("secret") != secret) && (key == "/print/" ||
+			// 		key == "/mapfish/" ||
+			// 		(key == "/geoserver/" && r.FormValue("service") != "" && !strings.HasPrefix(referer.Path, key))) {
+			// 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			// 	} else {
+			// 		r.Host = target.Host
+			// 		if strings.Contains(target.Hostname(), ".") {
+			// 			reverseProxy.ServeHTTP(w, r)
+			// 		} else {
+			// 			reverseProxyInsecure.ServeHTTP(w, r)
+			// 		}
+			// 	}
+			// 	return
+			// }
 		}
-		// if strings.HasPrefix(r.URL.Path, key) {
-		// 	r.URL.Scheme = target.Scheme
-		// 	r.URL.Host = target.Host
-		// 	r.URL.Path = target.Path + strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
-		// 	referer, _ := url.Parse(r.Referer())
-		// 	if key == "/api/" {
-		// 		r.Host = host
-		// 		if target.Port() != "" {
-		// 			r.Host += ":" + target.Port()
-		// 		}
-		// 		reverseProxyInsecure.ServeHTTP(w, r)
-		// 	} else if (r.FormValue("secret") != secret) && (key == "/print/" ||
-		// 		key == "/mapfish/" ||
-		// 		(key == "/geoserver/" && r.FormValue("service") != "" && !strings.HasPrefix(referer.Path, key))) {
-		// 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		// 	} else {
-		// 		r.Host = target.Host
-		// 		if strings.Contains(target.Hostname(), ".") {
-		// 			reverseProxy.ServeHTTP(w, r)
-		// 		} else {
-		// 			reverseProxyInsecure.ServeHTTP(w, r)
-		// 		}
-		// 	}
-		// 	return
-		// }
 	}
-	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
 func reverseDirector(r *http.Request) {
