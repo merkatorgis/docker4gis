@@ -8,7 +8,6 @@ container=docker4gis-proxy
 image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy"
 
 echo; echo "Building ${image}"
-docker container rm -f "${container}" 2>/dev/null
 
 HERE=$(dirname "$0")
 
@@ -25,6 +24,7 @@ if [ -d goproxy ]; then # building base
 		docker image build -t "${image}" .
 	fi
 else # building upon base
+	docker container rm -f "${container}" 2>/dev/null
 	mkdir -p conf
 	cp -r "${HERE}/../plugins" "conf"
 	docker image build -t "${image}" .
