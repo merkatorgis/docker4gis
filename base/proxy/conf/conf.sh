@@ -1,6 +1,7 @@
 #!/bin/sh
 
 DOCKER_USER="${DOCKER_USER}"
+SECRET="${SECRET}"
 API="${API}"
 APP="${APP}"
 
@@ -11,7 +12,8 @@ MAPSERVER="http://${DOCKER_USER}-mapserver"
 MAPPROXY="http://${DOCKER_USER}-mapproxy"
 SWAGGER="http://${DOCKER_USER}-swagger:8080"
 
-echo "api=${API}
+echo "secret=${SECRET}
+api=${API}
 app=${APP}
 static=${APP}static/
 favicon.ico=${APP}favicon.ico

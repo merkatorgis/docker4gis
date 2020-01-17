@@ -13,6 +13,7 @@ import (
 )
 
 type proxy struct {
+	secret      string
 	target      *url.URL
 	impersonate bool
 	insecure    bool
@@ -22,7 +23,6 @@ var proxies = make(map[string]map[string]*proxy)
 var host = os.Getenv("PROXY_HOST")
 var user = os.Getenv("DOCKER_USER")
 var homedest = os.Getenv("HOMEDEST")
-var secret = os.Getenv("SECRET")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
 var reverseProxyInsecure *httputil.ReverseProxy
@@ -64,10 +64,16 @@ func main() {
 
 		proxies[app] = make(map[string]*proxy)
 		scanner := bufio.NewScanner(file)
+		secret := ""
 		for scanner.Scan() {
 			split := strings.Split(scanner.Text(), "=")
 			if len(split) == 2 {
-				defineProxy(app, split[0], split[1])
+				key, value := split[0], split[1]
+				if key == "secret" {
+					secret = value
+				} else {
+					defineProxy(app, secret, key, value)
+				}
 			}
 		}
 
@@ -106,7 +112,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func defineProxy(app, key, value string) {
+func defineProxy(app, secret, key, value string) {
 	impersonate, insecure := false, false
 	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
 		split := strings.SplitN(value, ",", 2)
@@ -126,6 +132,7 @@ func defineProxy(app, key, value string) {
 	}
 	key = "/" + key + "/"
 	proxies[app][key] = &proxy{
+		secret:      secret,
 		target:      target,
 		impersonate: impersonate,
 		insecure:    insecure,
@@ -160,6 +167,11 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 			path = path + "/"
 		}
 		if strings.HasPrefix(path, key) {
+			if (key == "/geoserver/" || key == "/mapfish/") && r.FormValue("secret") != proxy.secret {
+				log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), proxy.secret)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
 			target := proxy.target
 			r.URL.Scheme = target.Scheme
 			r.URL.Host = target.Host
