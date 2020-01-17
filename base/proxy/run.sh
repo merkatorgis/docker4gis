@@ -3,7 +3,6 @@ set -e
 
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
-HOST_NAME="${HOST_NAME:-$(hostname)}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
@@ -61,7 +60,7 @@ docker run --name "${container}" \
 	--mount source="${volume}",target=/config \
 	-p $PROXY_PORT:443 \
 	--network "${network}" \
-	--add-host="${HOST_NAME}":$(getip $(hostname)) \
+	--add-host=$(hostname):$(getip $(hostname)) \
 	-d $image proxy	"$@"
 
 for network in $(docker container exec "${container}" ls /config)

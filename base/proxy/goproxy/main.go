@@ -12,14 +12,20 @@ import (
 	"strings"
 )
 
+type proxy struct {
+	target      *url.URL
+	impersonate bool
+	insecure    bool
+}
+
+var proxies = make(map[string]map[string]*proxy)
 var host = os.Getenv("PROXY_HOST")
 var user = os.Getenv("DOCKER_USER")
 var homedest = os.Getenv("HOMEDEST")
 var secret = os.Getenv("SECRET")
-
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
-var proxies = make(map[string]map[string]*url.URL)
+var reverseProxyInsecure *httputil.ReverseProxy
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
@@ -29,15 +35,14 @@ func init() {
 	transportInsecure := http.DefaultTransport.(*http.Transport)
 	configInsecure := &tls.Config{InsecureSkipVerify: true}
 	transportInsecure.TLSClientConfig = configInsecure
-	// reverseProxyInsecure = &httputil.ReverseProxy{
-	// 	Director:       reverseDirector,
-	// 	ModifyResponse: modifyResponse,
-	// 	Transport:      transportInsecure,
-	// }
-	reverseProxy = &httputil.ReverseProxy{
+	reverseProxyInsecure = &httputil.ReverseProxy{
 		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
 		Transport:      transportInsecure,
+	}
+	reverseProxy = &httputil.ReverseProxy{
+		Director:       reverseDirector,
+		ModifyResponse: modifyResponse,
 	}
 
 	log.Printf("homedest: %s", homedest)
@@ -57,7 +62,7 @@ func main() {
 		}
 		defer file.Close()
 
-		proxies[app] = make(map[string]*url.URL)
+		proxies[app] = make(map[string]*proxy)
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			split := strings.Split(scanner.Text(), "=")
@@ -101,14 +106,31 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func defineProxy(app, key, target_ string) {
-	target, _ := url.Parse(target_)
+func defineProxy(app, key, value string) {
+	impersonate, insecure := false, false
+	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
+		split := strings.SplitN(value, ",", 2)
+		impersonate = (split[0] == "impersonate")
+		insecure = (split[0] == "insecure")
+		value = split[1]
+	}
+	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
+		split := strings.SplitN(value, ",", 2)
+		impersonate = (split[0] == "impersonate")
+		insecure = (split[0] == "insecure")
+		value = split[1]
+	}
+	target, _ := url.Parse(value)
 	if target.Path == "" {
 		target.Path = "/"
 	}
 	key = "/" + key + "/"
-	proxies[app][key] = target
-	log.Printf("reversing: %s%s -> %v", app, key, target)
+	proxies[app][key] = &proxy{
+		target:      target,
+		impersonate: impersonate,
+		insecure:    insecure,
+	}
+	log.Printf("reversing: %s%s -> %v impersonate=%t insecure=%t", app, key, target, impersonate, insecure)
 }
 
 func reverse(w http.ResponseWriter, r *http.Request) {
@@ -126,26 +148,35 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 		referer, _ := url.Parse(r.Referer() + "/") //  + "/" to cater for empty Referer
 		app = strings.Split(referer.Path, "/")[1]
 		path = r.URL.Path
-		// log.Printf("referer app=%s path=%s", app, path)
+		log.Printf("Trying referer: app=%s path=%s", app, path)
 	}
 	if _, ok := proxies[app]; !ok {
 		// Last resort (also helping old single-proxy clients): try DOCKER_USER
 		app = user
+		log.Printf("Trying DOCKER_USER: app=%s path=%s", app, path)
 	}
-	for key, target := range proxies[app] {
+	for key, proxy := range proxies[app] {
 		if path+"/" == key {
 			path = path + "/"
 		}
 		if strings.HasPrefix(path, key) {
+			target := proxy.target
 			r.URL.Scheme = target.Scheme
 			r.URL.Host = target.Host
 			r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
-			// r.Host = target.Host
-			r.Host = host
-			if target.Port() != "" {
-				r.Host += ":" + target.Port()
+			if proxy.impersonate {
+				r.Host = host
+				if target.Port() != "" {
+					r.Host += ":" + target.Port()
+				}
+			} else {
+				r.Host = target.Host
 			}
-			reverseProxy.ServeHTTP(w, r)
+			if proxy.insecure {
+				reverseProxyInsecure.ServeHTTP(w, r)
+			} else {
+				reverseProxy.ServeHTTP(w, r)
+			}
 			return
 		}
 		// if strings.HasPrefix(r.URL.Path, key) {
@@ -178,7 +209,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 }
 
 func reverseDirector(r *http.Request) {
-	log.Printf("%s %s reverse %v", r.RemoteAddr, r.Method, r.URL)
+	log.Printf("%s %s reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	if _, ok := r.Header["User-Agent"]; !ok {
 		// explicitly disable User-Agent so it's not set to default value
 		r.Header.Set("User-Agent", "")
