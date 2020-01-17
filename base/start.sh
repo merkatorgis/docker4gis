@@ -14,9 +14,8 @@ then
 		then
 			exit 0
 		fi
-	else
-		docker container rm -f "${container}"
 	fi
+	docker container rm -f "${container}"
 fi
 
 exit 1

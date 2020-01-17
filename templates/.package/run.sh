@@ -15,7 +15,7 @@ export PROXY_PORT="${PROXY_PORT:-443}"
 export SECRET='xxx'
 export APP="${APP}"
 export API="${API}"
-export HOMEDEST="${HOMEDEST:-/app}"
+export HOMEDEST="${HOMEDEST:-/${DOCKER_USER}/app}"
 
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 if [ "${DOCKER_BINDS_DIR}" == '' ]; then

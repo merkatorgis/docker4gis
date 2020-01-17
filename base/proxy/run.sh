@@ -3,6 +3,7 @@ set -e
 
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
+PROXY_PORT_HTTP="${PROXY_PORT_HTTP:-80}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
@@ -10,24 +11,15 @@ DOCKER_TAG="${DOCKER_TAG}"
 DOCKER_ENV="${DOCKER_ENV}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-repo=$(basename "$0")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+# repo=$(basename "$0")
+container=docker4gis-proxy
+image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy:${DOCKER_TAG}"
 
-API_CONTAINER="${API_CONTAINER:-$DOCKER_USER-api}"
-APP_CONTAINER="${APP_CONTAINER:-$DOCKER_USER-app}"
-RESOURCES_CONTAINER="${RESOURCES_CONTAINER:-$DOCKER_USER-resources}"
-GEOSERVER_CONTAINER="${GEOSERVER_CONTAINER:-$DOCKER_USER-geoserver}"
-MAPFISH_CONTAINER="${MAPFISH_CONTAINER:-$DOCKER_USER-mapfish}"
-
-API="${API:-http://${API_CONTAINER}:8080/}"
-APP="${APP:-http://${APP_CONTAINER}/}"
-RESOURCES="${RESOURCES:-http://${RESOURCES_CONTAINER}/}"
 HOMEDEST="${HOMEDEST}"
-NGR="${NGR:-https://geodata.nationaalgeoregister.nl}"
-GEOSERVER="${GEOSERVER:-http://${GEOSERVER_CONTAINER}:8080/geoserver/}"
-MAPFISH="${MAPFISH:-http://${MAPFISH_CONTAINER}:8080/}"
 SECRET="${SECRET}"
+
+API="${API:-http://${DOCKER_USER}-api:8080}"
+APP="${APP:-http://${DOCKER_USER}-app}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
@@ -53,19 +45,34 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-docker run --name $container \
+network="${container}"
+.run/network.sh "${network}"
+
+volume="${container}"
+docker volume create "${volume}"
+
+PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
+PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
+
+docker run --name "${container}" \
 	-e PROXY_HOST=$PROXY_HOST \
-	-e API=$API \
-	-e APP=$APP \
-	-e RESOURCES=$RESOURCES \
+	-e PROXY_PORT=$PROXY_PORT \
 	-e HOMEDEST=$HOMEDEST \
-	-e NGR=$NGR \
-	-e GEOSERVER=$GEOSERVER \
-	-e MAPFISH=$MAPFISH \
+	-e DOCKER_USER=$DOCKER_USER \
 	-e SECRET=$SECRET \
-	-v $DOCKER_BINDS_DIR/certificates:/certificates \
-	-p $PROXY_PORT:443 \
-	--network "${DOCKER_USER}-net" \
+	-e API=${API} \
+	-e APP=${APP} \
+	--mount source="${volume}",target=/config \
+	-p "${PROXY_PORT}":443 \
+	-p "${PROXY_PORT_HTTP}":80 \
+	--network "${network}" \
 	--add-host=$(hostname):$(getip $(hostname)) \
-	--add-host="${PROXY_HOST}":$(getip $(urlhost "${API}")) \
-	-d $image proxy "$@"
+	-d $image proxy	"$@"
+
+for network in $(docker container exec "${container}" ls /config)
+do
+	if docker network inspect "${network}" 1>/dev/null 2>&1
+	then
+		docker network connect "${network}" "${container}"
+	fi
+done
