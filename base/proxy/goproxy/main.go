@@ -193,32 +193,8 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						reverseProxy.ServeHTTP(w, r)
 					}
 				}
+				break
 			}
-			// if strings.HasPrefix(r.URL.Path, key) {
-			// 	r.URL.Scheme = target.Scheme
-			// 	r.URL.Host = target.Host
-			// 	r.URL.Path = target.Path + strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
-			// 	referer, _ := url.Parse(r.Referer())
-			// 	if key == "/api/" {
-			// 		r.Host = host
-			// 		if target.Port() != "" {
-			// 			r.Host += ":" + target.Port()
-			// 		}
-			// 		reverseProxyInsecure.ServeHTTP(w, r)
-			// 	} else if (r.FormValue("secret") != secret) && (key == "/print/" ||
-			// 		key == "/mapfish/" ||
-			// 		(key == "/geoserver/" && r.FormValue("service") != "" && !strings.HasPrefix(referer.Path, key))) {
-			// 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			// 	} else {
-			// 		r.Host = target.Host
-			// 		if strings.Contains(target.Hostname(), ".") {
-			// 			reverseProxy.ServeHTTP(w, r)
-			// 		} else {
-			// 			reverseProxyInsecure.ServeHTTP(w, r)
-			// 		}
-			// 	}
-			// 	return
-			// }
 		}
 	}
 }
