@@ -13,5 +13,4 @@ EXPOSE 80 443
 ENTRYPOINT ["/entrypoint"]
 CMD ["proxy"]
 
-ONBUILD COPY conf /tmp/conf
-ONBUILD COPY conf/certificates /certificates
+ONBUILD ADD conf /tmp/conf
