@@ -1,7 +1,6 @@
 #!/bin/bash
 
 host_port=$1
-container_port=$2
 
 if [ ${host_port} ]
 then
@@ -10,5 +9,5 @@ then
 	do
 		host_port=$((host_port + 1))
 	done
-	echo "-p ${host_port}:${container_port}"
+	echo "${host_port}"
 fi

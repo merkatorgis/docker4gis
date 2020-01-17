@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-TOMCAT_PORT="${TOMCAT_PORT:-9090}"
-
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
 DOCKER_TAG="${DOCKER_TAG}"
@@ -19,6 +17,8 @@ mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
+TOMCAT_PORT=$(.run/port.sh "${TOMCAT_PORT:-9090}")
+
 docker volume create "${container}"
 docker container run \
 	--name $container \
@@ -28,6 +28,6 @@ docker container run \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--network "${DOCKER_USER}" \
-	$(.run/port.sh "${TOMCAT_PORT}" 8080) \
+	-p "${TOMCAT_PORT}":8080 \
 	"$@" \
 	-d $image

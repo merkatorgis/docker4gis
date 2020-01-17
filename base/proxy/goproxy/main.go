@@ -26,6 +26,7 @@ type config struct {
 
 var configs = make(map[string]*config)
 var host = os.Getenv("PROXY_HOST")
+var port = os.Getenv("PROXY_PORT")
 var user = os.Getenv("DOCKER_USER")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
@@ -90,8 +91,9 @@ func main() {
 
 	// Redirect http to https
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s http->https %s", r.RemoteAddr, r.Method, r.URL.String())
 		url := r.URL
-		url.Host = r.Host
+		url.Host = host + ":" + port
 		url.Scheme = "https"
 		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 	}))
@@ -174,7 +176,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 			}
 			if strings.HasPrefix(path, key) {
 				if (key == "/geoserver/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
-					log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), config.secret)
+					// log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), config.secret)
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				} else {
 					target := proxy.target

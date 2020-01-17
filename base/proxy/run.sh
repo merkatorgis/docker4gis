@@ -3,6 +3,7 @@ set -e
 
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
+PROXY_PORT_HTTP="${PROXY_PORT_HTTP:-80}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
@@ -50,15 +51,20 @@ network="${container}"
 volume="${container}"
 docker volume create "${volume}"
 
+PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
+PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
+
 docker run --name "${container}" \
 	-e PROXY_HOST=$PROXY_HOST \
+	-e PROXY_PORT=$PROXY_PORT \
 	-e HOMEDEST=$HOMEDEST \
 	-e DOCKER_USER=$DOCKER_USER \
 	-e SECRET=$SECRET \
 	-e API=${API} \
 	-e APP=${APP} \
 	--mount source="${volume}",target=/config \
-	-p $PROXY_PORT:443 \
+	-p "${PROXY_PORT}":443 \
+	-p "${PROXY_PORT_HTTP}":80 \
 	--network "${network}" \
 	--add-host=$(hostname):$(getip $(hostname)) \
 	-d $image proxy	"$@"
