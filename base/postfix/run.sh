@@ -11,7 +11,6 @@ repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-POSTFIX_PORT="${POSTFIX_PORT:-25}"
 POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
@@ -24,10 +23,12 @@ if [ "${POSTFIX_DESTINATION}" != '' ]; then
 	destination="-e DESTINATION=${POSTFIX_DESTINATION}"
 fi
 
+POSTFIX_PORT=$(.run/port.sh "${POSTFIX_PORT:-25}")
+
 docker run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-	-p $POSTFIX_PORT:25 \
-		${destination} \
-	--network "${DOCKER_USER}-net" \
+	-p "${POSTFIX_PORT}":25 \
+	${destination} \
+	--network "${DOCKER_USER}" \
 	-d $image

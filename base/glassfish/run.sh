@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-app_port="${1:-8080}"
-admin_port="${2:-4848}"
-shift 2
-
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
 DOCKER_TAG="${DOCKER_TAG}"
@@ -15,11 +11,14 @@ repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
+app_port=$(.run/port.sh "${app_port:-9090}")
+admin_port=$(.run/port.sh "${admin_port:-5858}")
+
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker volume create "${container}"
 docker run --name "${container}" \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	--mount source="${container}",target=/host \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-p "${app_port}":8080 \

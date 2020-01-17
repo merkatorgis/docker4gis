@@ -3,8 +3,8 @@ set -e
 
 if [ "$1" = 'proxy' ]; then
 	shift 1
-	cp -r /tmp/conf/certificates/ /
-	exec /goproxy "$@"
+	/conf.sh "$@"
+	exec /goproxy
 fi
 
 exec "$@"

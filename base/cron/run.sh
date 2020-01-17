@@ -25,7 +25,7 @@ docker run --name $container \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
-	--network "${DOCKER_USER}-net" \
+	--network "${DOCKER_USER}" \
 	-e "GEOSERVER_CONTAINER=${GEOSERVER_CONTAINER}" \
 	-e "GEOSERVER_USER=${GEOSERVER_USER}" \
 	-e "GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD}" \
