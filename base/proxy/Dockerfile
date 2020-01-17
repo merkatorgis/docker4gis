@@ -8,9 +8,7 @@ COPY conf/entrypoint /entrypoint
 COPY conf/conf.sh /conf.sh
 COPY goproxy/goproxy /goproxy
 
-RUN mv /tmp/conf/entrypoint/* /
-
-EXPOSE 8080
+EXPOSE 80 443
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["proxy"]
