@@ -27,7 +27,6 @@ type config struct {
 var configs = make(map[string]*config)
 var host = os.Getenv("PROXY_HOST")
 var user = os.Getenv("DOCKER_USER")
-var homedest = os.Getenv("HOMEDEST")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
 var reverseProxyInsecure *httputil.ReverseProxy
@@ -49,8 +48,6 @@ func init() {
 		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
 	}
-
-	log.Printf("homedest: %s", homedest)
 }
 
 func main() {
@@ -77,6 +74,9 @@ func main() {
 				key, value := split[0], split[1]
 				if key == "secret" {
 					configs[app].secret = value
+				} else if key == "homedest" {
+					configs[app].homedest = value
+					log.Printf("app: %s, homedest: %s", app, value)
 				} else {
 					defineProxy(app, key, value)
 				}
@@ -107,12 +107,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept")
-	} else if r.URL.Path == "/" {
-		if r.URL.Query().Get("url") == "" && homedest != "" {
-			http.Redirect(w, r, homedest, http.StatusFound)
-		} else {
-			passThroughProxy.ServeHTTP(w, r)
-		}
 	} else {
 		reverse(w, r)
 	}
@@ -169,6 +163,8 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	}
 	if config, ok := configs[app]; !ok {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	} else if path == "/" {
+		http.Redirect(w, r, config.homedest, http.StatusFound)
 	} else {
 		for key, proxy := range config.proxies {
 			if path+"/" == key {

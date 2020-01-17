@@ -2,6 +2,7 @@
 
 DOCKER_USER="${DOCKER_USER}"
 SECRET="${SECRET}"
+HOMEDEST="${HOMEDEST}"
 API="${API}"
 APP="${APP}"
 
@@ -13,6 +14,7 @@ MAPPROXY="http://${DOCKER_USER}-mapproxy"
 SWAGGER="http://${DOCKER_USER}-swagger:8080"
 
 echo "secret=${SECRET}
+homedest=${HOMEDEST}
 api=${API}
 app=${APP}
 static=${APP}static/
