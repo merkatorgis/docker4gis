@@ -36,6 +36,10 @@ func init() {
 		Director:       passThroughDirector,
 		ModifyResponse: modifyResponse,
 	}
+	reverseProxy = &httputil.ReverseProxy{
+		Director:       reverseDirector,
+		ModifyResponse: modifyResponse,
+	}
 	transportInsecure := http.DefaultTransport.(*http.Transport)
 	configInsecure := &tls.Config{InsecureSkipVerify: true}
 	transportInsecure.TLSClientConfig = configInsecure
@@ -43,10 +47,6 @@ func init() {
 		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
 		Transport:      transportInsecure,
-	}
-	reverseProxy = &httputil.ReverseProxy{
-		Director:       reverseDirector,
-		ModifyResponse: modifyResponse,
 	}
 }
 
@@ -107,6 +107,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept")
+	} else if r.URL.Path == "/" && r.URL.Query().Get("url") != "" {
+		passThroughProxy.ServeHTTP(w, r)
 	} else {
 		reverse(w, r)
 	}
