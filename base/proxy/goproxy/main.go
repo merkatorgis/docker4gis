@@ -175,7 +175,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 				path = path + "/"
 			}
 			if strings.HasPrefix(path, key) {
-				if (key == "/geoserver/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
+				if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
 					// log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), config.secret)
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				} else {
