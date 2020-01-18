@@ -45,6 +45,8 @@ urlhost()
 	echo "${1}" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
+mkdir -p "${DOCKER_BINDS_DIR}/certificates"
+
 network="${container}"
 .run/network.sh "${network}"
 
@@ -62,6 +64,7 @@ docker run --name "${container}" \
 	-e SECRET=$SECRET \
 	-e API=${API} \
 	-e APP=${APP} \
+	-v $DOCKER_BINDS_DIR/certificates:/certificates \
 	--mount source="${volume}",target=/config \
 	-p "${PROXY_PORT}":443 \
 	-p "${PROXY_PORT_HTTP}":80 \
