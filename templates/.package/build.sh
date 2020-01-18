@@ -77,7 +77,9 @@ component postfix   "${DOCKER_BASE}/postfix"
 component cron      "${DOCKER_BASE}/cron"
 component app       "${DOCKER_BASE}/serve"
 component resources "${DOCKER_BASE}/serve"
-component proxy     "${DOCKER_BASE}/proxy"
+component proxy     "${DOCKER_BASE}/proxy" \
+	# extra1=http://container1 \
+	# extra2=https://somewhere.outside.com
 
 # component extra "${here}/../extra"
 
