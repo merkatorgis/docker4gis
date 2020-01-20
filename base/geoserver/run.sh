@@ -27,6 +27,7 @@ GEOSERVER_PORT=$(.run/port.sh "${GEOSERVER_PORT:-58080}")
 
 docker volume create "${container}"
 docker run --name "${container}" \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e GEOSERVER_HOST=$GEOSERVER_HOST \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \

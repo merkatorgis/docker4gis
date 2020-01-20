@@ -27,6 +27,7 @@ POSTGIS_PORT=$(.run/port.sh "${POSTGIS_PORT:-5432}")
 
 docker volume create "$container"
 docker run --name $container \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \

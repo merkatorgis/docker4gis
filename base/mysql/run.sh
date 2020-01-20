@@ -27,6 +27,7 @@ MYSQL_PORT=$(.run/port.sh "${MYSQL_PORT:-3306}")
 
 docker volume create "$container"
 docker container run --name $container \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \

@@ -57,10 +57,10 @@ PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
 PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
 
 docker run --name "${container}" \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e PROXY_PORT=$PROXY_PORT \
 	-e HOMEDEST=$HOMEDEST \
-	-e DOCKER_USER=$DOCKER_USER \
 	-e SECRET=$SECRET \
 	-e API=${API} \
 	-e APP=${APP} \
