@@ -20,8 +20,8 @@ mkdir -p "${DOCKER_BINDS_DIR}/runner"
 TOMCAT_PORT=$(.run/port.sh "${TOMCAT_PORT:-9090}")
 
 docker volume create "${container}"
-docker container run \
-	--name $container \
+docker container run --name $container \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	--mount source="${container}",target=/host \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \

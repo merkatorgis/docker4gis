@@ -26,6 +26,7 @@ fi
 POSTFIX_PORT=$(.run/port.sh "${POSTFIX_PORT:-25}")
 
 docker run --name $container \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	-p "${POSTFIX_PORT}":25 \
