@@ -18,8 +18,8 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy:${DOCKER_TAG}"
 HOMEDEST="${HOMEDEST}"
 SECRET="${SECRET}"
 
-API="${API:-http://${DOCKER_USER}-api:8080}"
-APP="${APP:-http://${DOCKER_USER}-app}"
+API="${API:-http://${DOCKER_USER}-api:8080/}"
+APP="${APP:-http://${DOCKER_USER}-app/}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
