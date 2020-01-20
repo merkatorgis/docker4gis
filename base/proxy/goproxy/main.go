@@ -70,14 +70,15 @@ func main() {
 		}
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			split := strings.Split(scanner.Text(), "=")
+			split := strings.SplitN(scanner.Text(), "=", 2)
 			if len(split) == 2 {
 				key, value := split[0], split[1]
 				if key == "secret" {
 					configs[app].secret = value
+					log.Printf("%s.secret=%s", app, value)
 				} else if key == "homedest" {
 					configs[app].homedest = value
-					log.Printf("app: %s, homedest: %s", app, value)
+					log.Printf("%s.homedest=%s", app, value)
 				} else {
 					defineProxy(app, key, value)
 				}
@@ -117,6 +118,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func defineProxy(app, key, value string) {
+	log.Printf("/%s/%s -> %s", app, key, value)
 	impersonate, insecure := false, false
 	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
 		split := strings.SplitN(value, ",", 2)
@@ -140,7 +142,6 @@ func defineProxy(app, key, value string) {
 		impersonate: impersonate,
 		insecure:    insecure,
 	}
-	log.Printf("reversing: %s%s -> %v impersonate=%t insecure=%t", app, key, target, impersonate, insecure)
 }
 
 func reverse(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +177,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 			}
 			if strings.HasPrefix(path, key) {
 				if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
-					// log.Printf("FormValue=%s proxy.secret=%s", r.FormValue("secret"), config.secret)
+					log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				} else {
 					target := proxy.target
