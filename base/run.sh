@@ -1,7 +1,7 @@
 #!/bin/bash
 
-main_script="$1"
-tag="${2:-latest}"
+DOCKER_BASE="${DOCKER_BASE}"
 
-basedir=$(dirname "${main_script}")
-echo '' | "${basedir}/.package/run.sh" "${tag}"
+tag="${1:-latest}"
+
+echo '' | "${DOCKER_BASE}/package/run.sh" "${tag}"

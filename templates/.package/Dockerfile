@@ -1,5 +1,1 @@
-FROM alpine:3.7
-
-COPY conf /
-
-ENTRYPOINT ["top"]
+FROM docker4gis/package
