@@ -27,6 +27,8 @@ else # building upon base
 	docker container rm -f "${container}" 2>/dev/null
 	mkdir -p conf
 	cp -r "${HERE}/../plugins" "conf"
-	docker image build -t "${image}" .
+	docker image build \
+		--build-arg DOCKER_USER="${DOCKER_USER}" \
+		-t "${image}" .
 	rm -rf "conf/plugins"
 fi

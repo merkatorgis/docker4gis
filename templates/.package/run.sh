@@ -6,8 +6,8 @@ docker_tag="${1:-latest}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 export DOCKER_USER="${DOCKER_USER}"
 export DOCKER_ENV="${DOCKER_ENV}"
-
 export PROXY_HOST="${PROXY_HOST}"
+
 export SECRET="${SECRET}"
 export APP="${APP}"
 export API="${API}"

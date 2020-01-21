@@ -13,6 +13,8 @@ MAPSERVER="http://${DOCKER_USER}-mapserver"
 MAPPROXY="http://${DOCKER_USER}-mapproxy"
 SWAGGER="http://${DOCKER_USER}-swagger:8080"
 
+echo DOCKER_USER="${DOCKER_USER}"
+
 echo "secret=${SECRET}
 homedest=${HOMEDEST}
 api=${API}
