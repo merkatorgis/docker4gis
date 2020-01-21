@@ -13,6 +13,8 @@ export APP="${APP}"
 export API="${API}"
 export HOMEDEST="${HOMEDEST}"
 
+export POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
+
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 if [ ! "${DOCKER_BINDS_DIR}" ]
 then
@@ -39,6 +41,8 @@ SECRET=${SECRET}
 APP=${APP}
 API=${API}
 HOMEDEST=${HOMEDEST}
+
+POSTFIX_DESTINATION=${POSTFIX_DESTINATION}
 " | tee -a ${DOCKER_USER}.log
 
 read -n 1 -p 'Press any key to continue...'
