@@ -27,6 +27,8 @@ export APP="${APP}"
 export API="${API}"
 export HOMEDEST="${HOMEDEST}"
 
+export POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
+
 action="${1:-start}"
 shift 1
 
