@@ -5,19 +5,19 @@ docker_tag="${1:-latest}"
 
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 export DOCKER_USER="${DOCKER_USER}"
-
 export DOCKER_ENV="${DOCKER_ENV}"
-export PROXY_HOST="${PROXY_HOST}"
 
+export PROXY_HOST="${PROXY_HOST}"
 export SECRET="${SECRET}"
 export APP="${APP}"
 export API="${API}"
-export HOMEDEST="${HOMEDEST:-/${DOCKER_USER}/app}"
+export HOMEDEST="${HOMEDEST}"
 
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
-if [ "${DOCKER_BINDS_DIR}" == '' ]; then
+if [ ! "${DOCKER_BINDS_DIR}" ]
+then
 	pushd ~
-	export DOCKER_BINDS_DIR="$(pwd)/docker-binds"
+		export DOCKER_BINDS_DIR="$(pwd)/docker-binds"
 	popd
 fi
 
@@ -35,6 +35,7 @@ PROXY_HOST=${PROXY_HOST}
 DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR}
 DOCKER_REGISTRY=${DOCKER_REGISTRY}
 
+SECRET=${SECRET}
 APP=${APP}
 API=${API}
 HOMEDEST=${HOMEDEST}
