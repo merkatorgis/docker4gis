@@ -20,7 +20,7 @@ export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
 
 export MSYS_NO_PATHCONV=1
 
-export PROXY_HOST='localhost.merkator.com'
+export PROXY_HOST="localhost.merkator.com"
 export PROXY_PORT="${PROXY_PORT:-7443}"
 export SECRET="${SECRET}"
 export APP="${APP}"
@@ -59,7 +59,7 @@ then
 	# ./ex run 33282
 	# ./ex run dab57fa2c4220bf8e13f298feacf36d4d036d89c
 	# ./ex run 2.0.1
-	"${DOCKER_BASE}/run.sh" "$0" "$1"
+	"${DOCKER_BASE}/run.sh" "$1"
 elif [ "${action}" == br ]
 then
 	# Build new image for component, and run existing package.
