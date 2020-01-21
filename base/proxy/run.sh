@@ -16,10 +16,14 @@ container=docker4gis-proxy
 image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy:${DOCKER_TAG}"
 
 SECRET="${SECRET}"
+API="${API}"
+APP="${APP}"
+HOMEDEST="${HOMEDEST}"
 
-API="${API:-http://${DOCKER_USER}-api:8080/}"
-APP="${APP:-http://${DOCKER_USER}-app/}"
-HOMEDEST="${HOMEDEST:-/${DOCKER_USER}/app/}"
+secret()   { if [ "${SECRET}"   ]; then echo "-e SECRET=${SECRET}";     fi }
+api()      { if [ "${API}"      ]; then echo "-e API=${API}";           fi }
+app()      { if [ "${APP}"      ]; then echo "-e APP=${APP}";           fi }
+homedest() { if [ "${HOMEDEST}" ]; then echo "-e HOMEDEST=${HOMEDEST}"; fi }
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
@@ -56,22 +60,10 @@ docker volume create "${volume}"
 PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
 PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
 
-secret()
-{
-	if [ "${SECRET}" ]
-	then
-		echo "-e SECRET=${SECRET}"
-	fi
-}
-
 docker run --name "${container}" \
-	-e DOCKER_USER="${DOCKER_USER}" \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e PROXY_PORT=$PROXY_PORT \
-	$(secret) \
-	-e API=${API} \
-	-e APP=${APP} \
-	-e HOMEDEST=$HOMEDEST \
+	$(secret) $(api) $(app) $(homedest) \
 	-v $DOCKER_BINDS_DIR/certificates:/certificates \
 	--mount source="${volume}",target=/config \
 	-p "${PROXY_PORT}":443 \

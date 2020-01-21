@@ -22,8 +22,10 @@ export MSYS_NO_PATHCONV=1
 
 export PROXY_HOST='localhost.merkator.com'
 export PROXY_PORT="${PROXY_PORT:-7443}"
+export SECRET="${SECRET}"
 export APP="${APP}"
 export API="${API}"
+export HOMEDEST="${HOMEDEST}"
 
 action="${1:-start}"
 shift 1
