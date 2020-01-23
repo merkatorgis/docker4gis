@@ -13,6 +13,8 @@ then
 		if docker container start "${container}"
 		then
 			exit 0
+		else 
+			echo "Starting existing container failed; creating a new one..."
 		fi
 	fi
 	docker container rm -f "${container}"
