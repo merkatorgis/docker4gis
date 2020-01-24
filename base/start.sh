@@ -7,7 +7,7 @@ echo; echo "Starting $container..."
 
 if container_ls=$(docker container ls -a | grep "${container}$")
 then
-	old_image=$(echo "${container_ls}" | sed -n -e 's|\w*\s*\(\S*\).*|\1|p')
+	old_image=$(echo "${container_ls}" | awk '{print $2}')
 	if [ "${old_image}" == "${image}" ]
 	then
 		if docker container start "${container}"
