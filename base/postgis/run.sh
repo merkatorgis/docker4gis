@@ -14,9 +14,6 @@ repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-POSTGIS_PORT="${POSTGIS_PORT:-5432}"
-PROXY_HOST="${PROXY_HOST:-localhost.merkator.com}"
-PROXY_PORT="${PROXY_PORT:-8080}"
 SECRET="${SECRET}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
@@ -26,8 +23,11 @@ mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
+POSTGIS_PORT=$(.run/port.sh "${POSTGIS_PORT:-5432}")
+
 docker volume create "$container"
 docker run --name $container \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
@@ -40,8 +40,8 @@ docker run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="$container",target=/var/lib/postgresql/data \
-	-p $POSTGIS_PORT:5432 \
-	--network "${DOCKER_USER}-net" \
+	-p "${POSTGIS_PORT}":5432 \
+	--network "${DOCKER_USER}" \
 	-d $image
 
 # wait for db

@@ -13,7 +13,6 @@ repo=$(basename "$0")
 container="${DOCKER_USER}-${repo}"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
-MYSQL_PORT="${MYSQL_PORT:-3306}"
 SECRET="${SECRET}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
@@ -22,10 +21,13 @@ mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
-gateway=$(docker network inspect "${DOCKER_USER}-net" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
+gateway=$(docker network inspect "${DOCKER_USER}" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
+
+MYSQL_PORT=$(.run/port.sh "${MYSQL_PORT:-3306}")
 
 docker volume create "$container"
 docker container run --name $container \
+	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
@@ -36,8 +38,8 @@ docker container run --name $container \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
 	--mount source="$container",target=/var/lib/mysql \
-	-p $MYSQL_PORT:3306 \
-	--network "${DOCKER_USER}-net" \
+	-p "${MYSQL_PORT}":3306 \
+	--network "${DOCKER_USER}" \
 	-d $image
 
 # wait for db

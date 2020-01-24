@@ -3,7 +3,7 @@
 script="$1"
 shift 1
 
-log="/util/runner/log/${script}.$(date -I).log"
+log="/util/runner/log/${DOCKER_USER}/${script}.$(date -I).log"
 mkdir -p $(dirname "${log}")
 
 echo "$$ > $(date -Ins)" >> "${log}"
