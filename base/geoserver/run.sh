@@ -23,11 +23,17 @@ mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 mkdir -p "${DOCKER_BINDS_DIR}/gwc"
 
+XMS="${XMS:-256m}"
+XMX="${XMX:-2g}"
+
 GEOSERVER_PORT=$(.run/port.sh "${GEOSERVER_PORT:-58080}")
 
 docker volume create "${container}"
 docker run --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
+	-e DOCKER_ENV=$DOCKER_ENV \
+	-e XMS="${XMS}" \
+	-e XMX="${XMX}" \
 	-e GEOSERVER_HOST=$GEOSERVER_HOST \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
