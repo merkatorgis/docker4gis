@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 POSTGRES_USER="${1:-postgres}"
 POSTGRES_PASSWORD="${2:-postgres}"
@@ -23,6 +24,11 @@ mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
+postfix_domain=
+if [ "${POSTFIX_DOMAIN}" != '' ]; then
+	postfix_domain="-e POSTFIX_DOMAIN=${POSTFIX_DOMAIN}"
+fi
+
 POSTGIS_PORT=$(.run/port.sh "${POSTGIS_PORT:-5432}")
 
 docker volume create "$container"
@@ -30,6 +36,7 @@ docker container run --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
+	${postfix_domain} \
 	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
 	-e POSTGRES_DB=$POSTGRES_DB \
 	-e POSTGRES_USER=$POSTGRES_USER \
