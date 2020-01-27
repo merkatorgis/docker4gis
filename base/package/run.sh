@@ -43,6 +43,7 @@ API=${API}
 HOMEDEST=${HOMEDEST}
 
 POSTFIX_DESTINATION=${POSTFIX_DESTINATION}
+POSTFIX_DOMAIN=${POSTFIX_DOMAIN}
 " | tee -a ${DOCKER_USER}.log
 
 read -n 1 -p 'Press any key to continue...'
