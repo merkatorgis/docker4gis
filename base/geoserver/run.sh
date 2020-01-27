@@ -29,7 +29,7 @@ XMX="${XMX:-2g}"
 GEOSERVER_PORT=$(.run/port.sh "${GEOSERVER_PORT:-58080}")
 
 docker volume create "${container}"
-docker run --name "${container}" \
+docker container run --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e XMS="${XMS}" \

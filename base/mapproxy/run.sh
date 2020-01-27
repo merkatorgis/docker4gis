@@ -17,7 +17,7 @@ if .run/start.sh "${image}" "${container}"; then exit; fi
 
 MAPPROXY_PORT=$(.run/port.sh "${MAPPROXY_PORT:-58081}")
 
-docker run --name "${container}" \
+docker container run --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	--network "${DOCKER_USER}" \
 	-p "${MAPPROXY_PORT}":80 \

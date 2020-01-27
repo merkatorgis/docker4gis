@@ -16,7 +16,7 @@ if .run/start.sh "${image}" "${container}"; then exit; fi
 XMS="${XMS:-256m}"
 XMX="${XMX:-2g}"
 
-docker run --name "${container}" \
+docker container run --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e JAVA_OPTS="-Xms${XMS} -Xmx${XMX} -XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseParNewGC -XX:NewRatio=2 -XX:+AggressiveOpts" \
 	--network "${DOCKER_USER}" \
