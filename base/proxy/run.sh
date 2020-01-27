@@ -60,7 +60,7 @@ docker volume create "${volume}"
 PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
 PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
 
-docker run --name "${container}" \
+docker container run --name "${container}" \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e PROXY_PORT=$PROXY_PORT \
 	$(secret) $(api) $(app) $(homedest) \
