@@ -33,6 +33,11 @@ save()
 	repo="$1"
 	tag="${2:-true}"
 	_image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
+	if ! docker image inspect "${_image}:latest" 1>/dev/null 2>&1
+	then
+		# Component whitout an image.
+		return
+	fi
 	if [ "${DOCKER_TAG}" != latest ]
 	then
 		if "${tag}"
