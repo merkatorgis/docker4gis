@@ -172,38 +172,37 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s %s Redirect %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 			http.Redirect(w, r, config.homedest, http.StatusFound)
 			return
-		} else {
-			paths := []string{path, "/" + refererParts[2] + path}
-			for _, path := range paths {
-				for key, proxy := range config.proxies {
-					if path+"/" == key {
-						path = path + "/"
-					}
-					if strings.HasPrefix(path, key) {
-						if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
-							log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
-							http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		}
+		paths := []string{path, "/" + refererParts[2] + path}
+		for _, path := range paths {
+			for key, proxy := range config.proxies {
+				if path+"/" == key {
+					path = path + "/"
+				}
+				if strings.HasPrefix(path, key) {
+					if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
+						log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
+						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+					} else {
+						target := proxy.target
+						r.URL.Scheme = target.Scheme
+						r.URL.Host = target.Host
+						r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
+						if proxy.impersonate {
+							r.Host = host
+							if target.Port() != "" {
+								r.Host += ":" + target.Port()
+							}
 						} else {
-							target := proxy.target
-							r.URL.Scheme = target.Scheme
-							r.URL.Host = target.Host
-							r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
-							if proxy.impersonate {
-								r.Host = host
-								if target.Port() != "" {
-									r.Host += ":" + target.Port()
-								}
-							} else {
-								r.Host = target.Host
-							}
-							if proxy.insecure {
-								reverseProxyInsecure.ServeHTTP(w, r)
-							} else {
-								reverseProxy.ServeHTTP(w, r)
-							}
+							r.Host = target.Host
 						}
-						return
+						if proxy.insecure {
+							reverseProxyInsecure.ServeHTTP(w, r)
+						} else {
+							reverseProxy.ServeHTTP(w, r)
+						}
 					}
+					return
 				}
 			}
 		}
