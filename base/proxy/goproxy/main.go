@@ -145,6 +145,8 @@ func defineProxy(app, key, value string) {
 }
 
 func reverse(w http.ResponseWriter, r *http.Request) {
+	referer, _ := url.Parse(r.Referer())
+	refererParts := strings.Split(referer.Path+"//", "/") //  + "//" to cater for empty Referer
 	path := "/"
 	requestParts := strings.Split(r.URL.Path, "/")
 	app := requestParts[1]
@@ -155,10 +157,9 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 		}
 		// log.Printf("app=%s path=%s", app, path)
 	} else {
-		// Naughty components case: missing app directory; try referer
-		referer, _ := url.Parse(r.Referer() + "/") //  + "/" to cater for empty Referer
-		app = strings.Split(referer.Path, "/")[1]
-		path = r.URL.Path
+		// Naughty components case: assuming they're the root; try referer
+		app = refererParts[1]
+		path = "/" + refererParts[2] + r.URL.Path
 		log.Printf("Trying referer: app=%s path=%s", app, path)
 	}
 	if _, ok := configs[app]; !ok {
@@ -166,46 +167,53 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 		app = user
 		log.Printf("Trying DOCKER_USER: app=%s path=%s", app, path)
 	}
-	if config, ok := configs[app]; !ok {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	} else if path == "/" {
-		http.Redirect(w, r, config.homedest, http.StatusFound)
-	} else {
-		for key, proxy := range config.proxies {
-			if path+"/" == key {
-				path = path + "/"
-			}
-			if strings.HasPrefix(path, key) {
-				if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
-					log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
-					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				} else {
-					target := proxy.target
-					r.URL.Scheme = target.Scheme
-					r.URL.Host = target.Host
-					r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
-					if proxy.impersonate {
-						r.Host = host
-						if target.Port() != "" {
-							r.Host += ":" + target.Port()
-						}
-					} else {
-						r.Host = target.Host
+	if config, ok := configs[app]; ok {
+		if path == "/" || path == "//" {
+			log.Printf("%s %s Redirect %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
+			http.Redirect(w, r, config.homedest, http.StatusFound)
+			return
+		} else {
+			paths := []string{path, "/" + refererParts[2] + path}
+			for _, path := range paths {
+				for key, proxy := range config.proxies {
+					if path+"/" == key {
+						path = path + "/"
 					}
-					if proxy.insecure {
-						reverseProxyInsecure.ServeHTTP(w, r)
-					} else {
-						reverseProxy.ServeHTTP(w, r)
+					if strings.HasPrefix(path, key) {
+						if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
+							log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
+							http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+						} else {
+							target := proxy.target
+							r.URL.Scheme = target.Scheme
+							r.URL.Host = target.Host
+							r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
+							if proxy.impersonate {
+								r.Host = host
+								if target.Port() != "" {
+									r.Host += ":" + target.Port()
+								}
+							} else {
+								r.Host = target.Host
+							}
+							if proxy.insecure {
+								reverseProxyInsecure.ServeHTTP(w, r)
+							} else {
+								reverseProxy.ServeHTTP(w, r)
+							}
+						}
+						return
 					}
 				}
-				break
 			}
 		}
 	}
+	log.Printf("%s %s Not Found %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
 func reverseDirector(r *http.Request) {
-	log.Printf("%s %s reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
+	log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	if _, ok := r.Header["User-Agent"]; !ok {
 		// explicitly disable User-Agent so it's not set to default value
 		r.Header.Set("User-Agent", "")
@@ -221,7 +229,7 @@ func passThroughDirector(r *http.Request) {
 		target.RawQuery = query.Encode()
 		r.URL = target
 		r.Host = target.Host
-		log.Printf("%s %s passthrough %v", r.RemoteAddr, r.Method, r.URL)
+		log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
 	}
 }
 
