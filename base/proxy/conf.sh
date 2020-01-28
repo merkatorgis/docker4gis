@@ -32,11 +32,9 @@ resources=${RESOURCES}
 mapserver=${MAPSERVER}
 mapproxy=${MAPPROXY}
 swagger=${SWAGGER}
-swagger-ui.css=${SWAGGER}/swagger-ui.css
-swagger-ui-bundle.js=${SWAGGER}/swagger-ui-bundle.js
-swagger-ui-standalone-preset.js=${SWAGGER}/swagger-ui-standalone-preset.js
-favicon-32x32.png=${SWAGGER}/favicon-32x32.png
-favicon-16x16.png=${SWAGGER}/favicon-16x16.png
+swagger-ui.css.map=${SWAGGER}/swagger-ui.css.map
+swagger-ui-bundle.js.map=${SWAGGER}/swagger-ui-bundle.js.map
+swagger-ui-standalone-preset.js.map=${SWAGGER}/swagger-ui-standalone-preset.js.map
 " > "/config/${DOCKER_USER}"
 
 for proxy in ${@}
