@@ -6,7 +6,7 @@ RUN apk update; apk add --no-cache \
 	ttf-freefont
 
 ENV PATH=/util:$PATH \
-	JAVA_OPTS='-Xms2g -Xmx2g -XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseParNewGC -XX:NewRatio=2 -XX:+AggressiveOpts'
+	JAVA_OPTS='-XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseParNewGC -XX:NewRatio=2 -XX:+AggressiveOpts'
 
 COPY conf/plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh

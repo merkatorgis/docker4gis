@@ -17,12 +17,17 @@ mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
+XMS="${XMS:-256m}"
+XMX="${XMX:-2g}"
+
 TOMCAT_PORT=$(.run/port.sh "${TOMCAT_PORT:-9090}")
 
 docker volume create "${container}"
 docker container run --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e DOCKER_ENV=$DOCKER_ENV \
+	-e XMS="${XMS}" \
+	-e XMX="${XMX}" \
 	--mount source="${container}",target=/host \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \

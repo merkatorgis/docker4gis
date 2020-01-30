@@ -21,7 +21,7 @@ mkdir -p "${DOCKER_BINDS_DIR}/secrets"
 mkdir -p "${DOCKER_BINDS_DIR}/fileport"
 mkdir -p "${DOCKER_BINDS_DIR}/runner"
 
-docker run --name $container \
+docker container run --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-v $DOCKER_BINDS_DIR/secrets:/secrets \
 	-v $DOCKER_BINDS_DIR/fileport:/fileport \

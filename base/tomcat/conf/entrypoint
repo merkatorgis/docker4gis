@@ -23,7 +23,7 @@ then
 	fi
 
 	# run Tomcat with configured options
-	JAVA_OPTS="${JAVA_OPTS} ${EXTRA_JAVA_OPTS}" exec catalina.sh run
+	JAVA_OPTS="-Xms${XMS} -Xmx${XMX} ${JAVA_OPTS} ${EXTRA_JAVA_OPTS}" exec catalina.sh run
 fi
 
 exec "$@"
