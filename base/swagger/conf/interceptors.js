@@ -26,5 +26,19 @@ requestInterceptor: request => {\n
  if (request.headers.Authorization === null) {\n
   delete request.headers.Authorization;\n
  }\n
+ if (searchParams.has('access_token')) {\n
+  const access_token = searchParams.get('access_token');\n
+  if (access_token) {\n
+   localStorage.setItem(ACCESS_TOKEN, access_token);\n
+  } else {\n
+   localStorage.removeItem(ACCESS_TOKEN);\n
+  }\n
+  searchParams.delete('access_token');\n
+  location.replace(url.href);\n
+ }\n
+ request.headers.access_token = localStorage.getItem(ACCESS_TOKEN);\n
+ if (request.headers.access_token === null) {\n
+  delete request.headers.access_token;\n
+ }\n
  return request;\n
 },
