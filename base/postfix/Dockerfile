@@ -33,5 +33,3 @@ ENTRYPOINT ["/entrypoint"]
 CMD ["postfix"]
 
 ONBUILD ADD conf /tmp/conf
-ONBUILD ARG DOCKER_USER
-ONBUILD ENV DOCKER_USER="${DOCKER_USER}"

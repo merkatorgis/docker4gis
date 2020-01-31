@@ -14,7 +14,5 @@ HERE=$(dirname "$0")
 
 mkdir -p conf
 cp -r "${HERE}/../plugins" "conf"
-docker image build \
-    --build-arg DOCKER_USER="${DOCKER_USER}" \
-    -t "${image}" .
+docker image build -t "${image}" .
 rm -rf "conf/plugins"
