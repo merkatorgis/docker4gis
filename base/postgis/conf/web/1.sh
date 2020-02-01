@@ -16,6 +16,8 @@ pushd schema/1
     # default with:
     pg.sh -c "alter default privileges revoke execute on functions from public"
 
+    pg.sh -c "create extension if not exists citext"
+
     pg.sh -f roles.sql
     pg.sh -f users.sql
 

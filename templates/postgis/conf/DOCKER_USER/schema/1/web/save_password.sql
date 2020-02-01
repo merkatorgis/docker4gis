@@ -1,5 +1,5 @@
 create or replace function save_password
-    ( email    text
+    ( email    citext
     , password text
     )
 returns web.jwt_token
@@ -14,7 +14,7 @@ as $$
 $$;
 
 grant execute on function save_password
-    ( text
+    ( citext
     , text
     )
 to web_passwd
