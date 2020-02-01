@@ -1,5 +1,5 @@
 create or replace function web.save_password
-    ( email    text
+    ( email    citext
     , password text
     )
 returns void

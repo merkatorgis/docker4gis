@@ -1,5 +1,5 @@
 create or replace function new_user
-    ( email text
+    ( email citext
     , admin boolean default false
     )
 returns void
@@ -10,7 +10,7 @@ as $$
 $$;
 
 grant execute on function new_user
-    ( text
+    ( citext
     , boolean
     )
 to web_admin
