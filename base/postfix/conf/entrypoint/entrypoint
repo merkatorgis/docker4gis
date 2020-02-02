@@ -12,9 +12,8 @@ if [ "$1" = 'postfix' ]; then
 	touch /onstart
 	. /onstart
 
-	rsyslogd
-	postfix start
-	exec tail -f /var/log/maillog
+	postconf -e "maillog_file = /dev/stdout"
+	exec postfix start-fg
 fi
 
 exec "$@"
