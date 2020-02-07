@@ -3,7 +3,7 @@
 -- password are correct.
 
 create or replace function web.user_role
-    ( email text
+    ( email citext
     , pass  text
     )
 returns name

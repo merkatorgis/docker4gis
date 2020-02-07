@@ -2,7 +2,7 @@ create sequence web.web_user_seq
 ;
 
 create or replace function web.new_user
-    ( email text
+    ( email citext
     , admin boolean default false
     )
 returns name

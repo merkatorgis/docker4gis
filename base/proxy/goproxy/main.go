@@ -165,6 +165,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	if _, ok := configs[app]; !ok {
 		// Last resort (also helping old single-proxy clients): try DOCKER_USER
 		app = user
+		path = r.URL.Path
 		log.Printf("Trying DOCKER_USER: app=%s path=%s", app, path)
 	}
 	if config, ok := configs[app]; ok {

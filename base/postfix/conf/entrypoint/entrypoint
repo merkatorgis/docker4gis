@@ -9,12 +9,13 @@ if [ "$1" = 'postfix' ]; then
 	sed -i -e "s/{{DESTINATION}}/${DESTINATION}/g" /etc/postfix/transport
 	postmap /etc/postfix/transport
 
+	postconf -e "$(postconf export_environment) DESTINATION=${DESTINATION}"
+
 	touch /onstart
 	. /onstart
 
-	rsyslogd
-	postfix start
-	exec tail -f /var/log/maillog
+	postconf -e "maillog_file = /dev/stdout"
+	exec postfix start-fg
 fi
 
 exec "$@"

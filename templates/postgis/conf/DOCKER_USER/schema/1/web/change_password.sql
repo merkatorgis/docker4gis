@@ -1,4 +1,4 @@
-create or replace function change_password(email text)
+create or replace function change_password(email citext)
 returns void
 language sql
 security definer
@@ -12,7 +12,7 @@ as $$
         );
 $$;
 
-grant execute on function change_password(text)
+grant execute on function change_password(citext)
 to web_anon
 , web_user
 ;
