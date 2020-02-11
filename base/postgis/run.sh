@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 POSTGRES_USER="${1:-postgres}"
 POSTGRES_PASSWORD="${2:-postgres}"
@@ -18,11 +19,6 @@ SECRET="${SECRET}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
-mkdir -p "${DOCKER_BINDS_DIR}/secrets"
-mkdir -p "${DOCKER_BINDS_DIR}/fileport"
-mkdir -p "${DOCKER_BINDS_DIR}/runner"
-mkdir -p "${DOCKER_BINDS_DIR}/certificates"
-
 postfix_domain=
 if [ "${POSTFIX_DOMAIN}" != '' ]; then
 	postfix_domain="-e POSTFIX_DOMAIN=${POSTFIX_DOMAIN}"
@@ -41,10 +37,10 @@ docker container run --name $container \
 	-e POSTGRES_USER=$POSTGRES_USER \
 	-e POSTGIS_HOST=$POSTGIS_HOST \
 	-e CONTAINER=$container \
-	-v $DOCKER_BINDS_DIR/secrets:/secrets \
-	-v $DOCKER_BINDS_DIR/certificates:/certificates \
-	-v $DOCKER_BINDS_DIR/fileport:/fileport \
-	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
+	$(docker_bind "${DOCKER_BINDS_DIR}/secrets"      /secrets) \
+	$(docker_bind "${DOCKER_BINDS_DIR}/certificates" /certificates) \
+	$(docker_bind "${DOCKER_BINDS_DIR}/fileport"     /fileport) \
+	$(docker_bind "${DOCKER_BINDS_DIR}/runner"       /util/runner/log) \
 	--mount source="$container",target=/var/lib/postgresql/data \
 	-p "${POSTGIS_PORT}":5432 \
 	--network "${DOCKER_USER}" \
