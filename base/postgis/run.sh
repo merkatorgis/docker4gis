@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 POSTGRES_USER="${1:-postgres}"
 POSTGRES_PASSWORD="${2:-postgres}"
