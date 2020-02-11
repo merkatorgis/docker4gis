@@ -188,6 +188,21 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					} else {
+						if proxy.authorise {
+							if req, err := http.NewRequest("GET", authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+								return
+							} else {
+								req.Header = r.Header
+								if res, e := http.DefaultClient.Do(req); e != nil {
+									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+									return
+								} else if res.StatusCode/100 != 2 {
+									http.Error(w, http.StatusText(res.StatusCode), res.StatusCode)
+									return
+								}
+							}
+						}
 						target := proxy.target
 						r.URL.Scheme = target.Scheme
 						r.URL.Host = target.Host
