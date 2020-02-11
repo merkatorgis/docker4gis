@@ -24,6 +24,19 @@ then
 	popd
 fi
 
+docker_bind() {
+	source="$1"
+	target="$2"
+	mkdir -p "${source}"
+	if [ "${OS}" = "Windows_NT" ]
+	then
+		source="/${source}"
+	fi
+	# echo --mount "type=bind,source=${source},target=${target}"
+	echo -v "${source}:${target}"
+}
+export -f docker_bind
+
 echo "
 $(date)
 
