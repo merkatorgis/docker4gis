@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = 'proxy' ]; then
+	shift 1
+	/conf.sh "$@"
+	cp /tmp/conf/certificates/* /certificates
+	exec /goproxy
+fi
+
+exec "$@"

@@ -59,8 +59,6 @@ Create a directory for your app's code on your local file system. Make a directo
 
 Rename the main script to a short name for your specific app (your're going to type that name quite a lot in the terminal). Then edit the main script to set the `DOCKER_USER` variable. If you're on a specific Docker registry, set the `DOCKER_REGISTRY` variable as well. Edit the `DOCKER_BASE` value to point to the [base](/base) directory in your fork's local clone (or configure this variable in your Bash profile).
 
-Make your main script executable with `chmod +x app` (where app it the script's file name).
-
 ## Building things
 
 See the different [base images](#base-images) for their features and how to set them up for your app. Mostly, you'd copy a template `Dockerfile` and `build.sh` script, and optionally add things you need.
@@ -77,18 +75,26 @@ When you're happy about your changes, save a version to the Docker registry with
 
 Once your images are in a registry, they're accessible there from your servers. On a server, the images are never built, only run. So the only thing you need there, is the little run script that runs the package. See its [docs](package.md) for details.
 
+When working on a project with several colleagues, all will have their focus on different components. You don't need to constantly build all the images; instead you can update all at once to the most recently pushed version through `./app latest`. That will remove all existing containers, update all images, and then run everything.
+It's also possible to `./app package latest` to push everything, without creating a new tag.
+
 ## Base images 
 
 - cron
 - elm
 - gdal
 - geoserver
+- mapserver
+- mapproxy
 - glassfish
 - tomcat (build from maven)
 - mapfish
 - postfix
+- mysql
 - [postgis](postgis.md)
 - postgis-gdal
+- postgrest
+- swagger
 - [proxy](proxy.md)
 - registry
 - serve

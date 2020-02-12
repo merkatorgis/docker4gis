@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -10,29 +12,27 @@ import (
 	"strings"
 )
 
+type proxy struct {
+	target      *url.URL
+	impersonate bool
+	insecure    bool
+	authorise   bool
+}
+
+type config struct {
+	secret   string
+	homedest string
+	proxies  map[string]*proxy
+}
+
+var configs = make(map[string]*config)
 var host = os.Getenv("PROXY_HOST")
-var api = os.Getenv("API")
-var app = os.Getenv("APP")
-var homedest = os.Getenv("HOMEDEST")
-var resources = os.Getenv("RESOURCES")
-var ngr = os.Getenv("NGR")
-var geoserver = os.Getenv("GEOSERVER")
-var mapfish = os.Getenv("MAPFISH")
-var secret = os.Getenv("SECRET")
+var port = os.Getenv("PROXY_PORT")
+var user = os.Getenv("DOCKER_USER")
+var authPath = os.Getenv("AUTH_PATH")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
 var reverseProxyInsecure *httputil.ReverseProxy
-var proxies = make(map[string]*url.URL)
-
-func defineProxy(key, target string) {
-	u, _ := url.Parse(target)
-	if u.Path == "" {
-		u.Path = "/"
-	}
-	key = "/" + key + "/"
-	proxies[key] = u
-	log.Printf("reversing: %s -> %v", key, u)
-}
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
@@ -51,40 +51,52 @@ func init() {
 		ModifyResponse: modifyResponse,
 		Transport:      transportInsecure,
 	}
-	// goproxy thfghhj=http://www.dhghdsfgh.com jlkvflk=http://www.vsoiihffvh.com
-	for _, proxy := range os.Args[1:] {
-		split := strings.Split(proxy, "=")
-		defineProxy(split[0], split[1])
-	}
-	defineProxy("ngr", ngr)
-
-	defineProxy("geoserver", geoserver)
-
-	defineProxy("mapfish", mapfish)
-	defineProxy("print", mapfish+"print/")
-
-	defineProxy("api", api)
-
-	defineProxy("app", app)
-	defineProxy("static", app+"static/")
-	defineProxy("favicon.ico", app+"favicon.ico")
-	defineProxy("manifest.json", app+"manifest.json")
-	defineProxy("service-worker.js", app+"service-worker.js")
-	defineProxy("index.html", app+"index.html")
-	defineProxy("index", app+"index")
-	defineProxy("html", app+"html/")
-
-	defineProxy("resources", resources)
-
-	log.Printf("homedest: %s", homedest)
 }
 
 func main() {
+	fileInfos, err := ioutil.ReadDir("/config")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, fileInfo := range fileInfos {
+		app := fileInfo.Name()
+		file, err := os.Open("/config/" + app)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		configs[app] = &config{
+			proxies: make(map[string]*proxy),
+		}
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			split := strings.SplitN(scanner.Text(), "=", 2)
+			if len(split) == 2 {
+				key, value := split[0], split[1]
+				if key == "secret" {
+					configs[app].secret = value
+					log.Printf("%s.secret=%s", app, value)
+				} else if key == "homedest" {
+					configs[app].homedest = value
+					log.Printf("%s.homedest=%s", app, value)
+				} else {
+					defineProxy(app, key, value)
+				}
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	// Redirect http to https
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s http->https %s", r.RemoteAddr, r.Method, r.URL.String())
 		url := r.URL
-		url.Host = r.Host
+		url.Host = host + ":" + port
 		url.Scheme = "https"
 		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 	}))
@@ -99,54 +111,127 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept")
-	} else if r.URL.Path == "/" {
-		if r.URL.Query().Get("url") == "" && homedest != "" {
-			http.Redirect(w, r, homedest, http.StatusFound)
-		} else {
-			passThroughProxy.ServeHTTP(w, r)
-		}
+		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
+	} else if r.URL.Path == "/" && r.URL.Query().Get("url") != "" {
+		passThroughProxy.ServeHTTP(w, r)
 	} else {
 		reverse(w, r)
 	}
 }
 
-func reverse(w http.ResponseWriter, r *http.Request) {
-	for key, target := range proxies {
-		if r.URL.Path+"/" == key {
-			r.URL.Path = r.URL.Path + "/"
-		}
-		if strings.HasPrefix(r.URL.Path, key) {
-			r.URL.Scheme = target.Scheme
-			r.URL.Host = target.Host
-			r.URL.Path = target.Path + strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
-			referer, _ := url.Parse(r.Referer())
-			if key == "/api/" {
-				r.Host = host
-				if target.Port() != "" {
-					r.Host += ":" + target.Port()
-				}
-				reverseProxyInsecure.ServeHTTP(w, r)
-			} else if (r.FormValue("secret") != secret) && (key == "/print/" ||
-				key == "/mapfish/" ||
-				(key == "/geoserver/" && r.FormValue("service") != "" && !strings.HasPrefix(referer.Path, key))) {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			} else {
-				r.Host = target.Host
-				if strings.Contains(target.Hostname(), ".") {
-					reverseProxy.ServeHTTP(w, r)
-				} else {
-					reverseProxyInsecure.ServeHTTP(w, r)
-				}
-			}
-			return
+func defineProxy(app, key, value string) {
+	log.Printf("/%s/%s -> %s", app, key, value)
+	impersonate, insecure, authorise := false, false, false
+	for strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") || strings.HasPrefix(value, "authorise,") {
+		split := strings.SplitN(value, ",", 2)
+		value = split[1]
+		switch split[0] {
+		case "impersonate":
+			impersonate = true
+		case "insecure":
+			insecure = true
+		case "authorise":
+			authorise = true
 		}
 	}
+	target, _ := url.Parse(value)
+	if target.Path == "" {
+		target.Path = "/"
+	}
+	key = "/" + key + "/"
+	configs[app].proxies[key] = &proxy{
+		target:      target,
+		impersonate: impersonate,
+		insecure:    insecure,
+		authorise:   authorise,
+	}
+}
+
+func reverse(w http.ResponseWriter, r *http.Request) {
+	referer, _ := url.Parse(r.Referer())
+	refererParts := strings.Split(referer.Path+"//", "/") //  + "//" to cater for empty Referer
+	path := "/"
+	requestParts := strings.Split(r.URL.Path, "/")
+	app := requestParts[1]
+	if _, ok := configs[app]; ok {
+		// Normal case: path starts with app directory
+		if len(requestParts) > 2 {
+			path += strings.SplitN(r.URL.Path, "/", 3)[2] // alles na de tweede slash
+		}
+		// log.Printf("app=%s path=%s", app, path)
+	} else {
+		// Naughty components case: assuming they're the root; try referer
+		app = refererParts[1]
+		path = "/" + refererParts[2] + r.URL.Path
+		log.Printf("Trying referer: app=%s path=%s", app, path)
+	}
+	if _, ok := configs[app]; !ok {
+		// Last resort (also helping old single-proxy clients): try DOCKER_USER
+		app = user
+		path = r.URL.Path
+		log.Printf("Trying DOCKER_USER: app=%s path=%s", app, path)
+	}
+	if config, ok := configs[app]; ok {
+		if path == "/" || path == "//" {
+			log.Printf("%s %s Redirect %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
+			http.Redirect(w, r, config.homedest, http.StatusFound)
+			return
+		}
+		paths := []string{path, "/" + refererParts[2] + path}
+		for _, path := range paths {
+			for key, proxy := range config.proxies {
+				if path+"/" == key {
+					path = path + "/"
+				}
+				if strings.HasPrefix(path, key) {
+					if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
+						log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
+						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+					} else {
+						if proxy.authorise {
+							if req, err := http.NewRequest("GET", authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+								return
+							} else {
+								req.Header = r.Header
+								if res, e := http.DefaultClient.Do(req); e != nil {
+									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+									return
+								} else if res.StatusCode/100 != 2 {
+									http.Error(w, http.StatusText(res.StatusCode), res.StatusCode)
+									return
+								}
+							}
+						}
+						target := proxy.target
+						r.URL.Scheme = target.Scheme
+						r.URL.Host = target.Host
+						r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
+						if proxy.impersonate {
+							r.Host = host
+							if target.Port() != "" {
+								r.Host += ":" + target.Port()
+							}
+						} else {
+							r.Host = target.Host
+						}
+						if proxy.insecure {
+							reverseProxyInsecure.ServeHTTP(w, r)
+						} else {
+							reverseProxy.ServeHTTP(w, r)
+						}
+					}
+					return
+				}
+			}
+		}
+	}
+	log.Printf("%s %s Not Found %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
 func reverseDirector(r *http.Request) {
-	log.Printf("%s %s reverse %v", r.RemoteAddr, r.Method, r.URL)
+	log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	if _, ok := r.Header["User-Agent"]; !ok {
 		// explicitly disable User-Agent so it's not set to default value
 		r.Header.Set("User-Agent", "")
@@ -162,7 +247,7 @@ func passThroughDirector(r *http.Request) {
 		target.RawQuery = query.Encode()
 		r.URL = target
 		r.Host = target.Host
-		log.Printf("%s %s passthrough %v", r.RemoteAddr, r.Method, r.URL)
+		log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
 	}
 }
 
@@ -170,6 +255,6 @@ func modifyResponse(r *http.Response) error {
 	r.Header.Set("Access-Control-Allow-Origin", "*")
 	// Deze twee hieronder zouden eigenlijk niet nodig moeten zijn, maar het blijkt er wel beter van te worden..
 	r.Header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept")
+	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
 	return nil
 }

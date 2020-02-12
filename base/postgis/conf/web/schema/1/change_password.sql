@@ -1,5 +1,5 @@
 create or replace function web.change_password
-    ( email    text
+    ( email    citext
     , subject  text default 'Create password'
     , template text default 'Within the next 15 minutes, please follow this link to create your password: %s'
     , url      text default current_setting('request.header.referer')

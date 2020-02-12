@@ -1,5 +1,5 @@
 create or replace function web.login
-    ( email    text
+    ( email    citext
     , password text
     , seconds  bigint default 0
     , claims   text[] default '{}'

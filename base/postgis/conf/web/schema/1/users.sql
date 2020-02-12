@@ -1,5 +1,5 @@
 create table web.users
-    ( email text primary key check ( email ~* '^.+@.+\..+$' )
+    ( email citext primary key check ( email ~* '^.+@.+\..+$' )
     , role  name not null unique check ( length(role) < 512 )
     , pass  text default null check ( length(pass) < 512 )
     , exp   bigint default null

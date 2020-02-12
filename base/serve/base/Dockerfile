@@ -2,6 +2,10 @@ FROM node:11.3.0
 
 RUN npm install -g serve
 
-CMD [ "serve", "--listen", "80", "--single", "/build" ]
+COPY serve.json /
+COPY entrypoint /
+
+ENTRYPOINT [ "/entrypoint" ]
+CMD [ "serve" ]
 
 ONBUILD ADD . /build

@@ -13,7 +13,10 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
+fileport="${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}"
+
 docker container run --name $container \
-	--network "${DOCKER_USER}-net" \
-	"$@" \
-	-d $image
+	-e DOCKER_USER="${DOCKER_USER}" \
+	--network "${DOCKER_USER}" \
+	$(docker_bind "${fileport}" /fileport) \
+	-d $image serve "$@"

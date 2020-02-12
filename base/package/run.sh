@@ -5,29 +5,42 @@ docker_tag="${1:-latest}"
 
 export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 export DOCKER_USER="${DOCKER_USER}"
-
 export DOCKER_ENV="${DOCKER_ENV}"
-export PROXY_HOST="${PROXY_HOST:-localhost}"
+export PROXY_HOST="${PROXY_HOST}"
 
-export POSTGIS_PORT="${POSTGIS_PORT:-5432}"
-export POSTFIX_PORT="${POSTFIX_PORT:-25}"
-export PROXY_PORT="${PROXY_PORT:-443}"
-export SECRET='xxx'
+export SECRET="${SECRET}"
 export APP="${APP}"
 export API="${API}"
-export HOMEDEST="${HOMEDEST:-/app}"
+export HOMEDEST="${HOMEDEST}"
+
+export POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
+export POSTFIX_DOMAIN="${POSTFIX_DOMAIN}"
 
 export DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
-if [ "${DOCKER_BINDS_DIR}" == '' ]; then
+if [ ! "${DOCKER_BINDS_DIR}" ]
+then
 	pushd ~
-	export DOCKER_BINDS_DIR="$(pwd)/docker-binds"
+		export DOCKER_BINDS_DIR="$(pwd)/docker-binds"
 	popd
 fi
+
+docker_bind() {
+	source="$1"
+	target="$2"
+	mkdir -p "${source}"
+	if [ "${OS}" = "Windows_NT" ]
+	then
+		source="/${source}"
+	fi
+	# echo --mount "type=bind,source=${source},target=${target}"
+	echo -v "${source}:${target}"
+}
+export -f docker_bind
 
 echo "
 $(date)
 
-About to run '${DOCKER_USER}' version: ${docker_tag}
+Running '${DOCKER_USER}' version: ${docker_tag}
 
 With these settings:
 
@@ -37,12 +50,14 @@ PROXY_HOST=${PROXY_HOST}
 
 DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR}
 DOCKER_REGISTRY=${DOCKER_REGISTRY}
-POSTGIS_PORT=${POSTGIS_PORT}
-POSTFIX_PORT=${POSTFIX_PORT}
-PROXY_PORT=${PROXY_PORT}
+
+SECRET=${SECRET}
 APP=${APP}
 API=${API}
 HOMEDEST=${HOMEDEST}
+
+POSTFIX_DESTINATION=${POSTFIX_DESTINATION}
+POSTFIX_DOMAIN=${POSTFIX_DOMAIN}
 " | tee -a ${DOCKER_USER}.log
 
 read -n 1 -p 'Press any key to continue...'

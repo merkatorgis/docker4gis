@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ $1 ]
-then
-	MAPPROXY_PORT="$1"
-	shift 1
-else
-	MAPPROXY_PORT="${MAPPROXY_PORT}"
-fi
+MAPPROXY_PORT="${MAPPROXY_PORT:-58081}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
@@ -21,8 +15,11 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
-docker run --name "${container}" \
-	--network "${DOCKER_USER}-net" \
-	$(.run/port.sh "${MAPPROXY_PORT}" 80) \
+MAPPROXY_PORT=$(.run/port.sh "${MAPPROXY_PORT:-58081}")
+
+docker container run --name "${container}" \
+	-e DOCKER_USER="${DOCKER_USER}" \
+	--network "${DOCKER_USER}" \
+	-p "${MAPPROXY_PORT}":80 \
 	"$@" \
 	-d "${image}"

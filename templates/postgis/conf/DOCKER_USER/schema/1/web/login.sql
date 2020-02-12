@@ -1,5 +1,5 @@
 create or replace function login
-    ( email    text
+    ( email    citext
     , password text
     )
 returns web.jwt_token
@@ -15,7 +15,7 @@ as $$
 $$;
 
 grant execute on function login
-    ( text
+    ( citext
     , text
     )
 to web_anon

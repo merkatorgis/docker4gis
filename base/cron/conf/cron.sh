@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-# e.g. /klic/scripts/insert.sh
-script="$1"
-
 # e.g. '*/1 * * * *' (or 'startup')
-schedule="$2"
+schedule="$1"
+
+# e.g. /klic/scripts/insert.sh
+script="$2"
 
 # pass 'startup' to run on container startup as well
 startup="$3"

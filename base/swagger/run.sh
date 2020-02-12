@@ -13,8 +13,16 @@ image="docker4gis/swagger"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
-docker run --name "${container}" \
-	--network "${DOCKER_USER}-net" \
-	-e API_URL="https://${PROXY_HOST}:${PROXY_PORT}/api" \
+proxy="${PROXY_HOST}"
+if [ "${PROXY_PORT}" ]
+then
+	proxy="${proxy}:${PROXY_PORT}"
+fi
+API_URL="${API_URL:-https://${proxy}/${DOCKER_USER}/api}"
+
+docker container run --name "${container}" \
+	-e DOCKER_USER="${DOCKER_USER}" \
+	--network "${DOCKER_USER}" \
+	-e API_URL="${API_URL}" \
 	"$@" \
 	-d "${image}"
