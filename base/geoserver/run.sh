@@ -29,11 +29,11 @@ docker container run --name "${container}" \
 	-e XMS="${XMS}" \
 	-e XMX="${XMX}" \
 	-e GEOSERVER_HOST=$GEOSERVER_HOST \
-	$(docker_bind "${DOCKER_BINDS_DIR}/secrets"      /secrets) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/certificates" /certificates) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/fileport"     /fileport) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/runner"       /util/runner/log) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/gwc"          /geoserver/cache) \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/certificates")":/certificates \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/gwc")":/geoserver/cache \
 	--mount source="${container}",target=/geoserver/data/workspaces/dynamic \
 	--network "${DOCKER_USER}" \
 	-e "GEOSERVER_USER=${GEOSERVER_USER}" \

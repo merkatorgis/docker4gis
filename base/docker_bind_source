@@ -1,0 +1,10 @@
+docker_bind_source() {
+	source="$1"
+	mkdir -p "${source}"
+	if [ "${OS}" = "Windows_NT" ]
+	then
+		source="/${source}"
+	fi
+	echo "$source"
+}
+export -f docker_bind_source

@@ -30,9 +30,9 @@ docker container run --name $container \
 	-e MYSQL_DATABASE=$MYSQL_DATABASE \
 	-e CONTAINER=$container \
 	-e GATEWAY=$gateway \
-	$(docker_bind "${DOCKER_BINDS_DIR}/secrets"  /secrets) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/fileport" /fileport) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/runner"   /util/runner/log) \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
 	--mount source="$container",target=/var/lib/mysql \
 	-p "${MYSQL_PORT}":3306 \
 	--network "${DOCKER_USER}" \
