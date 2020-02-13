@@ -8,6 +8,7 @@ then
 	then
 		shift 1
 		dir=/fileport
+		cp /build/serve.json /fileport
 	fi
 	if [ "$1" = '--single' ]
 	then
