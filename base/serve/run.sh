@@ -18,5 +18,5 @@ fileport="${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}"
 docker container run --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	--network "${DOCKER_USER}" \
-	$(docker_bind "${fileport}" /fileport) \
+	-v "$(docker_bind_source "${fileport}")":/fileport \
 	-d $image serve "$@"
