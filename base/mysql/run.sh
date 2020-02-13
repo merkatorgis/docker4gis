@@ -17,10 +17,6 @@ SECRET="${SECRET}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
-mkdir -p "${DOCKER_BINDS_DIR}/secrets"
-mkdir -p "${DOCKER_BINDS_DIR}/fileport"
-mkdir -p "${DOCKER_BINDS_DIR}/runner"
-
 gateway=$(docker network inspect "${DOCKER_USER}" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
 
 MYSQL_PORT=$(.run/port.sh "${MYSQL_PORT:-3306}")
@@ -34,9 +30,9 @@ docker container run --name $container \
 	-e MYSQL_DATABASE=$MYSQL_DATABASE \
 	-e CONTAINER=$container \
 	-e GATEWAY=$gateway \
-	-v $DOCKER_BINDS_DIR/secrets:/secrets \
-	-v $DOCKER_BINDS_DIR/fileport:/fileport \
-	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
 	--mount source="$container",target=/var/lib/mysql \
 	-p "${MYSQL_PORT}":3306 \
 	--network "${DOCKER_USER}" \

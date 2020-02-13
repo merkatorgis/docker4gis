@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = 'serve' ]
+then
+	shift 1
+	if [ "$1" = 'dynamic' ]
+	then
+		shift 1
+		dir=/fileport
+		cp /build/serve.json /fileport
+	fi
+	if [ "$1" = '--single' ]
+	then
+		shift 1
+		SINGLE='--single'
+	fi
+	exec serve --listen 80 ${SINGLE} "${dir:-/build}"
+fi
+
+exec "$@"

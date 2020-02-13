@@ -14,7 +14,7 @@ HERE=$(dirname "$0")
 if [ -d goproxy ]; then # building base
 	export MSYS_NO_PATHCONV=1
 	if docker container run --rm \
-		-v "$PWD"/goproxy:/usr/src/goproxy \
+		-v "$(docker_bind_source "${PWD}/goproxy")":/usr/src/goproxy \
 		-w /usr/src/goproxy \
 		-e CGO_ENABLED=0 \
 		-e GOOS=linux \

@@ -16,6 +16,7 @@ type proxy struct {
 	target      *url.URL
 	impersonate bool
 	insecure    bool
+	authorise   bool
 }
 
 type config struct {
@@ -28,6 +29,7 @@ var configs = make(map[string]*config)
 var host = os.Getenv("PROXY_HOST")
 var port = os.Getenv("PROXY_PORT")
 var user = os.Getenv("DOCKER_USER")
+var authPath = os.Getenv("AUTH_PATH")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
 var reverseProxyInsecure *httputil.ReverseProxy
@@ -109,7 +111,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept")
+		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
 	} else if r.URL.Path == "/" && r.URL.Query().Get("url") != "" {
 		passThroughProxy.ServeHTTP(w, r)
 	} else {
@@ -119,18 +121,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func defineProxy(app, key, value string) {
 	log.Printf("/%s/%s -> %s", app, key, value)
-	impersonate, insecure := false, false
-	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
+	impersonate, insecure, authorise := false, false, false
+	for strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") || strings.HasPrefix(value, "authorise,") {
 		split := strings.SplitN(value, ",", 2)
-		impersonate = (split[0] == "impersonate")
-		insecure = (split[0] == "insecure")
 		value = split[1]
-	}
-	if strings.HasPrefix(value, "impersonate,") || strings.HasPrefix(value, "insecure,") {
-		split := strings.SplitN(value, ",", 2)
-		impersonate = (split[0] == "impersonate")
-		insecure = (split[0] == "insecure")
-		value = split[1]
+		switch split[0] {
+		case "impersonate":
+			impersonate = true
+		case "insecure":
+			insecure = true
+		case "authorise":
+			authorise = true
+		}
 	}
 	target, _ := url.Parse(value)
 	if target.Path == "" {
@@ -141,6 +143,7 @@ func defineProxy(app, key, value string) {
 		target:      target,
 		impersonate: impersonate,
 		insecure:    insecure,
+		authorise:   authorise,
 	}
 }
 
@@ -185,6 +188,21 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					} else {
+						if proxy.authorise {
+							if req, err := http.NewRequest("GET", authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+								return
+							} else {
+								req.Header = r.Header
+								if res, e := http.DefaultClient.Do(req); e != nil {
+									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+									return
+								} else if res.StatusCode/100 != 2 {
+									http.Error(w, http.StatusText(res.StatusCode), res.StatusCode)
+									return
+								}
+							}
+						}
 						target := proxy.target
 						r.URL.Scheme = target.Scheme
 						r.URL.Host = target.Host
@@ -237,6 +255,6 @@ func modifyResponse(r *http.Response) error {
 	r.Header.Set("Access-Control-Allow-Origin", "*")
 	// Deze twee hieronder zouden eigenlijk niet nodig moeten zijn, maar het blijkt er wel beter van te worden..
 	r.Header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept")
+	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
 	return nil
 }

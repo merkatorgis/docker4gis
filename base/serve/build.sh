@@ -13,13 +13,26 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
 echo; echo "Building ${image}"
 docker container rm -f "${container}" 2>/dev/null
 
-pushd "${build_dir}"
-
-echo 'FROM docker4gis/serve' > ./Dockerfile
-if [ "${single}" != '--single' ]; then
-    echo 'CMD [ "serve", "--listen", "80", "/build" ]' >> ./Dockerfile
+if [ ! -f Dockerfile ]
+then
+    # Just to support old usages
+    echo 'FROM docker4gis/serve' > Dockerfile
+    if [ "${single}" = '--single' ]; then
+        echo 'ENV SINGLE=--single' >> Dockerfile
+    fi
 fi
-docker image build -t "${image}" .
-rm ./Dockerfile
 
-popd
+build() {
+	docker image build -t "${image}" .
+}
+
+if [ -d "${build_dir}" ]
+then
+    cp Dockerfile "${build_dir}"
+    pushd "${build_dir}"
+        build
+        rm Dockerfile
+    popd
+else
+    build
+fi

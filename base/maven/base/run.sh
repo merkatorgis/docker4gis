@@ -8,6 +8,6 @@ echo; echo "Compiling from '${src_dir}'..."
 docker volume create mvndata
 
 docker container run --rm \
-    -v "${src_dir}":/src \
+	-v "$(docker_bind_source "${src_dir}")":/src \
     --mount source=mvndata,target=/root/.m2 \
     "docker4gis/maven:${maven_tag}"

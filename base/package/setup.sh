@@ -15,9 +15,10 @@ here=$(dirname "$0")
 run="${here}/conf/.run"
 mkdir -p "${run}"
 
-cp "${DOCKER_BASE}/network.sh" "${run}"
-cp "${DOCKER_BASE}/port.sh"    "${run}"
-cp "${DOCKER_BASE}/start.sh"   "${run}"
+cp "${DOCKER_BASE}/network.sh"         "${run}"
+cp "${DOCKER_BASE}/port.sh"            "${run}"
+cp "${DOCKER_BASE}/start.sh"           "${run}"
+cp "${DOCKER_BASE}/docker_bind_source" "${run}"
 
 main="${run}/${DOCKER_USER}.sh"
 echo '#!/bin/bash' > "${main}"
@@ -27,6 +28,7 @@ echo "export DOCKER_REGISTRY=${DOCKER_REGISTRY}" >> "${main}"
 echo "export DOCKER_USER=${DOCKER_USER}" >> "${main}"
 echo "export DOCKER_TAG=${DOCKER_TAG}" >> "${main}"
 echo ".run/network.sh" >> "${main}"
+echo ". .run/docker_bind_source" >> "${main}"
 
 save()
 {

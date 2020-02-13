@@ -17,7 +17,7 @@ popd
 mkdir -p build
 docker container run \
     --rm \
-    -v $PWD/build:/app/build \
+	-v "$(docker_bind_source "${PWD}/build")":/app/build \
     elm-app/build
 docker image rm elm-app/build
 

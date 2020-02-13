@@ -16,7 +16,9 @@ component postfix   "${DOCKER_BASE}/postfix"
 component cron      "${DOCKER_BASE}/cron"
 component app       "${DOCKER_BASE}/serve"
 component resources "${DOCKER_BASE}/serve"
+component dynamic   "${DOCKER_BASE}/serve" dynamic
 component proxy     "${DOCKER_BASE}/proxy" \
+	# dynamic="authorise,http://${DOCKER_USER}-dynamic" \
 	# extra1=http://container1 \
 	# extra2=https://somewhere.outside.com
 

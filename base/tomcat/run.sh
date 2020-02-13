@@ -13,10 +13,6 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
-mkdir -p "${DOCKER_BINDS_DIR}/fileport"
-mkdir -p "${DOCKER_BINDS_DIR}/secrets"
-mkdir -p "${DOCKER_BINDS_DIR}/runner"
-
 XMS="${XMS:-256m}"
 XMX="${XMX:-2g}"
 
@@ -29,9 +25,9 @@ docker container run --name $container \
 	-e XMS="${XMS}" \
 	-e XMX="${XMX}" \
 	--mount source="${container}",target=/host \
-	-v $DOCKER_BINDS_DIR/fileport:/fileport \
-	-v $DOCKER_BINDS_DIR/secrets:/secrets \
-	-v $DOCKER_BINDS_DIR/runner:/util/runner/log \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
 	--network "${DOCKER_USER}" \
 	-p "${TOMCAT_PORT}":8080 \
 	"$@" \

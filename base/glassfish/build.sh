@@ -25,7 +25,7 @@ if [ "${war}" != 'war' ]; then
     fi
 
     docker container run --rm \
-        -v "${src_dir}":/src \
+    	-v "$(docker_bind_source "${src_dir}")":/src \
         --mount source=mvndata,target="${cache_dir}" \
         dirichlet/netbeans \
         bash -c '\
