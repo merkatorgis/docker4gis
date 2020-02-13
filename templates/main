@@ -30,8 +30,6 @@ export HOMEDEST="${HOMEDEST}"
 export POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
 export POSTFIX_DOMAIN="${POSTFIX_DOMAIN}"
 
-. "${DOCKER_BASE}/docker_bind_source"
-
 action="${1:-start}"
 shift 1
 
