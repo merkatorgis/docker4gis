@@ -36,10 +36,10 @@ docker container run --name $container \
 	-e POSTGRES_USER=$POSTGRES_USER \
 	-e POSTGIS_HOST=$POSTGIS_HOST \
 	-e CONTAINER=$container \
-	$(docker_bind "${DOCKER_BINDS_DIR}/secrets"      /secrets) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/certificates" /certificates) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/fileport"     /fileport) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/runner"       /util/runner/log) \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/certificates")":/certificates \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
 	--mount source="$container",target=/var/lib/postgresql/data \
 	-p "${POSTGIS_PORT}":5432 \
 	--network "${DOCKER_USER}" \

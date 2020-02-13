@@ -19,9 +19,9 @@ if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker container run --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
-	$(docker_bind "${DOCKER_BINDS_DIR}/secrets"  /secrets) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/fileport" /fileport) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/runner"   /util/runner/log) \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
 	--network "${DOCKER_USER}" \
 	-e "GEOSERVER_CONTAINER=${GEOSERVER_CONTAINER}" \
 	-e "GEOSERVER_USER=${GEOSERVER_USER}" \

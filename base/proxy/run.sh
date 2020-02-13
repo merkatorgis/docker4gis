@@ -62,7 +62,7 @@ docker container run --name "${container}" \
 	-e PROXY_HOST=$PROXY_HOST \
 	-e PROXY_PORT=$PROXY_PORT \
 	$(secret) $(api) $(app) $(homedest) \
-	$(docker_bind "${DOCKER_BINDS_DIR}/certificates" /certificates) \
+	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/certificates")":/certificates \
 	--mount source="${volume}",target=/config \
 	-p "${PROXY_PORT}":443 \
 	-p "${PROXY_PORT_HTTP}":80 \
