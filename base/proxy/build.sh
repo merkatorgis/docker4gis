@@ -7,6 +7,8 @@ DOCKER_USER="${DOCKER_USER:-docker4gis}"
 container=docker4gis-proxy
 image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy"
 
+. "${DOCKER_BASE}/docker_bind_source"
+
 echo; echo "Building ${image}"
 
 HERE=$(dirname "$0")
