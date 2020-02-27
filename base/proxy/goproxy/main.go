@@ -162,7 +162,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// Naughty components case: assuming they're the root; try referer
 		app = refererParts[1]
-		path = "/" + refererParts[2] + r.URL.Path
+		path = r.URL.Path
 		log.Printf("Trying referer: app=%s path=%s", app, path)
 	}
 	if _, ok := configs[app]; !ok {
