@@ -215,6 +215,12 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						} else {
 							r.Host = target.Host
 						}
+						if (key == "/mapproxy/"){
+							r.Header.Set("X-Script-Name", "/"+ user+"/mapproxy")
+							r.Header.Set("X-Forwarded-Host", host )
+							r.Header.Set("X-Forwarded-Proto",  "https")
+							//Forwarded: by=identifier; for=client or subsequent proxies;host=Host;proto=https
+						}	
 						if proxy.insecure {
 							reverseProxyInsecure.ServeHTTP(w, r)
 						} else {
