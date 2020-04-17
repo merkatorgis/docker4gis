@@ -113,7 +113,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
 	} else if r.URL.Path == "/" && r.URL.Query().Get("url") != "" {
-		passThroughProxy.ServeHTTP(w, r)
+		if target, err := url.Parse(r.FormValue("url")); err != nil {
+			log.Printf("%+v", err)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadGateway)
+		} else if !strings.Contains(target.Host, ".") {
+			log.Printf("Not passing through to internal host")
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		} else {
+			passThroughProxy.ServeHTTP(w, r)
+		}
 	} else {
 		reverse(w, r)
 	}
@@ -239,16 +247,13 @@ func reverseDirector(r *http.Request) {
 }
 
 func passThroughDirector(r *http.Request) {
-	if target, err := url.Parse(r.FormValue("url")); err != nil {
-		log.Printf("%+v", err)
-	} else {
-		query := r.URL.Query()
-		query.Del("url")
-		target.RawQuery = query.Encode()
-		r.URL = target
-		r.Host = target.Host
-		log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
-	}
+	target, _ := url.Parse(r.FormValue("url"))
+	query := r.URL.Query()
+	query.Del("url")
+	target.RawQuery = query.Encode()
+	r.URL = target
+	r.Host = target.Host
+	log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
 }
 
 func modifyResponse(r *http.Response) error {
