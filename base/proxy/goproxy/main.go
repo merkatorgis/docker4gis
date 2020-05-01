@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"golang.org/x/crypto/acme/autocert"
 )
 
 type proxy struct {
@@ -26,9 +28,11 @@ type config struct {
 }
 
 var configs = make(map[string]*config)
-var host = os.Getenv("PROXY_HOST")
-var port = os.Getenv("PROXY_PORT")
-var user = os.Getenv("DOCKER_USER")
+var proxyHost = os.Getenv("PROXY_HOST")
+var proxyPort = os.Getenv("PROXY_PORT")
+var useAutocert = os.Getenv("AUTOCERT")
+var dockerEnv = os.Getenv("DOCKER_ENV")
+var dockerUser = os.Getenv("DOCKER_USER")
 var authPath = os.Getenv("AUTH_PATH")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
@@ -60,6 +64,9 @@ func main() {
 	}
 
 	for _, fileInfo := range fileInfos {
+		if fileInfo.Mode().IsDir() {
+			continue
+		}
 		app := fileInfo.Name()
 		file, err := os.Open("/config/" + app)
 		if err != nil {
@@ -92,18 +99,33 @@ func main() {
 		}
 	}
 
-	// Redirect http to https
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Redirect http to https
 		log.Printf("%s %s http->https %s", r.RemoteAddr, r.Method, r.URL.String())
 		url := r.URL
-		url.Host = host + ":" + port
+		url.Host = proxyHost + ":" + proxyPort
 		url.Scheme = "https"
 		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 	}))
 
-	crt := "/certificates/" + host + ".crt"
-	key := "/certificates/" + host + ".key"
-	log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
+	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
+		crt := "/certificates/" + proxyHost + ".crt"
+		key := "/certificates/" + proxyHost + ".key"
+		log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
+	} else {
+		m := &autocert.Manager{
+			Cache:      autocert.DirCache("/config/autocert"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(proxyHost),
+		}
+		s := &http.Server{
+			Addr:      ":https",
+			TLSConfig: m.TLSConfig(),
+			Handler:   http.HandlerFunc(handler),
+		}
+		log.Fatal(s.ListenAndServeTLS("", ""))
+	}
+
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +197,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, ok := configs[app]; !ok {
 		// Last resort (also helping old single-proxy clients): try DOCKER_USER
-		app = user
+		app = dockerUser
 		path = r.URL.Path
 		log.Printf("Trying DOCKER_USER: app=%s path=%s", app, path)
 	}
@@ -216,7 +238,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						r.URL.Host = target.Host
 						r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
 						if proxy.impersonate {
-							r.Host = host
+							r.Host = proxyHost
 							if target.Port() != "" {
 								r.Host += ":" + target.Port()
 							}
