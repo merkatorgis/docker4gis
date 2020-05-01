@@ -4,11 +4,12 @@ set -e
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
 PROXY_PORT_HTTP="${PROXY_PORT_HTTP:-80}"
+AUTOCERT="${AUTOCERT:-false}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
 DOCKER_TAG="${DOCKER_TAG}"
-DOCKER_ENV="${DOCKER_ENV}"
+DOCKER_ENV="${DOCKER_ENV:-DEVELOPMENT}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
 # repo=$(basename "$0")
@@ -59,8 +60,10 @@ PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
 PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
 
 docker container run --name "${container}" \
-	-e PROXY_HOST=$PROXY_HOST \
-	-e PROXY_PORT=$PROXY_PORT \
+	-e PROXY_HOST="${PROXY_HOST}" \
+	-e PROXY_PORT="${PROXY_PORT}" \
+	-e AUTOCERT="${AUTOCERT}" \
+	-e DOCKER_ENV="${DOCKER_ENV}" \
 	$(secret) $(api) $(app) $(homedest) \
 	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/certificates")":/certificates \
 	--mount source="${volume}",target=/config \
@@ -68,7 +71,7 @@ docker container run --name "${container}" \
 	-p "${PROXY_PORT_HTTP}":80 \
 	--network "${network}" \
 	--add-host=$(hostname):$(getip $(hostname)) \
-	-d $image proxy	"$@"
+	-d "${image}" proxy	"$@"
 
 for network in $(docker container exec "${container}" ls /config)
 do
