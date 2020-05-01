@@ -54,8 +54,16 @@ the image that the `docker4gis-proxy` container is running from)
 
 ### SSL certificate
 
-- Put the `${PROXY_HOST}.crt` and `${PROXY_HOST}.key` files in the `conf/certificates` folder.
-- Configure the `PROXY_HOST=${PROXY_HOST}` variable
+- If the `PROXY_HOST` environment variable starts with `localhost`,
+or `DOCKER_ENV` is `DEVELOPMENT`,
+or `AUTOCERT` is not `true`,
+then there shoud be a `{PROXY_HOST}.crt` and a `{PROXY_HOST}.key` file
+in `{DOCKER_BINDS_DIR}/certificates` (a self-signed `localhost.crt` and
+`localhost.key` pair is provided)
+- Otherwise (on a server with a proper domain name), a
+[Let's Encrypt](https://letsencrypt.org/) certificate is generated and
+installed automatically - it will also be automatically renewed 30 days
+before expiration.
 
 ### Additional destinations
 
