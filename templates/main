@@ -20,7 +20,7 @@ export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
 
 export MSYS_NO_PATHCONV=1
 
-export PROXY_HOST="localhost.merkator.com"
+export PROXY_HOST="${PROXY_HOST}"
 export PROXY_PORT="${PROXY_PORT:-7443}"
 export SECRET="${SECRET}"
 export APP="${APP}"
