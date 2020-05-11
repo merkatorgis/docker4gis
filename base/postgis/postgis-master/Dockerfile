@@ -1,17 +1,7 @@
-FROM docker4gis/postgis-gdal:11-3.0.1
+FROM docker.merkator.com/postgis/postgis:11-master-alpine
 
 RUN apk update; apk add --no-cache \
-		python py3-psycopg2 sudo
-
-ENV OGR_FDW_VERSION 1.0.8
-COPY conf/ogr_fdw /tmp/ogr_fdw
-RUN /tmp/ogr_fdw/install.sh
-
-COPY conf/odbc_fdw /tmp/odbc_fdw
-RUN /tmp/odbc_fdw/install.sh
-
-COPY conf/tds /tmp/tds
-RUN /tmp/tds/install.sh
+	python py3-psycopg2 sudo
 
 COPY conf/plsh /tmp/plsh
 RUN /tmp/plsh/install.sh

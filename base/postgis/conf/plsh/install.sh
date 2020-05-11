@@ -3,7 +3,7 @@
 PLSH_ISH="${PLSH_ISH:-bae6f78}"
 
 apk add --no-cache --virtual .build-deps \
-	g++ make
+	g++ make clang llvm9
 
 here=$(dirname "$0")
 archive="${here}/plsh-${PLSH_ISH}.zip"
