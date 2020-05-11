@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apk add --no-cache --virtual .build-deps \
-	py-setuptools make gcc libc-dev
+	py-setuptools make gcc libc-dev clang llvm9
 
 pgxn install safeupdate
 
