@@ -32,13 +32,32 @@ through their corresponding environment variables (sensible defaults are provide
 
 ### Security
 
-As for now, a proper authentication mechanism is lacking.
-As a provisional measure, all Geoserver, MapServer, MapProxy, and MapFish requests
-must supply a `secret` parameter matching the `${SECRET}` environment variable, if that is set.
-This value is of course readable for users logged into your app, inspecting their browsers' requests.
-But it does at least deny access to your geodata for passers-by.
+#### PostgREST
+If you add the [`postgis`](/templates/postgis) and [`postgrest`](/templates/postgrest)
+components, you get a user database (verified email address & secured password)
+and a fully [JWT](https://jwt.io/) authenticated automatic HTTP/JSON API
+to the database - see [PostgREST](http://postgrest.org).
+Add the [`swagger`](/templates/swagger) component as well for easy API browsing.
 
-For public data services, you can leave the request parameter out, and leave the environment variable unset.
+#### String identifiers
+For the Geoserver, MapServer, MapProxy, and MapFish components, if the
+`${SECRET}` environment variable is set, requests must supply a `secret`
+URL parameter matching its value.
+
+A better generic option for those components is to include a customer/tenant/user-specific
+`access_token` string that is copied into every query the component issues to
+the database.
+In GeoServer, you can use a `view_param` in a [`sql_view`](https://docs.geoserver.org/stable/en/user/data/database/sqlview.html#parameterizing-sql-views)
+definition.
+In MapServer, you can use [runtime subtitution](https://mapserver.org/cgi/runsub.html)
+of URL parameters.
+
+#### Authorized destinations
+Any proxy destination can be marked to `authorise`. In that case,
+access for each request is first tested by issuing a `GET` request to the
+URL in the `AUTH_PATH` environment variable, with a `method`
+(GET/PUT/POST/DELETE) and a `path` parameter (any request headers come along
+as well): it should return either status `200 OK` or `401 Unautorized`.
 
 ### Multiple applications
 
@@ -54,16 +73,25 @@ the image that the `docker4gis-proxy` container is running from)
 
 ### SSL certificate
 
-- Put the `${PROXY_HOST}.crt` and `${PROXY_HOST}.key` files in the `conf/certificates` folder.
-- Configure the `PROXY_HOST=${PROXY_HOST}` variable
+- If the `PROXY_HOST` environment variable starts with `localhost`,
+or `DOCKER_ENV` is `DEVELOPMENT`,
+or `AUTOCERT` is not `true`,
+then there shoud be a `{PROXY_HOST}.crt` and a `{PROXY_HOST}.key` file
+in `{DOCKER_BINDS_DIR}/certificates` (a self-signed `localhost.crt` and
+`localhost.key` pair is provided)
+- Otherwise (on a server with a proper domain name), a
+[Let's Encrypt](https://letsencrypt.org/) certificate is generated and
+installed automatically - it will also be automatically renewed 30 days
+before expiration.
 
 ### Additional destinations
 
 In your `run/build.sh` script, extend the line running the proxy, eg:
 ```
 component proxy     "${DOCKER_BASE}/proxy" \
-    extra1=http://container1 \
-    extra2=https://somewhere.outside.com
+	dynamic="authorise,http://${DOCKER_USER}-dynamic" \
+	extra1=http://container1 \
+	extra2=https://somewhere.outside.com
 ```
 So a client request for `https://${PROXY_HOST}/${DOCKER_USER}/extra1` will trigger a request
 from the proxy to `http://container1` and echo the response from there back to the client.
