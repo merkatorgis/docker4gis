@@ -9,7 +9,7 @@ includes="${@}"
 echo; echo "Building ${src_dir}"
 
 pushd "${src_dir}"
-echo 'FROM docker4gis/elm-app' > ./Dockerfile
+echo 'FROM docker4gis/elm-app:214' > ./Dockerfile
 docker image build -t elm-app/build .
 rm ./Dockerfile
 popd
