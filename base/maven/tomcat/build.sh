@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 src_dir="$1"
 pushd "${src_dir}"
@@ -19,16 +20,16 @@ here=$(dirname "$0")
 if "${here}/../base/run.sh" "${src_dir}" "${maven_tag}"
 then
     echo; echo "Building ${image}"
-    docker container rm -f "${container}" 2>/dev/null
+    if docker container rm -f "${container}" 2>/dev/null; then true; fi
 
     app_name=$(basename "${src_dir}")
     war="conf/webapps/${app_name}.war"
     mkdir -p conf/webapps
-    mv "${src_dir}"/target/*.war "${war}"
+    sudo mv "${src_dir}"/target/*.war "${war}"
 
     docker image build -t "${image}" .
 
-    mv "${war}" "${src_dir}"/target/
+    sudo mv "${war}" "${src_dir}"/target/
     if [ ! $(ls conf/webapps) ]
     then
         rm -rf conf/webapps
