@@ -23,6 +23,7 @@ else # building upon base
 	mkdir -p conf
 	cp -r "${here}/../plugins" "conf"
 	docker image build \
+		--no-cache  \
 		--build-arg DOCKER_USER="${DOCKER_USER}" \
 		-t "${image}" .
 	rm -rf "conf/plugins"
