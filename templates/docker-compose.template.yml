@@ -1,0 +1,142 @@
+#docker-compose.template.yml
+version: '3.7'
+services:
+    template-postgis:
+      environment:
+        - SECRET=admin
+        - DOCKER_ENV=DEVELOPMENT
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_DB=template
+        - POSTGRES_USER=postgres
+        - POSTGIS_HOST=postgresql
+        - CONTAINER=template-postgis
+        - DOCKER_USER=template            
+      container_name: template-postgis
+      image: docker.merkator.com/template/postgis:latest 
+      volumes:
+        - type: volume
+          source: template-postgis
+          target: /var/lib/postgresql/data
+        - type: bind
+          source: d:\github\docker4gis\binds\secrets
+          target: /secrets 
+        - type: bind
+          source: d:\github\docker4gis\binds\fileport
+          target: /fileport 
+        - type: bind
+          source: d:\github\docker4gis\binds\certificates
+          target: /certificates           
+        - type: bind
+          source: d:\github\docker4gis\binds\runner
+          target: /util/runner/log                      
+      ports:
+        - "5432:5432"
+      networks: 
+        - default
+        - template-net
+    template-geoserver:
+      environment:
+        - GEOSERVER_HOST=geoserver.merkator.com
+        - GEOSERVER_USER=admin
+        - GEOSERVER_PASSWORD=geoserver
+        - DOCKER_USER=template            
+      container_name: template-geoserver
+      image: docker.merkator.com/template/geoserver:latest
+      volumes:
+        - type: volume
+          source: template-geoserver
+          target: /geoserver/data/workspaces
+        - type: bind
+          source: d:\github\docker4gis\binds\secrets
+          target: /secrets 
+        - type: bind
+          source: d:\github\docker4gis\binds\fileport
+          target: /fileport 
+        - type: bind
+          source: d:\github\docker4gis\binds\certificates
+          target: /certificates        
+        - type: bind
+          source: d:\github\docker4gis\binds\gwc
+          target: /geoserver/cache    
+        - type: bind
+          source: d:\github\docker4gis\binds\runner
+          target: /util/runner/log             
+      ports:
+        - "58080:8080"        
+      networks:
+        - default
+        - template-net
+      depends_on:
+        - template-postgis   
+    template-api:
+      environment:
+        - DOCKER_ENV=DEVELOPMENT  
+        # - POSTGIS_HOST=template-postgis     
+        # - POSTGIS_PORT=5432         
+        - DOCKER_USER=template        
+      container_name: template-api
+      image: docker.merkator.com/template/api:latest
+      volumes:
+        - type: volume
+          source: template-api
+          target: /host      
+        - type: bind
+          source: d:\github\docker4gis\binds\runner
+          target: /util/runner/log  
+        - type: bind
+          source: d:\github\docker4gis\binds\secrets
+          target: /secrets 
+        - type: bind
+          source: d:\github\docker4gis\binds\fileport
+          target: /fileport
+      ports:
+        - "9090:8080"          
+      networks:
+        - default
+        - template-net     
+    template-app:
+      container_name: template-app
+      image: docker.merkator.com/template/app:latest
+      networks:
+        - template-net        
+    template-proxy:
+      environment:
+        - PROXY_HOST=localhost.merkator.com     
+        - PROXY_PORT=7443                
+        - API=http://template-api:8080/
+        - APP=http://template-app/
+        - GEOSERVER=http://template-geoserver:8080/geoserver/
+        - HOMEDEST=/template/app
+        - DOCKER_USER=template
+      container_name: template-proxy    
+      image: docker.merkator.com/template/proxy:latest
+      volumes:
+        - type: bind
+          source: d:\github\docker4gis\binds\certificates
+          target: /certificates    
+        - type: volume
+          source: template-proxy
+          target: /config                
+      networks:
+        - default
+        - template-net
+      depends_on:
+        - template-postgis
+        - template-geoserver
+        - template-api
+        - template-app
+      ports:
+        - "7443:443" 
+        - "82:80"           
+      extra_hosts: 
+        - "localhost.merkator.com:127.0.0.1"
+        
+volumes:
+    template-postgis: {}  
+    template-geoserver: {} 
+    template-api: {}
+    template-proxy: {}
+    
+networks:
+  template-net:
+     internal: true

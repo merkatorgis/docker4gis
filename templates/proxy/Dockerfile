@@ -9,3 +9,6 @@ ENV HOMEDEST="/${DOCKER_USER}/app/"
 
 # Where to ask for authorisation
 ENV AUTH_PATH="http://${DOCKER_USER}-api:8080/rpc/auth_path"
+
+# IF you don't want all the containers availible throught the proxy make your own config to limit to only the ones you want and add that config
+# COPY conf/conf.sh  /conf.sh
