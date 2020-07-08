@@ -214,6 +214,30 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 					path = path + "/"
 				}
 				if strings.HasPrefix(path, key) {
+					if key == "/geoserver/" {
+						// for geoserver, read any "access_token" from basic auth, and pass it on as a viewparam
+						if username, password, ok := r.BasicAuth(); ok && username == "access_token" {
+							query := r.URL.Query()
+							viewparams := query.Get("viewparams")
+							if viewparams == "" {
+								viewparams = query.Get("VIEWPARAMS")
+							}
+							if strings.Contains(viewparams, username) {
+								log.Printf("access_token provided in viewparams as well as in basic auth; using the viewparams value")
+							} else {
+								param := username + ":" + password
+								if viewparams == "" {
+									viewparams = param
+								} else {
+									viewparams = viewparams + ";" + param
+								}
+								query.Set("VIEWPARAMS", viewparams)
+								r.URL.RawQuery = query.Encode()
+								log.Printf("Basic %s:%s", username, password)
+							}
+							r.Header.Del("Authorization")
+						}
+					}
 					if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
 						log.Printf("StatusUnauthorized, FormValue=%s", r.FormValue("secret"))
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
