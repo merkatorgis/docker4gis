@@ -17,7 +17,7 @@ admin_port=$(.run/port.sh "${admin_port:-5858}")
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
 docker volume create "${container}"
-docker container run --name "${container}" \
+docker container run --restart always --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	--network "${DOCKER_USER}" \
 	--mount source="${container}",target=/host \

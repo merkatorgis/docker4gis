@@ -21,7 +21,7 @@ docker volume create certificates
 docker volume create registry
 if (docker network create registry 2>/dev/null); then true; fi
 
-docker container run --name $container \
+docker container run --restart always --name $container \
 	--network registry \
 	-v certificates:/certificates \
 	-e REGISTRY_HOST=$REGISTRY_HOST \
@@ -29,7 +29,7 @@ docker container run --name $container \
 	"$@" \
 	-d "$image"
 
-docker container run --name theregistry \
+docker container run --restart always --name theregistry \
 	--network registry \
 	-v certificates:/certificates \
 	-v registry:/var/lib/registry \
