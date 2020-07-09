@@ -214,9 +214,10 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 					path = path + "/"
 				}
 				if strings.HasPrefix(path, key) {
-					if key == "/geoserver/" {
-						// for geoserver, read any "access_token" from basic auth, and pass it on as a viewparam
-						if username, password, ok := r.BasicAuth(); ok && username == "access_token" {
+					if username, password, ok := r.BasicAuth(); ok && username == "access_token" {
+						r.Header.Del("Authorization")
+						if key == "/geoserver/" {
+							// for geoserver, read any "access_token" from basic auth, and pass it on as a viewparam
 							query := r.URL.Query()
 							viewparams := query.Get("viewparams")
 							if viewparams == "" {
@@ -233,9 +234,8 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								}
 								query.Set("VIEWPARAMS", viewparams)
 								r.URL.RawQuery = query.Encode()
-								log.Printf("Basic %s:%s", username, password)
+								log.Printf("Basic Auth access_token passed in VIEWPARAMS")
 							}
-							r.Header.Del("Authorization")
 						}
 					}
 					if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != config.secret {
