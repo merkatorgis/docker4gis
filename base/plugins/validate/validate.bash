@@ -52,22 +52,6 @@ function readable_file() {
     file "$1"
 }
 
-function integer() {
-    local key=$1
-    local value=$2
-    if ! [ "$value" -eq "$value" ]; then
-        error "$key: $value is not an integer"
-    fi
-}
-
-function positive_integer() {
-    local key=$1
-    local value=$2
-    if ! [ "$value" -ge 0 ]; then
-        error "$key: $value is not a positive integer"
-    fi
-}
-
 function length() {
     local key=$1
     local value=$2
@@ -77,7 +61,47 @@ function length() {
     fi
 }
 
-function positive_integer_length() {
-    positive_integer "$1" "$2"
-    length "$1" "$2" "$3"
+function integer() {
+    local key=$1
+    local value=$2
+    if ! [ "$value" -eq "$value" ]; then
+        error "$key: $value is not an integer"
+    fi
+}
+
+function integer_min() {
+    local key=$1
+    local value=$2
+    local min=$3
+    if ! [ "$value" -ge "$min" ]; then
+        error "$key: $value is less than $min"
+    fi
+}
+
+function integer_max() {
+    local key=$1
+    local value=$2
+    local max=$3
+    if ! [ "$value" -le "$max" ]; then
+        error "$key: $value is greater than $max"
+    fi
+}
+
+function integer_min_max() {
+    local key=$1
+    local value=$2
+    local min=$3
+    local max=$4
+    integer_min "$key" "$value" "$min"
+    integer_max "$key" "$value" "$max"
+}
+
+function integer_min_max_length() {
+    local key=$1
+    local value=$2
+    local min=$3
+    local max=$4
+    local length=$5
+    integer_min_max "$key" "$value" "$min" "$max"
+    length "$key" "$value" "$length"
 }
