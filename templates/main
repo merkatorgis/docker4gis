@@ -6,116 +6,117 @@ export DOCKER_USER=template
 
 # Fork the merkatorgis/docker4gis repo and set the environment variable
 # to the docker4gis/base directory:
-export DOCKER_BASE="${DOCKER_BASE}"
+export DOCKER_BASE=$DOCKER_BASE
 
 # Either empty for Docker Hub:
 # export DOCKER_REGISTRY=''
 # or a registry location (including the trailing slash), eg:
 # export DOCKER_REGISTRY=docker.merkator.com/
 # or set en enivronment variable:
-export DOCKER_REGISTRY="${DOCKER_REGISTRY}"
+export DOCKER_REGISTRY=$DOCKER_REGISTRY
 
 export DOCKER_ENV=DEVELOPMENT
-export DOCKER_BINDS_DIR="${DOCKER_BASE}/../binds"
+export DOCKER_BINDS_DIR="$DOCKER_BASE/../binds"
 
 export MSYS_NO_PATHCONV=1
 
-export PROXY_HOST="${PROXY_HOST}"
-export PROXY_PORT="${PROXY_PORT:-7443}"
-export SECRET="${SECRET}"
-export APP="${APP}"
-export API="${API}"
-export HOMEDEST="${HOMEDEST}"
+export PROXY_HOST=$PROXY_HOST
+export PROXY_PORT=${PROXY_PORT:-7443}
+export SECRET=$SECRET
+export APP=$APP
+export API=$API
+export HOMEDEST=$HOMEDEST
 
-export POSTFIX_DESTINATION="${POSTFIX_DESTINATION}"
-export POSTFIX_DOMAIN="${POSTFIX_DOMAIN}"
+export POSTFIX_DESTINATION=$POSTFIX_DESTINATION
+export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
-action="${1:-start}"
+action=${1:-start}
 shift 1
 
-if [ "${action}" == build ]
-then
+if [ "$action" = build ]; then
 	# Build new image for component.
 	# Examples:
 	# ./ex build proxy
 	# ./ex build postgis
 	# ./ex build geoserver
 	# ./ex build app
-	"${DOCKER_BASE}/build.sh" "$0" "$@"
-elif [ "${action}" == package ]
-then
+	"$0" test "$1" &&
+		"$DOCKER_BASE/build.sh" "$0" "$@"
+elif [ "$action" = package ]; then
 	# Create a runnable package.
 	# With a name, all images are pushed with that tag, and latest.
 	# Without a name all latest versions are used, and nothing gets pushed.
 	# Examples:
 	# ./ex package
 	# ./ex package 33282
-	# ./ex package dab57fa2c4220bf8e13f298feacf36d4d036d89c
+	# ./ex package 144
 	# ./ex package 2.0.1
-	export DOCKER_TAG="$1"
-	"${DOCKER_BASE}/build.sh" "$0" .package "${DOCKER_TAG}"
-elif [ "${action}" == run ]
-then
+	# ./ex package latest
+	export DOCKER_TAG=$1
+	"$DOCKER_BASE/build.sh" "$0" .package "$DOCKER_TAG"
+elif [ "$action" = run ]; then
 	# Run the current package.
 	# Examples:
 	# ./ex run
 	# ./ex run 33282
-	# ./ex run dab57fa2c4220bf8e13f298feacf36d4d036d89c
+	# ./ex run 144
 	# ./ex run 2.0.1
-	"${DOCKER_BASE}/run.sh" "$1"
-elif [ "${action}" == br ]
-then
-	# Build new image for component, and run existing package.
+	"$DOCKER_BASE/run.sh" "$1"
+elif [ "$action" = test ]; then
+	# Run a specific component's unit tests,
+	# or the application's integration tests.
 	# Examples:
-	# ./ex br proxy
-	# ./ex br postgis
-	# ./ex br geoserver
-	# ./ex br app
-	"$0" build "${1}"
-	"$0" run
-elif [ "${action}" == pr ]
-then
+	# ./ex test proxy
+	# ./ex test app
+	# ./ex test
+	"$DOCKER_BASE/test.sh" "$1"
+elif [ "$action" = prt ]; then
 	# Create a runnable package (latest), and run it.
 	# Examples:
-	# ./ex br
-	"$0" package
-	"$0" run
-elif [ "${action}" == stop ]
-then
+	# ./ex prt
+	"$0" package &&
+		"$0" run &&
+		"$0" test
+elif [ "$action" = brt ]; then
+	# Build new image for component, and run existing package.
+	# Examples:
+	# ./ex brt proxy
+	# ./ex brt postgis
+	# ./ex brt geoserver
+	# ./ex brt app
+	"$0" build "$@" &&
+		"$0" run &&
+		"$0" test
+elif [ "$action" = stop ]; then
 	# Stop running containers.
 	# Examples:
 	# ./ex stop
-	"${DOCKER_BASE}/stop.sh" "$0"
-elif [ "${action}" == latest ]
-then
+	"$DOCKER_BASE/stop.sh" "$0"
+elif [ "$action" = latest ]; then
 	# Fetch latest images from the registry, and run the package.
 	# Examples:
 	# ./ex latest
-	"${DOCKER_BASE}/latest.sh" "$0"
-elif [ "${action}" == binds ]
-then
+	"$DOCKER_BASE/latest.sh" "$0"
+elif [ "$action" = binds ]; then
 	# Echo the DOCKER_BINDS_DIR.
 	# Examples:
 	# ls -la $(./ex binds)
-	echo "${DOCKER_BINDS_DIR}"
-elif [ "${action}" == geoserver ]
-then
+	echo "$DOCKER_BINDS_DIR"
+elif [ "$action" = geoserver ]; then
 	# Write the GeoServer container's config to your working directory.
 	# Examples:
 	# ./ex geoserver
 	# ./ex geoserver app_name
-	app_name="${1:-${DOCKER_USER}}"
-	container="${DOCKER_USER}-geoserver"
-	data_dir=$(docker container exec "${container}" bash -c 'echo "${GEOSERVER_DATA_DIR}"')
-	from="${container}:${data_dir}/workspaces/${app_name}"
-	to="geoserver/conf/${app_name}/workspaces"
-	echo "About to overwrite
- './${to}/${app_name}' with
- '${from}'"
-	read -n 1 -p 'Press any key to continue (or Ctrl-C to cancel)...'
+	app_name=${1:-$DOCKER_USER}
+	container="$DOCKER_USER-geoserver"
+	data_dir=$(docker container exec "$container" bash -c 'echo "$GEOSERVER_DATA_DIR"')
+	from="$container:$data_dir/workspaces/$app_name"
+	to="geoserver/conf/$app_name/workspaces"
+	echo "About to overwrite './$to/$app_name' with '$from'"
+	read -rn 1 -p 'Press any key to continue (or Ctrl-C to cancel)...'
 	echo
-	rm -rf "${to}/${app_name}"
-	docker container cp "${from}" "${to}"
+	rm -rf "${to:?}/$app_name"
+	docker container cp "$from" "$to"
 else
-	echo "Unknown action: ${action}"
+	echo "Unknown action: $action"
 fi
