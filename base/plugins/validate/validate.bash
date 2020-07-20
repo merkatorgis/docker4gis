@@ -7,57 +7,117 @@
 ERR_INVALID_INPUT=${1:-2}
 
 function error() {
-    echo "ERR_INVALID_INPUT" "$1"
+    local key=$1
+    local value=$2
+    echo "ERR_INVALID_INPUT" "- $key:" "$value"
     exit "$ERR_INVALID_INPUT"
 }
 
 function exists() {
-    if ! [ -e "$1" ]; then
-        error "$1 not found"
+    local key=$1
+    local value=$2
+    if ! [ -e "$value" ]; then
+        error "$key" "$value not found"
     fi
 }
 
 function file() {
-    if ! [ -f "$1" ]; then
-        error "$1 is not a file"
+    local key=$1
+    local value=$2
+    if ! [ -f "$value" ]; then
+        error "$key" "$value is not a file"
     fi
 }
 
 function directory() {
-    if ! [ -d "$1" ]; then
-        error "$1 is not a directory"
+    local key=$1
+    local value=$2
+    if ! [ -d "$value" ]; then
+        error "$key" "$value is not a directory"
     fi
 }
 
 function readable() {
-    if ! [ -r "$1" ]; then
-        error "$1 is not readable"
+    local key=$1
+    local value=$2
+    if ! [ -r "$value" ]; then
+        error "$key" "$value is not readable"
     fi
 }
 
 function writable() {
-    if ! [ -w "$1" ]; then
-        error "$1 is not writable"
+    local key=$1
+    local value=$2
+    if ! [ -w "$value" ]; then
+        error "$key" "$value is not writable"
     fi
 }
 
 function executable() {
-    if ! [ -x "$1" ]; then
-        error "$1 is not executable"
+    local key=$1
+    local value=$2
+    if ! [ -x "$value" ]; then
+        error "$key" "$value is not executable"
+    fi
+}
+
+function is_command() {
+    local key=$1
+    local value=$2
+    if ! command -v "$value" >/dev/null; then
+        error "$key" "command $value not found"
     fi
 }
 
 function readable_file() {
-    readable "$1"
-    file "$1"
+    local key=$1
+    local value=$2
+    readable "$key" "$value"
+    file "$key" "$value"
+}
+
+function get_length() {
+    echo "${#1}"
 }
 
 function length() {
     local key=$1
     local value=$2
     local length=$3
-    if ! [ "${#value}" -eq "$length" ]; then
-        error "$key: $value is not $length characters long"
+    local actual
+    actual=$(get_length "$value")
+    if ! [ "$actual" -eq "$length" ]; then
+        error "$key" "$value is not $length characters long"
+    fi
+}
+
+function min_length() {
+    local key=$1
+    local value=$2
+    local length=$3
+    local actual
+    actual=$(get_length "$value")
+    if [ "$actual" -lt "$length" ]; then
+        error "$key" "$value is less than $length characters long"
+    fi
+}
+
+function max_length() {
+    local key=$1
+    local value=$2
+    local length=$3
+    local actual
+    actual=$(get_length "$value")
+    if [ "$actual" -gt "$length" ]; then
+        error "$key" "$value is more than $length characters long"
+    fi
+}
+
+function has_value() {
+    local key=$1
+    local value=$2
+    if [ ! "$value" ]; then
+        error "$key" "has no value"
     fi
 }
 
@@ -65,7 +125,7 @@ function integer() {
     local key=$1
     local value=$2
     if ! [ "$value" -eq "$value" ]; then
-        error "$key: $value is not an integer"
+        error "$key" "$value is not an integer"
     fi
 }
 
@@ -74,7 +134,7 @@ function integer_min() {
     local value=$2
     local min=$3
     if ! [ "$value" -ge "$min" ]; then
-        error "$key: $value is less than $min"
+        error "$key" "$value is less than $min"
     fi
 }
 
@@ -83,7 +143,7 @@ function integer_max() {
     local value=$2
     local max=$3
     if ! [ "$value" -le "$max" ]; then
-        error "$key: $value is greater than $max"
+        error "$key" "$value is greater than $max"
     fi
 }
 
