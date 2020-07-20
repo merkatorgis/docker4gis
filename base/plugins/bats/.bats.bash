@@ -1,16 +1,32 @@
-# To use these input validation functions,
-# include in a bash command af follows:
+# Sub-command runner and input validation functions for testable bash commands.
+#
+# Include in a bash command as follows:
+#
 # # shellcheck source=/dev/null
-# source ~/.validate.bash
-# Default error number is 2.
+# source ~/.bats.bash
 
-ERR_INVALID_INPUT=${1:-2}
+function @sub() {
+    local err=$1
+    local cmd=$2
+    shift 2
+    cmd="$(dirname "$0")/sub/$cmd.sh"
+    integer_not err "$err" 0
+    is_command cmd "$cmd"
+    if output=$("$cmd" "$@"); then
+        if [ "$output" ]; then
+            echo "$output"
+        fi
+    else
+        echo "$ID $err $? $output"
+        exit "$err"
+    fi
+}
 
 function error() {
     local key=$1
     local value=$2
     echo "ERR_INVALID_INPUT" "- $key:" "$value"
-    exit "$ERR_INVALID_INPUT"
+    exit 22 # EINVAL
 }
 
 function exists() {
@@ -64,7 +80,7 @@ function executable() {
 function is_command() {
     local key=$1
     local value=$2
-    if ! command -v "$value" >/dev/null; then
+    if ! command -v "$value" >/dev/null 2>&1; then
         error "$key" "command $value not found"
     fi
 }
@@ -121,12 +137,29 @@ function has_value() {
     fi
 }
 
+function not() {
+    local key=$1
+    local value=$2
+    local not=$3
+    if [ "$value" = "$not" ]; then
+        error "$key" "$value must not be $not"
+    fi
+}
+
 function integer() {
     local key=$1
     local value=$2
     if ! [ "$value" -eq "$value" ]; then
         error "$key" "$value is not an integer"
     fi
+}
+
+function integer_not() {
+    local key=$1
+    local value=$2
+    local not=$3
+    integer "$key" "$value"
+    not "$key" "$value" "$not"
 }
 
 function integer_min() {

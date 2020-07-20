@@ -11,6 +11,6 @@ if find "$dir" -name "*.bats" >/dev/null 2>&1; then
         echo "Consider npm install -g bats"
         exit
     fi
-    "$DOCKER_BASE"/plugins/validate/install.sh
+    "$DOCKER_BASE"/plugins/bats/install.sh
     time bats -r "$dir"
 fi
