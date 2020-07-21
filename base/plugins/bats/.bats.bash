@@ -12,11 +12,7 @@ function @sub() {
     cmd="$(dirname "$0")/sub/$cmd.sh"
     integer_not err "$err" 0
     is_command cmd "$cmd"
-    if output=$("$cmd" "$@"); then
-        if [ "$output" ]; then
-            echo "$output"
-        fi
-    else
+    if ! output=$("$cmd" "$@"); then
         echo "$ID $err $? $output"
         exit "$err"
     fi
