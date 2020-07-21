@@ -161,20 +161,19 @@ schortcut for `./app build {component} && ./app run && ./app test`.
 ### Bash Automated Testing System
 
 Running BATS tests is integrated in docker4gis, but it depends on a local
-installation of the BATS software, which the testrunner will try to install for
-you through NPM, if available.
+installation of the BATS software, which the test runner will try to install for
+you through [NPM](https://www.npmjs.com/package/bats), if available.
 
 #### Helper
 
-You wil want to include the common [helper file](../base/test_helper/load.bash)
+You'll want to include the common [helper file](../base/test_helper/load.bash)
 like this:
 ```bash
 #!/usr/bin/env bats
 load "$DOCKER_BASE"/test_helper/load.bash
 ```
 This will load the [bats-assert](https://github.com/bats-core/bats-assert) and
-[https://github.com/bats-core/bats-file](https://github.com/bats-core/bats-file)
-modules.
+[bats-file](https://github.com/bats-core/bats-file) modules.
 
 Also, it exposes a `$cmd` variable holding the "command under test", presuming
 the current `.bats` test file has the same name and location as the command
@@ -182,7 +181,7 @@ file, except for the extra .bats suffix.
 
 #### Plugin
 
-In any bash commands under test, you'll want to include [bats plugin
+In any bash commands under test, you'll want to include the [bats plugin
 file](../base/plugins/bats/.bats.bash) like this (the test runner installs it in
 your home directory):
 ```bash
