@@ -1,11 +1,14 @@
-FROM alpine:3.7
+FROM alpine:3.12
 
 RUN apk update; apk add --no-cache \
-	ca-certificates wget
+	ca-certificates wget bash
 
-COPY certificates /tmp/conf/certificates
-COPY entrypoint /entrypoint
-COPY conf.sh /conf.sh
+COPY conf/plugins/bats /tmp/bats
+RUN /tmp/bats/install.sh
+
+COPY conf/certificates /tmp/conf/certificates
+COPY conf/entrypoint /entrypoint
+COPY conf/conf.sh /conf.sh
 COPY goproxy/goproxy /goproxy
 
 EXPOSE 80 443

@@ -1,7 +1,7 @@
 FROM docker4gis/postgis-gdal:11-3.0.1
 
 RUN apk update; apk add --no-cache \
-		python py3-psycopg2 sudo
+	python py3-psycopg2 sudo
 
 ENV OGR_FDW_VERSION 1.0.8
 COPY conf/ogr_fdw /tmp/ogr_fdw
@@ -35,6 +35,9 @@ RUN /tmp/pg/install.sh
 
 COPY conf/plugins/mail /tmp/mail
 RUN /tmp/mail/install.sh
+
+COPY conf/plugins/bats /tmp/bats
+RUN /tmp/bats/install.sh
 
 COPY conf/entrypoint /entrypoint
 COPY conf/init.sh /tmp/init.sh

@@ -7,8 +7,6 @@ ADD conf /tmp/conf
 
 RUN /tmp/conf/plugins/gs/install.sh
 
-RUN /tmp/conf/plugins/bats/install.sh
-
 RUN	mv /tmp/conf/cron.sh /util/; \
 	mkdir -p /util/cron; \
 	mv /tmp/conf/startup.sh /util/cron/; \
