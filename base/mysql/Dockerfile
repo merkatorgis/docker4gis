@@ -4,6 +4,8 @@ ADD conf /tmp/conf
 
 RUN /tmp/conf/plugins/mysql/install.sh
 
+RUN /tmp/conf/plugins/bats/install.sh
+
 RUN	mkdir -p /util; \
 	mv /tmp/conf/schema.sh /util/; \
 	mv /tmp/conf/entrypoint/* /

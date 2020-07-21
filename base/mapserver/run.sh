@@ -13,7 +13,7 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
 
 if .run/start.sh "${image}" "${container}"; then exit; fi
 
-docker container run --name "${container}" \
+docker container run --restart always --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	--network "${DOCKER_USER}" \
 	"$@" \

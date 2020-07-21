@@ -22,7 +22,7 @@ gateway=$(docker network inspect "${DOCKER_USER}" | grep 'Gateway' | grep -oP '\
 MYSQL_PORT=$(.run/port.sh "${MYSQL_PORT:-3306}")
 
 docker volume create "$container"
-docker container run --name $container \
+docker container run --restart always --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \

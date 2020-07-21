@@ -12,6 +12,8 @@ ENV PATH=/util:$PATH \
 
 ADD conf /tmp/conf
 
+RUN /tmp/conf/plugins/bats/install.sh
+
 RUN	mkdir -p     /var/spool/postfix/ /var/spool/postfix/pid /var/mail; \
 	chown root   /var/spool/postfix/ /var/spool/postfix/pid; \
 	chmod a+rwxt /var/mail; \
@@ -19,7 +21,7 @@ RUN	mkdir -p     /var/spool/postfix/ /var/spool/postfix/pid /var/mail; \
 	postconf -e mynetworks_style=subnet; \
 	# Encrypt outgoing mail
 	postconf -e smtp_tls_security_level=may; \
- 	# Disable SMTPUTF8, because libraries (ICU) are missing in alpine
+	# Disable SMTPUTF8, because libraries (ICU) are missing in alpine
 	postconf -e smtputf8_enable=no; \
 	# Update aliases database. It's not used, but postfix complains if the .db file is missing
 	postalias /etc/postfix/aliases; \

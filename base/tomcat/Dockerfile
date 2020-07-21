@@ -8,6 +8,9 @@ RUN apk update; apk add --no-cache \
 ENV PATH=/util:$PATH \
 	JAVA_OPTS='-XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseParNewGC -XX:NewRatio=2 -XX:+AggressiveOpts'
 
+COPY conf/plugins/bats /tmp/bats
+RUN /tmp/bats/install.sh
+
 COPY conf/plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
 

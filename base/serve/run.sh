@@ -15,7 +15,7 @@ if .run/start.sh "${image}" "${container}"; then exit; fi
 
 fileport="${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}"
 
-docker container run --name $container \
+docker container run --restart always --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	--network "${DOCKER_USER}" \
 	-v "$(docker_bind_source "${fileport}")":/fileport \
