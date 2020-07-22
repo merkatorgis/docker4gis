@@ -6,15 +6,34 @@
 # source ~/.bats.bash
 
 function @sub() {
-    local err=$1
-    local cmd=$2
-    shift 2
+    _sub 'false' "$@"
+}
+
+function @subvive() {
+    _sub 'true' "$@"
+}
+
+function _sub() {
+    local survive=$1
+    local err=$2
+    local cmd=$3
+    shift 3
     cmd="$(dirname "$0")/sub/$cmd.sh"
-    integer_not err "$err" 0
-    is_command cmd "$cmd"
-    if ! output=$("$cmd" "$@"); then
-        echo "$ID $err $? $output"
-        exit "$err"
+    assert_integer_min err "$err" 1
+    assert_integer_max err "$err" 255
+    assert_command "$cmd"
+
+    output=$("$cmd" "$@")
+    status=$?
+    if [ "$status" -eq 0 ]; then
+        return 0
+    else
+        echo "$ID $err $status $output"
+        if [ "$survive" != 'true' ]; then
+            exit "$err"
+        else
+            return "$err"
+        fi
     fi
 }
 
@@ -25,7 +44,7 @@ function error() {
     exit 22 # EINVAL
 }
 
-function exists() {
+function assert_exists() {
     local key=$1
     local value=$2
     if ! [ -e "$value" ]; then
@@ -33,7 +52,7 @@ function exists() {
     fi
 }
 
-function file() {
+function assert_file() {
     local key=$1
     local value=$2
     if ! [ -f "$value" ]; then
@@ -41,7 +60,7 @@ function file() {
     fi
 }
 
-function directory() {
+function assert_directory() {
     local key=$1
     local value=$2
     if ! [ -d "$value" ]; then
@@ -49,7 +68,7 @@ function directory() {
     fi
 }
 
-function readable() {
+function assert_readable() {
     local key=$1
     local value=$2
     if ! [ -r "$value" ]; then
@@ -57,7 +76,7 @@ function readable() {
     fi
 }
 
-function writable() {
+function assert_writable() {
     local key=$1
     local value=$2
     if ! [ -w "$value" ]; then
@@ -65,7 +84,7 @@ function writable() {
     fi
 }
 
-function executable() {
+function assert_executable() {
     local key=$1
     local value=$2
     if ! [ -x "$value" ]; then
@@ -73,59 +92,59 @@ function executable() {
     fi
 }
 
-function is_command() {
-    local key=$1
-    local value=$2
-    if ! command -v "$value" >/dev/null 2>&1; then
-        error "$key" "command $value not found"
+function assert_command() {
+    local cmd=$1
+    local hint=$2
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        error "command $cmd not found. $hint"
     fi
 }
 
-function readable_file() {
+function assert_readable_file() {
     local key=$1
     local value=$2
-    readable "$key" "$value"
-    file "$key" "$value"
-}
-
-function get_length() {
-    echo "${#1}"
+    assert_readable "$key" "$value"
+    assert_file "$key" "$value"
 }
 
 function length() {
+    echo "${#1}"
+}
+
+function assert_length() {
     local key=$1
     local value=$2
-    local length=$3
-    local actual
-    actual=$(get_length "$value")
-    if ! [ "$actual" -eq "$length" ]; then
-        error "$key" "$value is not $length characters long"
+    local want=$3
+    local is
+    is=$(length "$value")
+    if ! [ "$is" -eq "$want" ]; then
+        error "$key" "$value is not $want characters long"
     fi
 }
 
-function min_length() {
+function assert_min_length() {
     local key=$1
     local value=$2
-    local length=$3
-    local actual
-    actual=$(get_length "$value")
-    if [ "$actual" -lt "$length" ]; then
-        error "$key" "$value is less than $length characters long"
+    local want=$3
+    local is
+    is=$(length "$value")
+    if [ "$is" -lt "$want" ]; then
+        error "$key" "$value is less than $want characters long"
     fi
 }
 
-function max_length() {
+function assert_max_length() {
     local key=$1
     local value=$2
-    local length=$3
-    local actual
-    actual=$(get_length "$value")
-    if [ "$actual" -gt "$length" ]; then
-        error "$key" "$value is more than $length characters long"
+    local want=$3
+    local is
+    is=$(length "$value")
+    if [ "$is" -gt "$want" ]; then
+        error "$key" "$value is more than $want characters long"
     fi
 }
 
-function has_value() {
+function assert_has_value() {
     local key=$1
     local value=$2
     if [ ! "$value" ]; then
@@ -133,7 +152,7 @@ function has_value() {
     fi
 }
 
-function not() {
+function assert_not() {
     local key=$1
     local value=$2
     local not=$3
@@ -142,7 +161,7 @@ function not() {
     fi
 }
 
-function integer() {
+function assert_integer() {
     local key=$1
     local value=$2
     if ! [ "$value" -eq "$value" ]; then
@@ -150,15 +169,15 @@ function integer() {
     fi
 }
 
-function integer_not() {
+function assert_integer_not() {
     local key=$1
     local value=$2
     local not=$3
-    integer "$key" "$value"
-    not "$key" "$value" "$not"
+    assert_integer "$key" "$value"
+    assert_not "$key" "$value" "$not"
 }
 
-function integer_min() {
+function assert_integer_min() {
     local key=$1
     local value=$2
     local min=$3
@@ -167,7 +186,7 @@ function integer_min() {
     fi
 }
 
-function integer_max() {
+function assert_integer_max() {
     local key=$1
     local value=$2
     local max=$3
@@ -176,21 +195,21 @@ function integer_max() {
     fi
 }
 
-function integer_min_max() {
+function assert_integer_min_max() {
     local key=$1
     local value=$2
     local min=$3
     local max=$4
-    integer_min "$key" "$value" "$min"
-    integer_max "$key" "$value" "$max"
+    assert_integer_min "$key" "$value" "$min"
+    assert_integer_max "$key" "$value" "$max"
 }
 
-function integer_min_max_length() {
+function assert_integer_min_max_length() {
     local key=$1
     local value=$2
     local min=$3
     local max=$4
     local length=$5
-    integer_min_max "$key" "$value" "$min" "$max"
-    length "$key" "$value" "$length"
+    assert_integer_min_max "$key" "$value" "$min" "$max"
+    assert_length "$key" "$value" "$length"
 }
