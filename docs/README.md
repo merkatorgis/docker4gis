@@ -203,12 +203,10 @@ source ~/.bats.bash
 @sub 1 check_running "$(basename "$0")"
 @sub 2 dir "$LOADER_ROOT_DIR"
 dir="${output:?}"
-@sub 3 check_size_time "$dir"/extracted/*/GI_*.xml
 klicmeldnr=$(ls "$dir"/extracted)
 echo "$ID $klicmeldnr converting in $dir ..."
-@sub 4 run_loader "$dir"
-status="$output"
-echo "$ID $klicmeldnr converting in $dir finished with status $status"
+@sub 3 run_loader "$dir"
+echo "$ID $klicmeldnr converting in $dir finished with status $output"
 ```
 
 Parameters to the `@sub` function are:
@@ -217,36 +215,49 @@ Parameters to the `@sub` function are:
    fails.
 1. The basename of a script file named `sub/{basename}.sh` relative to the
    current script's location.
-1. Any parameters to call the subroutine script with.
+1. Any parameters to call the subcommand with.
 
 Any output of a successful subroutine is available in the `$output` variable.
+The error code of the actual subcommand is available in `$status`.
 
 (The `:?` suffix in the sample above, causing the command to fail if the
 `$output` variable is not defined, is there to tell
 [shellcheck](https://www.shellcheck.net/) we _know_ it's there.)
 
+In case the main script needs to survive a failing subroutine, use `@subvive`
+instead of `@sub`, eg:
+```bash
+...
+xml=$(ls "$dir"/extracted/*/GI_*.xml)
+if ! @subvive 3 check_size_time "$xml"; then
+    @sub 4 email_too_big "$xml"
+    exit 3
+fi
+...
+```
+
 
 ##### Validations
 
 In the subroutine scripts, include the plugin as well, and make generously use
-of its myriad of validation functions, eg:
+of its myriad of assertion functions to validate input parameters, eg:
 ```bash
 #!/bin/bash
 ...
 # shellcheck source=/dev/null
 source ~/.bats.bash
-readable_file file "$file"
-integer_min MAX_BYTES "$MAX_BYTES" 0
-integer_min_max_length MIN_TIME_H "$MIN_TIME_H" 00 23 2
-integer_min_max_length MIN_TIME_M "$MIN_TIME_M" 00 59 2
-integer_min_max_length MAX_TIME_H "$MAX_TIME_H" 00 23 2
-integer_min_max_length MAX_TIME_M "$MAX_TIME_M" 00 59 2
-integer_min_max_length cur_time "$cur_time" 0000 2359 4
+assert_readable_file file "$file"
+assert_integer_min MAX_BYTES "$MAX_BYTES" 0
+assert_integer_min_max_length MIN_TIME_H "$MIN_TIME_H" 00 23 2
+assert_integer_min_max_length MIN_TIME_M "$MIN_TIME_M" 00 59 2
+assert_integer_min_max_length MAX_TIME_H "$MAX_TIME_H" 00 23 2
+assert_integer_min_max_length MAX_TIME_M "$MAX_TIME_M" 00 59 2
+assert_integer_min_max_length cur_time "$cur_time" 0000 2359 4
 ...
 ```
-Any violated validation will make the script fail with error 22 EINVAL, using
-the given name and value in the error message. So from a `.bats` test script,
-use `assert_failure 22` to test for proper input invalidation, eg:
+Any violated assertion will make the script fail with error 22 EINVAL, using the
+given name and value in the error message. So from a `.bats` test script, use
+`assert_failure 22` to test for proper input invalidation, eg:
 ```bash
 #!/usr/bin/env bats
 load "$DOCKER_BASE"/test_helper/load.bash
