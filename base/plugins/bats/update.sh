@@ -11,7 +11,9 @@ _push() {
         if docker image push "docker4gis/$component:$tag" >/dev/null; then
             echo "$component:$tag"
         else
-            echo "FAILED: $component:$tag"
+            status=$?
+            echo "FAILED: $component:$tag" >&2
+            return "$status"
         fi
 }
 
@@ -34,7 +36,9 @@ build() {
             if ./build.sh >/dev/null 2>&1; then
                 echo "$component"
             else
-                echo "FAILED: $component"
+                status=$?
+                echo "FAILED: $component" >&2
+                return "$status"
             fi
     )
 }
