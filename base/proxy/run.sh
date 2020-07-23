@@ -59,7 +59,7 @@ docker volume create "${volume}"
 PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
 PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
 
-docker container run --name "${container}" \
+docker container run --restart always --name "${container}" \
 	-e PROXY_HOST="${PROXY_HOST}" \
 	-e PROXY_PORT="${PROXY_PORT}" \
 	-e AUTOCERT="${AUTOCERT}" \

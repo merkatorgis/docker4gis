@@ -22,7 +22,7 @@ cp "${DOCKER_BASE}/docker_bind_source" "${run}"
 
 main="${run}/${DOCKER_USER}.sh"
 echo '#!/bin/bash' > "${main}"
-chmod +x "${main}"
+if chmod +x "${main}" 2>/dev/null; then true; fi
 
 echo "export DOCKER_REGISTRY=${DOCKER_REGISTRY}" >> "${main}"
 echo "export DOCKER_USER=${DOCKER_USER}" >> "${main}"

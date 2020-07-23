@@ -19,7 +19,7 @@ XMX="${XMX:-2g}"
 TOMCAT_PORT=$(.run/port.sh "${TOMCAT_PORT:-9090}")
 
 docker volume create "${container}"
-docker container run --name $container \
+docker container run --restart always --name $container \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e DOCKER_ENV=$DOCKER_ENV \
 	-e XMS="${XMS}" \

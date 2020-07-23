@@ -20,7 +20,7 @@ then
 fi
 API_URL="${API_URL:-https://${proxy}/${DOCKER_USER}/api}"
 
-docker container run --name "${container}" \
+docker container run --restart always --name "${container}" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	--network "${DOCKER_USER}" \
 	-e API_URL="${API_URL}" \
