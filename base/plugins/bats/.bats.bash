@@ -28,8 +28,8 @@ function _sub() {
     if [ "$status" -eq 0 ]; then
         return 0
     else
-        echo "$ID $err $status $output"
         if [ "$survive" != 'true' ]; then
+            echo "$ID $err $status $output"
             exit "$err"
         else
             return "$err"
