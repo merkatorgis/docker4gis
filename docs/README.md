@@ -197,12 +197,17 @@ small testable subroutines, eg:
 ```bash
 #!/bin/bash
 ID=$1
+
 LOADER_ROOT_DIR=${LOADER_ROOT_DIR:-"/fileport/$DOCKER_USER"}
+
 # shellcheck source=/dev/null
 source ~/.bats.bash
+
 @sub 1 check_running "$(basename "$0")"
+
 @sub 2 dir "$LOADER_ROOT_DIR"
 dir="${output:?}"
+
 klicmeldnr=$(ls "$dir"/extracted)
 echo "$ID $klicmeldnr converting in $dir ..."
 @sub 3 run_loader "$dir"
@@ -228,10 +233,9 @@ In case the main script needs to survive a failing subroutine, use `@subvive`
 instead of `@sub`, eg:
 ```bash
 ...
-xml=$(ls "$dir"/extracted/*/GI_*.xml)
-if ! @subvive 3 check_size_time "$xml"; then
-    @sub 4 email_too_big "$xml"
-    exit 3
+if @subvive 1 daytime; then
+    timestring=${output:?}
+    daytime=true
 fi
 ...
 ```
