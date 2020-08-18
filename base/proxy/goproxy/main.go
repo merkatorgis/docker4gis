@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -261,6 +262,23 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						r.URL.Scheme = target.Scheme
 						r.URL.Host = target.Host
 						r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
+						forwardedFor := r.Header.Get("X-Real-Ip")
+						if forwardedFor == "" {
+							forwardedFor = r.Header.Get("X-Forwarded-For")
+						}
+						if forwardedFor == "" {
+							forwardedFor, _, _ = net.SplitHostPort(r.RemoteAddr)
+						}
+						forwardedHost := r.Host
+						forwardedProto := "https"
+						forwardedPath := "/"+ app + key
+						forwarded := "for=" + forwardedFor + ";host=" + forwardedHost + ";proto=" + forwardedProto + ";path=" + forwardedPath
+						r.Header.Set("Forwarded", forwarded)
+						r.Header.Set("X-Forwarded-For", forwardedFor)
+						r.Header.Set("X-Forwarded-Host", forwardedHost)
+						r.Header.Set("X-Forwarded-Proto", forwardedProto)
+						r.Header.Set("X-Forwarded-Path", forwardedPath)
+						r.Header.Set("X-Script-Name", forwardedPath)
 						if proxy.impersonate {
 							r.Host = proxyHost
 							if target.Port() != "" {
