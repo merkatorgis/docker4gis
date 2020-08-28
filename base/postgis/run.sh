@@ -4,6 +4,8 @@ POSTGRES_USER="${1:-postgres}"
 POSTGRES_PASSWORD="${2:-postgres}"
 POSTGRES_DB="${3:-$DOCKER_USER}"
 
+SHM_SIZE="${SHM_SIZE:-64m}"
+
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
 DOCKER_TAG="${DOCKER_TAG}"
@@ -27,6 +29,7 @@ POSTGIS_PORT=$(.run/port.sh "${POSTGIS_PORT:-5432}")
 
 docker volume create "$container"
 docker container run --restart always --name $container \
+	--shm-size="$SHM_SIZE" \
 	-e DOCKER_USER="${DOCKER_USER}" \
 	-e SECRET=$SECRET \
 	-e DOCKER_ENV=$DOCKER_ENV \
