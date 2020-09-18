@@ -4,12 +4,18 @@ basedir=$(dirname "$1")
 repo="$2"
 shift 2
 
-curdir=$(pwd);
-cd "${basedir}"; basedir=$(pwd) # make the path absolute
+pushd "$basedir/$repo" || exit
 
-. "${DOCKER_BASE}/docker_bind_source"
+docker image build -t build .
+container=$(docker container create build)
 
-cd "${basedir}/${repo}"
-./build.sh "$@"
+temp=$(mktemp -d)
+docker container cp "$container":/docker4gis "$temp"
+docker container rm -f "$container"
+docker image rm build
 
-cd "${curdir}"
+"$temp"/docker4gis/build.sh .
+
+rm -rf "$temp"
+
+popd || exit

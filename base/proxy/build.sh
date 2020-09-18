@@ -12,9 +12,7 @@ image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy"
 echo
 echo "Building ${image}"
 
-here=$(dirname "$0")
-
-cp -r "${here}/../plugins" "conf"
+cp -r "${DOCKER_BASE}/plugins" "conf"
 if [ -d goproxy ]; then # building base
 	if goproxy/builder/run.sh; then
 		docker image build -t "${image}" .
