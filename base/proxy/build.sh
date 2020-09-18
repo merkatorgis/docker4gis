@@ -3,11 +3,8 @@
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
-# repo=$(basename "$(pwd)")
 container=docker4gis-proxy
 image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy"
-
-. "${DOCKER_BASE}/docker_bind_source"
 
 echo
 echo "Building ${image}"
