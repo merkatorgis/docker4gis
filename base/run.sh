@@ -1,8 +1,24 @@
 #!/bin/bash
+set -e
 
-DOCKER_BASE="${DOCKER_BASE}"
+repo="$1"
+tag="$2"
 
-tag="${1:-latest}"
+DOCKER_BASE="$DOCKER_BASE"
+DOCKER_REGISTRY="$DOCKER_REGISTRY"
+DOCKER_USER="$DOCKER_USER"
 
-echo '' | "${DOCKER_BASE}/package/run.sh" "${tag}"
-echo
+image="$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag"
+
+dir=$(mktemp -d)
+"$DOCKER_BASE"/base.sh "$dir" "$image"
+
+# Execute the actual run script,
+# and ensure that we survive, to remain able to clean up.
+if pushd "$dir" && . docker_bind_source && ./run.sh "$@" && popd; then
+    true
+fi
+
+if [ -d "$dir" ]; then
+    rm -rf "$dir"
+fi

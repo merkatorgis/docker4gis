@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+repo="$1"
+tag="$2"
+
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
 PROXY_PORT_HTTP="${PROXY_PORT_HTTP:-80}"
@@ -8,13 +11,11 @@ AUTOCERT="${AUTOCERT:-false}"
 
 DOCKER_REGISTRY="${DOCKER_REGISTRY}"
 DOCKER_USER="${DOCKER_USER}"
-DOCKER_TAG="${DOCKER_TAG}"
 DOCKER_ENV="${DOCKER_ENV:-DEVELOPMENT}"
 DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
 
-# repo=$(basename "$0")
 container=docker4gis-proxy
-image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy:${DOCKER_TAG}"
+image="${DOCKER_REGISTRY}${DOCKER_USER}/$repo:$tag"
 
 SECRET="${SECRET}"
 API="${API}"
@@ -26,7 +27,7 @@ api()      { if [ "${API}"      ]; then echo "-e API=${API}";           fi }
 app()      { if [ "${APP}"      ]; then echo "-e APP=${APP}";           fi }
 homedest() { if [ "${HOMEDEST}" ]; then echo "-e HOMEDEST=${HOMEDEST}"; fi }
 
-if .run/start.sh "${image}" "${container}"; then exit; fi
+if ./start.sh "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
@@ -51,13 +52,13 @@ urlhost()
 }
 
 network="${container}"
-.run/network.sh "${network}"
+./network.sh "${network}"
 
 volume="${container}"
 docker volume create "${volume}"
 
-PROXY_PORT=$(.run/port.sh "${PROXY_PORT}")
-PROXY_PORT_HTTP=$(.run/port.sh "${PROXY_PORT_HTTP}")
+PROXY_PORT=$(./port.sh "${PROXY_PORT}")
+PROXY_PORT_HTTP=$(./port.sh "${PROXY_PORT_HTTP}")
 
 docker container run --restart always --name "${container}" \
 	-e PROXY_HOST="${PROXY_HOST}" \

@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
 
+DOCKER_BASE="$DOCKER_BASE"
+
 mainscript="$1"
 repo="$2"
 shift 2
 
-dir="$(dirname "$mainscript")/$repo"
-dir="$(realpath "$dir")"
+dir=$(dirname "$mainscript")/"$repo"
+dir=$(realpath "$dir")
 
 buildscript="$dir/build.sh"
 if ! [ -x "$buildscript" ]; then
@@ -29,25 +31,17 @@ fi
 #   p: do print what's found
 #   i: ignore case
 docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\)~\1~ip' "$dockerfile")
-if [ "$docker4gis_base_image" ]; then
-    temp=$(mktemp -d)
-    container=$(docker container create "$docker4gis_base_image")
-    docker container cp "$container":/docker4gis "$temp"
-    docker container rm "$container"
+base_dir="$dir"/.docker4gis
 
-    export BASE_BUILD="$temp/docker4gis/build.sh"
-    if ! [ -x "$BASE_BUILD" ]; then
-        echo "No executable $BASE_BUILD found"
-        exit 3
-    fi
-fi
+"$DOCKER_BASE"/base.sh "$base_dir" "$docker4gis_base_image"
+export BASE="$base_dir"/build.sh
 
-# Execute the actual build script, which may or may not execute $BASE_BUILD,
-# and ensure that we survive, to be able to clean up $temp
-if pushd "$dir" && "$buildscript" && popd; then
+# Execute the actual build script, which may or may not execute $BASE,
+# and ensure that we survive, to remain able to clean up.
+if pushd "$dir" && "$buildscript" "$@" && popd; then
     true
 fi
 
-if [ -d "$temp" ]; then
-    rm -rf "$temp"
+if [ -d "$base_dir" ]; then
+    rm -rf "$base_dir"
 fi

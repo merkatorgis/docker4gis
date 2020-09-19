@@ -13,6 +13,7 @@ COPY goproxy/goproxy /goproxy
 
 COPY conf/utils /docker4gis
 COPY build.sh /docker4gis/build.sh
+COPY run.sh /docker4gis/run.sh
 
 EXPOSE 80 443
 
