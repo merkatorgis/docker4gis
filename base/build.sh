@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 mainscript="$1"
 repo="$2"
@@ -20,7 +20,7 @@ if ! [ -f "$dockerfile" ]; then
 fi
 if ! [ -f "$dockerfile" ]; then
     echo 'Dockerfile not found'
-    exit 1
+    exit 2
 fi
 
 # sed:
@@ -33,11 +33,12 @@ if [ "$docker4gis_base_image" ]; then
     temp=$(mktemp -d)
     container=$(docker container create "$docker4gis_base_image")
     docker container cp "$container":/docker4gis "$temp"
-    docker container rm -f "$container"
+    docker container rm "$container"
 
     export BASE_BUILD="$temp/docker4gis/build.sh"
     if ! [ -x "$BASE_BUILD" ]; then
         echo "No executable $BASE_BUILD found"
+        exit 3
     fi
 fi
 

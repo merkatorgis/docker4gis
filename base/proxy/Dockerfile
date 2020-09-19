@@ -11,6 +11,7 @@ COPY conf/entrypoint /entrypoint
 COPY conf/conf.sh /conf.sh
 COPY goproxy/goproxy /goproxy
 
+COPY conf/utils /docker4gis
 COPY build.sh /docker4gis/build.sh
 
 EXPOSE 80 443
