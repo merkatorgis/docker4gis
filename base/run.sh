@@ -15,7 +15,12 @@ dir=$(mktemp -d)
 
 # Execute the actual run script,
 # and ensure that we survive, to remain able to clean up.
-if pushd "$dir" && . docker_bind_source && ./run.sh "$@" && popd; then
+if
+    pushd "$dir" && \
+    . docker_bind_source && \
+    ./run.sh "$@" && \
+    popd
+then
     true
 fi
 
