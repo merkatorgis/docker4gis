@@ -28,11 +28,10 @@ fi
 # 's~regex~\groupno~ip':
 #   p: do print what's found
 #   i: ignore case
-docker4gis_base_image=$(sed -n 's~^from\s\+\(docker4gis/\S\+\)~\1~ip' "$dockerfile")
+docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\)~\1~ip' "$dockerfile")
 if [ "$docker4gis_base_image" ]; then
-    container=$(docker container create "$docker4gis_base_image")
-
     temp=$(mktemp -d)
+    container=$(docker container create "$docker4gis_base_image")
     docker container cp "$container":/docker4gis "$temp"
     docker container rm -f "$container"
 
@@ -48,6 +47,6 @@ if pushd "$dir" && "$buildscript" && popd; then
     true
 fi
 
-if [ "$temp" ]; then
+if [ -d "$temp" ]; then
     rm -rf "$temp"
 fi
