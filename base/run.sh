@@ -2,7 +2,7 @@
 set -e
 
 repo="$1"
-tag="$2"
+tag="${2:-$(cat "$repo"/tag)}"
 
 DOCKER_BASE="$DOCKER_BASE"
 DOCKER_REGISTRY="$DOCKER_REGISTRY"
@@ -18,7 +18,7 @@ dir=$(mktemp -d)
 if
     pushd "$dir" && \
     . docker_bind_source && \
-    ./run.sh "$@" && \
+    ./args.sh | xargs ./run.sh "$repo" "$tag" && \
     popd
 then
     true

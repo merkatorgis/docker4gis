@@ -21,5 +21,7 @@ ENTRYPOINT ["/entrypoint"]
 CMD ["proxy"]
 
 ONBUILD ADD conf /tmp/conf
+ONBUILD RUN cp /tmp/conf/args.sh /docker4gis
+
 ONBUILD ARG DOCKER_USER
 ONBUILD ENV DOCKER_USER="${DOCKER_USER}"
