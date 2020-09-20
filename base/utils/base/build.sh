@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-DOCKER_BASE="$DOCKER_BASE"
-
 mainscript="$1"
 repo="$2"
 shift 2
@@ -17,9 +15,10 @@ if ! [ -x "$buildscript" ]; then
 fi
 
 base_dir="$dir"/.docker4gis
-base_image=$("$DOCKER_BASE"/image.sh "$dir")
-
-"$DOCKER_BASE"/base.sh "$base_dir" "$base_image"
+pushd "$(dirname "$0")"
+    base_image=$(./image.sh "$dir")
+    ./base.sh "$base_dir" "$base_image"
+popd
 export BASE="$base_dir"/build.sh
 
 # Execute the actual build script, which may or may not execute $BASE,

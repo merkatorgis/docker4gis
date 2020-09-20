@@ -9,6 +9,6 @@ if [ "$docker4gis_image" ]; then
     container=$(docker container create "$docker4gis_image")
     docker container cp "$container":/docker4gis "$dir"
     docker container rm "$container"
-    cp "$dir"/docker4gis/* "$dir"
+    cp -r "$dir"/docker4gis/* "$dir"
     rm -rf "$dir"/docker4gis
 fi

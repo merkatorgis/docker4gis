@@ -28,7 +28,7 @@ api()      { if [ "${API}"      ]; then echo "-e API=${API}";           fi }
 app()      { if [ "${APP}"      ]; then echo "-e APP=${APP}";           fi }
 homedest() { if [ "${HOMEDEST}" ]; then echo "-e HOMEDEST=${HOMEDEST}"; fi }
 
-if ./start.sh "${image}" "${container}"; then exit; fi
+if base/start.sh "${image}" "${container}"; then exit; fi
 
 mkdir -p "${DOCKER_BINDS_DIR}/certificates"
 
@@ -53,13 +53,13 @@ urlhost()
 }
 
 network="${container}"
-./network.sh "${network}"
+base/network.sh "${network}"
 
 volume="${container}"
 docker volume create "${volume}"
 
-PROXY_PORT=$(./port.sh "${PROXY_PORT}")
-PROXY_PORT_HTTP=$(./port.sh "${PROXY_PORT_HTTP}")
+PROXY_PORT=$(base/port.sh "${PROXY_PORT}")
+PROXY_PORT_HTTP=$(base/port.sh "${PROXY_PORT_HTTP}")
 
 docker container run --restart always --name "${container}" \
 	-e PROXY_HOST="${PROXY_HOST}" \
