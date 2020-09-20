@@ -3,6 +3,7 @@ set -e
 
 repo="$1"
 tag="$2"
+shift 2
 
 PROXY_HOST="${PROXY_HOST:-localhost}"
 PROXY_PORT="${PROXY_PORT:-443}"
