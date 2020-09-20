@@ -14,12 +14,11 @@ if ! [ -x "$buildscript" ]; then
     exit 1
 fi
 
-base_dir="$dir"/.docker4gis
 pushd "$(dirname "$0")"
     base_image=$(./image.sh "$dir")
-    ./base.sh "$base_dir" "$base_image"
+    ./base.sh "$dir" "$base_image"
 popd
-export BASE="$base_dir"/build.sh
+export BASE="$dir"/.docker4gis/build.sh
 
 # Execute the actual build script, which may or may not execute $BASE,
 # and ensure that we survive, to remain able to clean up.
@@ -27,6 +26,6 @@ if pushd "$dir" && "$buildscript" "$@" && popd; then
     true
 fi
 
-if [ -d "$base_dir" ]; then
-    rm -rf "$base_dir"
+if [ -d "$dir"/.docker4gis ]; then
+    rm -rf "$dir"/.docker4gis
 fi

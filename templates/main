@@ -61,7 +61,7 @@ elif [ "$action" = run ]; then
 	# ./ex run 33282
 	# ./ex run 144
 	# ./ex run 2.0.1
-	"$DOCKER_BASE/run.sh" "$1"
+	echo '' | "$DOCKER_BASE/package/run.sh" "$1"
 elif [ "$action" = test ]; then
 	# Run a specific component's unit tests,
 	# or the application's integration tests.

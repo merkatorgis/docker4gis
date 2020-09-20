@@ -17,7 +17,7 @@ popd
 # Execute the actual run script,
 # and ensure that we survive, to remain able to clean up.
 if
-    pushd "$dir" && \
+    pushd "$dir"/.docker4gis && \
     . base/docker_bind_source && \
     ./args.sh | xargs ./run.sh "$repo" "$tag" && \
     popd

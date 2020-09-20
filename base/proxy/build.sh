@@ -5,8 +5,9 @@ DOCKER_BASE="$DOCKER_BASE"
 DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
-container=docker4gis-proxy
-image="$DOCKER_REGISTRY$DOCKER_USER/proxy"
+repo=proxy
+container="docker4gis-$repo"
+image="$DOCKER_REGISTRY$DOCKER_USER/$repo"
 
 echo
 echo "Building $image"

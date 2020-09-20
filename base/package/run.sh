@@ -50,19 +50,18 @@ POSTFIX_DOMAIN=${POSTFIX_DOMAIN}
 " | tee -a ${DOCKER_USER}.log
 
 read -n 1 -p 'Press any key to continue...'
-container="${DOCKER_USER}-package"
 image="${DOCKER_REGISTRY}${DOCKER_USER}/package:${docker_tag}"
 
 echo "
 Executing ${image}" | tee -a ${DOCKER_USER}.log
 
-docker container run --name "${container}" -d "${image}"
-docker container cp ${container}:/.run .
-docker container rm -f ${container}
+container=$(docker container create "$image")
+docker container cp "$container":/.docker4gis .
+docker container rm "$container"
 
-.run/${DOCKER_USER}.sh | tee -a ${DOCKER_USER}.log
+.docker4gis/run.sh | tee -a ${DOCKER_USER}.log
 
 echo "
 $(docker container ls)" | tee -a ${DOCKER_USER}.log
 
-rm -rf .run
+rm -rf .docker4gis
