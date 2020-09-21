@@ -1,9 +1,10 @@
 #!/bin/bash
+set -e
 
 PLSH_ISH="${PLSH_ISH:-bae6f78}"
 
 apk add --no-cache --virtual .build-deps \
-	g++ make clang llvm9
+	g++ make clang llvm
 
 here=$(dirname "$0")
 archive="${here}/plsh-${PLSH_ISH}.zip"
