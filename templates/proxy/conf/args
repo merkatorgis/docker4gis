@@ -1,6 +1,8 @@
+# shellcheck shell=bash
+##
 # List any arguments to pass to the container's CMD.
 # Environment variables are respected.
-# Lines starting with # are ignored.
+# Lines _starting with_ # are ignored.
 ##
 # dynamic=authorise,http://"$DOCKER_USER"-dynamic
 # extra1=http://container1
