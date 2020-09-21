@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 repo="$1"
 tag="${2:-$(cat "$repo"/tag)}"
@@ -27,28 +26,27 @@ if container_ls=$(docker container ls -a | grep "$container$"); then
             echo "Starting existing container failed; creating a new one..."
         fi
     fi
-    docker container rm -f "$container" >/dev/null
+    if ! docker container rm -f "$container" >/dev/null; then
+        exit 1
+    fi
 fi
 
 dir=$(mktemp -d)
-"$(dirname "$0")"/base.sh "$dir" "$image"
-
-# Execute the actual run script,
-# and ensure that we survive, to remain able to clean up.
-run() {
-    base/network.sh &&
-        . base/docker_bind_source &&
-        # pass args from args file,
-        # substituting environment variables,
-        # and skipping lines starting with a #
-        envsubst <args | grep -v "^#" | xargs \
-            ./run.sh "$repo" "$tag"
-}
-if pushd "$dir"/.docker4gis >/dev/null; then
-    if run; then true; fi
-    if popd >/dev/null; then true; fi
-fi
-
-if [ -d "$dir" ]; then
+finish() {
     rm -rf "$dir"
-fi
+    exit "${1:-$?}"
+}
+# copy the base image's scripts to the temp dir
+"$(dirname "$0")"/base.sh "$dir" "$image"
+# execute the base image's run script
+pushd "$dir"/.docker4gis >/dev/null || finish 1
+base/network.sh &&
+    . base/docker_bind_source &&
+    # pass args from args file,
+    # substituting environment variables,
+    # and skipping lines starting with a #
+    envsubst <args | grep -v "^#" | xargs \
+        ./run.sh "$repo" "$tag"
+popd >/dev/null || finish 1
+
+finish
