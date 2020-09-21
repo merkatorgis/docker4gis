@@ -18,6 +18,7 @@ popd >/dev/null
 # and ensure that we survive, to remain able to clean up.
 if pushd "$dir"/.docker4gis >/dev/null &&
     . base/docker_bind_source &&
+    base/network.sh &&
     envsubst <args | grep -v "^#" | xargs \
         ./run.sh "$repo" "$tag" &&
     popd >/dev/null; then

@@ -1,4 +1,3 @@
-# shellcheck shell=bash
 ##
 # List any arguments to pass to the container's CMD.
 # Environment variables are respected.

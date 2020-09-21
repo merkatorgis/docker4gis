@@ -23,16 +23,6 @@ API="$API"
 APP="$APP"
 HOMEDEST="$HOMEDEST"
 
-noop() {
-	name="$1"
-	value="$2"
-	if [ "$value" ]; then
-		echo "$name"="$value"
-	else
-		echo noop=noop
-	fi
-}
-
 if base/start.sh "$image" "$container"; then exit; fi
 
 mkdir -p "$DOCKER_BINDS_DIR"/certificates
@@ -69,10 +59,10 @@ docker container run --restart always --name "$container" \
 	-e PROXY_PORT="$PROXY_PORT" \
 	-e AUTOCERT="$AUTOCERT" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
-	-e "$(noop SECRET "$SECRET")" \
-	-e "$(noop API "$API")" \
-	-e "$(noop APP "$APP")" \
-	-e "$(noop HOMEDEST "$HOMEDEST")" \
+	-e "$(base/noop.sh SECRET "$SECRET")" \
+	-e "$(base/noop.sh API "$API")" \
+	-e "$(base/noop.sh APP "$APP")" \
+	-e "$(base/noop.sh HOMEDEST "$HOMEDEST")" \
 	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/certificates)":/certificates \
 	--mount source="$volume",target=/config \
 	-p "$PROXY_PORT":443 \
