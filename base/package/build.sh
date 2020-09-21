@@ -6,26 +6,24 @@ DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="${DOCKER_USER:-docker4gis}"
 
 repo=$(basename "$(pwd)")
-image="$DOCKER_REGISTRY$DOCKER_USER/package"
+image="$DOCKER_REGISTRY""$DOCKER_USER"/package
 
-echo; echo "Building $image"
+echo
+echo "Building $image"
 
 mkdir -p conf
-if [ "$repo" = .package ]
-then
-    echo '#!/bin/bash' > conf/run.sh
+if [ "$repo" = .package ]; then
+    echo '#!/bin/bash' >conf/run.sh
     chmod +x conf/run.sh
-    for repo in ../*/
-    do
-        if ! tag=$(cat "$repo"/tag)
-        then
+    for repo in ../*/; do
+        if ! tag=$(cat "$repo"/tag); then
             tag=latest
         fi
         repo=$(basename "$repo")
-        echo ".docker4gis/base/run.sh $repo $tag" >> conf/run.sh
+        echo ".docker4gis/base/run.sh $repo $tag" >>conf/run.sh
     done
 fi
-cp -r "$DOCKER_BASE"/utils "conf"
+cp -r "$DOCKER_BASE"/utils conf
 docker image build \
-    -t "${image}" .
-rm -rf "conf"
+    -t "$image" .
+rm -rf conf

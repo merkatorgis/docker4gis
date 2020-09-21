@@ -2,9 +2,9 @@
 
 dir="$1"
 
-dockerfile="$dir/Dockerfile"
+dockerfile="$dir"/Dockerfile
 if ! [ -f "$dockerfile" ]; then
-    dockerfile="$dir/dockerfile"
+    dockerfile="$dir"/dockerfile
 fi
 if ! [ -f "$dockerfile" ]; then
     echo 'Dockerfile not found'

@@ -8,5 +8,5 @@ if [ "$docker4gis_image" ]; then
     mkdir -p "$dir"
     container=$(docker container create "$docker4gis_image")
     docker container cp "$container":/.docker4gis "$dir"
-    docker container rm "$container"
+    docker container rm "$container" >/dev/null
 fi
