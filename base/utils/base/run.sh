@@ -35,16 +35,18 @@ dir=$(mktemp -d)
 
 # Execute the actual run script,
 # and ensure that we survive, to remain able to clean up.
-if pushd "$dir"/.docker4gis >/dev/null &&
+run() {
     base/network.sh &&
-    . base/docker_bind_source &&
-    # pass args from args file,
-    # substituting environment variables,
-    # and skipping lines starting with a #
-    envsubst <args | grep -v "^#" | xargs \
-        ./run.sh "$repo" "$tag" &&
-    popd >/dev/null; then
-    true
+        . base/docker_bind_source &&
+        # pass args from args file,
+        # substituting environment variables,
+        # and skipping lines starting with a #
+        envsubst <args | grep -v "^#" | xargs \
+            ./run.sh "$repo" "$tag"
+}
+if pushd "$dir"/.docker4gis >/dev/null; then
+    if run; then true; fi
+    if popd >/dev/null; then true; fi
 fi
 
 if [ -d "$dir" ]; then
