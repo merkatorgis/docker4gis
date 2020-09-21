@@ -4,7 +4,7 @@ image="$1"
 container="$2"
 
 echo
-echo "Starting $container..."
+echo "Starting $container from $image..."
 
 if container_ls=$(docker container ls -a | grep "$container$"); then
 	old_image=$(echo "$container_ls" | awk '{print $2}')

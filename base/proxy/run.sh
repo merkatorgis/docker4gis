@@ -49,7 +49,7 @@ network="$container"
 base/network.sh "$network"
 
 volume="$container"
-docker volume create "$volume"
+docker volume create "$volume" >/dev/null
 
 PROXY_PORT=$(base/port.sh "$PROXY_PORT")
 PROXY_PORT_HTTP=$(base/port.sh "$PROXY_PORT_HTTP")

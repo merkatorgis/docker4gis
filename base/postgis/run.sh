@@ -25,7 +25,7 @@ if base/start.sh "$image" "$container"; then exit; fi
 
 POSTGIS_PORT=$(base/port.sh "${POSTGIS_PORT:-5432}")
 
-docker volume create "$container"
+docker volume create "$container" >/dev/null
 docker container run --restart always --name "$container" \
 	--shm-size="$SHM_SIZE" \
 	-e DOCKER_USER="$DOCKER_USER" \

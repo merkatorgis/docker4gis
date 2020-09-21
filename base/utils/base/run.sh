@@ -17,8 +17,11 @@ popd >/dev/null
 # Execute the actual run script,
 # and ensure that we survive, to remain able to clean up.
 if pushd "$dir"/.docker4gis >/dev/null &&
-    . base/docker_bind_source &&
     base/network.sh &&
+    . base/docker_bind_source &&
+    # pass args from args file,
+    # substituting environment variables,
+    # and skipping lines starting with a #
     envsubst <args | grep -v "^#" | xargs \
         ./run.sh "$repo" "$tag" &&
     popd >/dev/null; then
