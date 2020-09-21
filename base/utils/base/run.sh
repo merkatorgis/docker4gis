@@ -17,17 +17,16 @@ fi
 echo
 echo "Starting $container from $image..."
 
-if container_ls=$(docker container ls -a | grep "$container$"); then
-    old_image=$(echo "$container_ls" | awk '{print $2}')
+if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$container" 2>/dev/null); then
     if [ "$old_image" = "$image" ]; then
         if docker container start "$container"; then
-            exit
+            exit 0
         else
             echo "Starting existing container failed; creating a new one..."
         fi
     fi
     if ! docker container rm -f "$container" >/dev/null; then
-        exit 1
+        exit $?
     fi
 fi
 
