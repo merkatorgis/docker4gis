@@ -21,8 +21,6 @@ image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
 SECRET="$SECRET"
 
-if base/start.sh "$image" "$container"; then exit; fi
-
 POSTGIS_PORT=$(base/port.sh "${POSTGIS_PORT:-5432}")
 
 docker volume create "$container" >/dev/null

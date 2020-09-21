@@ -8,11 +8,20 @@ DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="$DOCKER_USER"
 
 image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+if [ "$repo" = proxy ]; then
+    container=docker4gis-proxy
+else
+    container="$DOCKER_USER"-"$repo"
+fi
+
+here=$(dirname "$0")
+
+if "$here"/start.sh "$image" "$container"; then
+    exit
+fi
 
 dir=$(mktemp -d)
-pushd "$(dirname "$0")" >/dev/null
-./base.sh "$dir" "$image"
-popd >/dev/null
+"$here"/base.sh "$dir" "$image"
 
 # Execute the actual run script,
 # and ensure that we survive, to remain able to clean up.

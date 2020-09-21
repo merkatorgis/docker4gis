@@ -23,8 +23,6 @@ API="$API"
 APP="$APP"
 HOMEDEST="$HOMEDEST"
 
-if base/start.sh "$image" "$container"; then exit; fi
-
 mkdir -p "$DOCKER_BINDS_DIR"/certificates
 
 getip() {
