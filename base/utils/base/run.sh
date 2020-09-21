@@ -8,20 +8,30 @@ DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="$DOCKER_USER"
 
 image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+
 if [ "$repo" = proxy ]; then
     container=docker4gis-proxy
 else
     container="$DOCKER_USER"-"$repo"
 fi
 
-here=$(dirname "$0")
+echo
+echo "Starting $container from $image..."
 
-if "$here"/start.sh "$image" "$container"; then
-    exit
+if container_ls=$(docker container ls -a | grep "$container$"); then
+    old_image=$(echo "$container_ls" | awk '{print $2}')
+    if [ "$old_image" = "$image" ]; then
+        if docker container start "$container"; then
+            exit
+        else
+            echo "Starting existing container failed; creating a new one..."
+        fi
+    fi
+    docker container rm -f "$container" >/dev/null
 fi
 
 dir=$(mktemp -d)
-"$here"/base.sh "$dir" "$image"
+"$(dirname "$0")"/base.sh "$dir" "$image"
 
 # Execute the actual run script,
 # and ensure that we survive, to remain able to clean up.
