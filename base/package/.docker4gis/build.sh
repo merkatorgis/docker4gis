@@ -38,8 +38,8 @@ if [ "$repo" = .package ]; then
     # we're building a concrete application's package image;
     # compile a list of commands to run its containers
     echo '#!/bin/bash' >conf/run.sh
-    # echo 'set -x' >>conf/run.sh
-    # echo 'find .' >>conf/run.sh
+    echo 'set -x' >>conf/run.sh
+    echo 'find .' >>conf/run.sh
     chmod +x conf/run.sh
     # loop over all repos to add, picking the ones we want to do first
     for repo_path in ../*/; do
@@ -52,6 +52,7 @@ if [ "$repo" = .package ]; then
 fi
 
 cp -r "$DOCKER_BASE"/.docker4gis conf
+find conf
 docker image build \
     -t "$image" .
 
