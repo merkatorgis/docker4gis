@@ -9,7 +9,7 @@ DOCKER_USER="$DOCKER_USER"
 image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
 [ "$repo" = proxy ] &&
-    container=docker4gis-proxy ||
+    container="docker4gis-proxy" ||
     container="$DOCKER_USER"-"$repo"
 
 echo
@@ -24,11 +24,16 @@ if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$contain
 fi
 
 dir=$(mktemp -d)
+finish() {
+    rm -rf "$dir"
+    exit "${1:-?$}"
+}
+
 if
     docker4gis="$(dirname "$0")"/.docker4gis.sh
     docker4gis_dir=$("$docker4gis" "$dir" "$image")
 then
-    pushd "$docker4gis_dir" >/dev/null
+    pushd "$docker4gis_dir" >/dev/null || finish 1
     base/network.sh &&
         . base/docker_bind_source &&
         # Execute the (base) image's run script,
@@ -37,6 +42,7 @@ then
         # and skipping lines starting with a #.
         envsubst <args | grep -v "^#" | xargs \
             ./run.sh "$repo" "$tag"
-    popd >/dev/null
+    popd >/dev/null || finish 1
 fi
-rm -rf "$dir"
+
+finish

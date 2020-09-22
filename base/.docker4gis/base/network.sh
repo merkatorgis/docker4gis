@@ -2,6 +2,5 @@
 
 net="${1:-$DOCKER_USER}"
 
-if docker network create "$net" 1>/dev/null 2>&1; then
+docker network create "$net" 1>/dev/null 2>&1 &&
 	echo Created network "$net"
-fi

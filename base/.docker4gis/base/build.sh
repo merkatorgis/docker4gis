@@ -1,6 +1,9 @@
 #!/bin/bash
 # set -x
 
+DOCKER_REGISTRY="$DOCKER_REGISTRY"
+DOCKER_USER="$DOCKER_USER"
+
 mainscript="$1"
 repo="$2"
 shift 2
@@ -15,34 +18,47 @@ fail() {
 
 failed() {
     local message="$1"
-    $("$survive") && return 1 || fail "$message"
+    local survive="$2"
+    if [ "$survive" = "true" ]; then
+        return 1
+    else
+        fail "$message"
+    fi
 }
 
-executable() {
+x() {
     local file="$1"
-    survive="${2:-false}"
-    [ -x "$file" ] && echo "$file" || failed "Executable not found: $file."
+    local survive="$2"
+    if [ -x "$file" ]; then
+        echo "$file"
+    else
+        failed "Executable not found: $file." "$survive"
+    fi
 }
 
-file() {
+f() {
     local file="$1"
-    survive="${2:-false}"
-    [ -f "$file" ] && echo "$file" || failed "File not found: $file."
+    local survive="$2"
+    if [ -f "$file" ]; then
+        echo "$file"
+    else
+        failed "File not found: $file." "$survive"
+    fi
 }
 
 # Ensure we have something to do.
-buildscript=$(executable "$dir/build.sh")
+buildscript=$(x "$dir/build.sh")
 
 # Find the Dockerfile to read the FROM clause from.
-dockerfile=$(file "$dir"/Dockerfile "true") ||
-    dockerfile=$(file "$dir"/dockerfile "false")
+dockerfile=$(f "$dir"/Dockerfile "true") ||
+    dockerfile=$(f "$dir"/dockerfile "false")
 
 docker4gis() {
     docker4gis="$(dirname "$0")"/.docker4gis.sh
     docker4gis_dir=$("$docker4gis" "$dir" "$docker4gis_base_image")
     # The $buildscript probably wants to mainly execute the "$BASE" script.
-    export BASE="$docker4gis_dir"/build.sh
-    executable "$BASE"
+    BASE=$(x "$docker4gis_dir"/build.sh)
+    export BASE
 }
 
 # Parse the Dockerfile's FROM clause.
@@ -56,12 +72,21 @@ docker4gis() {
 docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile") &&
     docker4gis
 
+finish() {
+    # Clean up, if needed.
+    [ -d "$docker4gis_dir" ] && rm -rf "$docker4gis_dir"
+    exit "${1:-0}"
+}
+
+echo
+echo "Building $DOCKER_REGISTRY$DOCKER_USER/$repo"
+docker container rm -f "$DOCKER_USER"-"$repo" 2>/dev/null
+
 # Execute the actual build script,
 # which may or may not execute "$BASE",
 # which may or may not be set.
-pushd "$dir" >/dev/null
+pushd "$dir" >/dev/null || finish 1
 "$buildscript" "$@" >&1
-popd >/dev/null
+popd >/dev/null || finish 1
 
-# Clean up, if needed.
-[ -d "$docker4gis_dir" ] && rm -rf "$docker4gis_dir"
+finish
