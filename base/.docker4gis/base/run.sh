@@ -1,4 +1,5 @@
 #!/bin/bash
+# set -x
 
 repo="$1"
 tag="${2:-$(cat "$repo"/tag)}"
@@ -7,11 +8,9 @@ DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="$DOCKER_USER"
 
 image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
-
 [ "$repo" = proxy ] &&
     container="docker4gis-proxy" ||
     container="$DOCKER_USER"-"$repo"
-
 echo
 echo "Starting $container from $image..."
 
@@ -26,7 +25,7 @@ fi
 dir=$(mktemp -d)
 finish() {
     rm -rf "$dir"
-    exit "${1:-?$}"
+    exit "${1:-$?}"
 }
 
 if

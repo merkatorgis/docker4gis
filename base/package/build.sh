@@ -1,4 +1,5 @@
 #!/bin/bash
+# set -x
 
 DOCKER_BASE="$DOCKER_BASE"
 DOCKER_REGISTRY="$DOCKER_REGISTRY"
@@ -29,7 +30,7 @@ if [ "$repo" = .package ]; then
     add_repo() {
         # read tag from tag file
         local tag
-        tag=$(cat "$repo_path"/tag 2>dev/null) || tag=latest
+        tag=$(cat "$repo_path"/tag 2>/dev/null) || tag=latest
         local repo
         repo=$(basename "$repo_path")
         echo ".docker4gis/base/run.sh $repo $tag" >>conf/run.sh

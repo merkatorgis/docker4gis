@@ -78,9 +78,13 @@ finish() {
     exit "${1:-0}"
 }
 
+image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+[ "$repo" = proxy ] &&
+    container="docker4gis-proxy" ||
+    container="$DOCKER_USER"-"$repo"
 echo
-echo "Building $DOCKER_REGISTRY$DOCKER_USER/$repo"
-docker container rm -f "$DOCKER_USER"-"$repo" 2>/dev/null
+echo "Building $image"
+docker container rm -f "$container" 2>/dev/null
 
 # Execute the actual build script,
 # which may or may not execute "$BASE",
