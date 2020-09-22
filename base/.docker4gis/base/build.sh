@@ -78,7 +78,9 @@ finish() {
     exit "${1:-0}"
 }
 
-image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+[ "$repo" = .package ] &&
+    image="$DOCKER_REGISTRY""$DOCKER_USER"/package ||
+    image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo"
 [ "$repo" = proxy ] &&
     container="docker4gis-proxy" ||
     container="$DOCKER_USER"-"$repo"
