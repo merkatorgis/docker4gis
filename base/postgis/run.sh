@@ -34,22 +34,19 @@ docker container run --restart always --name "$container" \
 	-e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
 	-e POSTGRES_DB="$POSTGRES_DB" \
 	-e CONTAINER="$container" \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR/secrets")":/secrets \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR/certificates")":/certificates \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR/fileport")":/fileport \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR/runner")":/util/runner/log \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/secrets)":/secrets \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/certificates)":/certificates \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/fileport)":/fileport \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/runner)":/util/runner/log \
 	--mount source="$container",target=/var/lib/postgresql/data \
 	-p "$POSTGIS_PORT":5432 \
 	--network "$DOCKER_USER" \
 	-d "$image"
 
-wait_for_db() {
+while
 	sql="select current_setting('app.ddl_done', true)"
 	result=$(docker container exec "$container" pg.sh -Atc "$sql")
-	if [ "$result" = "true" ]; then
-		return 1
-	fi
-}
-while wait_for_db; do
+	[ "$result" != "true" ]
+do
 	sleep 1
 done

@@ -7,8 +7,6 @@ DOCKER_USER="${DOCKER_USER:-docker4gis}"
 repo=$(basename "$(pwd)")
 image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo"
 
-docker container rm -f "$DOCKER_USER"-api 2>/dev/null
-
 mkdir -p conf
 cp -r "$DOCKER_BASE"/plugins "$DOCKER_BASE"/.docker4gis conf
 docker image build \
