@@ -1,5 +1,4 @@
 #!/bin/bash
-# set -x
 
 DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="$DOCKER_USER"
@@ -92,7 +91,7 @@ docker container rm -f "$container" 2>/dev/null
 # which may or may not execute "$BASE",
 # which may or may not be set.
 pushd "$dir" >/dev/null || finish 1
-"$buildscript" "$@" >&1
+"$buildscript" "$@"
 popd >/dev/null || finish 1
 
 finish

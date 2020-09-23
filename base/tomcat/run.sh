@@ -1,34 +1,34 @@
 #!/bin/bash
 set -e
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER}"
-DOCKER_TAG="${DOCKER_TAG}"
-DOCKER_ENV="${DOCKER_ENV}"
-DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
+repo="$1"
+tag="$2"
+shift 2
 
-repo=$(basename "$0")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+DOCKER_REGISTRY="$DOCKER_REGISTRY"
+DOCKER_USER="$DOCKER_USER"
+DOCKER_ENV="$DOCKER_ENV"
+DOCKER_BINDS_DIR="$DOCKER_BINDS_DIR"
 
-if .run/start.sh "${image}" "${container}"; then exit; fi
+container="$DOCKER_USER"-"$repo"
+image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
 XMS="${XMS:-256m}"
 XMX="${XMX:-2g}"
 
-TOMCAT_PORT=$(.run/port.sh "${TOMCAT_PORT:-9090}")
+TOMCAT_PORT=$(base/port.sh "${TOMCAT_PORT:-9090}")
 
-docker volume create "${container}"
-docker container run --restart always --name $container \
-	-e DOCKER_USER="${DOCKER_USER}" \
-	-e DOCKER_ENV=$DOCKER_ENV \
-	-e XMS="${XMS}" \
-	-e XMX="${XMX}" \
-	--mount source="${container}",target=/host \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
-	--network "${DOCKER_USER}" \
-	-p "${TOMCAT_PORT}":8080 \
+docker volume create "$container" >/dev/null
+docker container run --restart always --name "$container" \
+	-e DOCKER_USER="$DOCKER_USER" \
+	-e DOCKER_ENV="$DOCKER_ENV" \
+	-e XMS="$XMS" \
+	-e XMX="$XMX" \
+	--mount source="$container",target=/host \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/secrets)":/secrets \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/fileport)":/fileport \
+	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/runner)":/util/runner/log \
+	--network "$DOCKER_USER" \
+	-p "$TOMCAT_PORT":8080 \
 	"$@" \
-	-d $image
+	-d "$image"

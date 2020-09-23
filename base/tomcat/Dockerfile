@@ -25,4 +25,9 @@ COPY conf/entrypoint /
 ENTRYPOINT ["/entrypoint"]
 CMD ["tomcat"]
 
+COPY conf/.docker4gis /.docker4gis
+COPY build.sh /.docker4gis/build.sh
+COPY run.sh /.docker4gis/run.sh
 ONBUILD COPY conf /tmp/conf
+ONBUILD RUN touch /tmp/conf/args; \
+	cp /tmp/conf/args /.docker4gis

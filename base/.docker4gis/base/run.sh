@@ -1,8 +1,8 @@
 #!/bin/bash
-# set -x
 
 repo="$1"
 tag="${2:-$(cat "$repo"/tag)}"
+shift 2
 
 DOCKER_REGISTRY="$DOCKER_REGISTRY"
 DOCKER_USER="$DOCKER_USER"
@@ -40,7 +40,7 @@ then
         # substituting environment variables,
         # and skipping lines starting with a #.
         envsubst <args | grep -v "^#" | xargs \
-            ./run.sh "$repo" "$tag"
+            ./run.sh "$repo" "$tag" "$@"
     popd >/dev/null || finish 1
 fi
 
