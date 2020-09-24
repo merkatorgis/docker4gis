@@ -58,16 +58,15 @@ POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 read -rn 1 -p 'Press any key to continue...'
 
 image="$DOCKER_REGISTRY""$DOCKER_USER"/package:"$docker_tag"
-
 echo "
 Executing $image" | tee -a "$log"
 
+temp=$(mktemp -d)
 container=$(docker container create "$image")
-docker container cp "$container":/.docker4gis .
+docker container cp "$container":/.docker4gis "$temp"
 docker container rm "$container" >/dev/null
+"$temp"/.docker4gis/run.sh | tee -a "$log"
+rm -rf "$temp"
 
-cd .docker4gis
-./run.sh | tee -a "$log"
 echo "
 $(docker container ls)" | tee -a "$log"
-rm -rf ../.docker4gis

@@ -33,7 +33,8 @@ if [ "$repo" = .package ]; then
         tag=$(cat "$repo_path"/tag 2>/dev/null) || tag=latest
         local repo
         repo=$(basename "$repo_path")
-        echo "docker4gis/run.sh $repo $tag" >>conf/run.sh
+        # shellcheck disable=SC2016
+        echo '"$(dirname "$0")"'"/docker4gis/run.sh $repo $tag" >>conf/run.sh
     }
     # loop over all repos to add, picking the ones we want to do first
     for repo_path in ../*/; do
