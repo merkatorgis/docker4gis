@@ -1,22 +1,20 @@
 #!/bin/bash
 set -e
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER}"
-DOCKER_TAG="${DOCKER_TAG}"
-DOCKER_ENV="${DOCKER_ENV}"
-DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
+repo="$1"
+tag="$2"
+shift 2
 
-repo=$(basename "$0")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+DOCKER_REGISTRY="$DOCKER_REGISTRY"
+DOCKER_USER="$DOCKER_USER"
+DOCKER_ENV="$DOCKER_ENV"
+DOCKER_BINDS_DIR="$DOCKER_BINDS_DIR"
 
-if .run/start.sh "${image}" "${container}"; then exit; fi
+container="$DOCKER_USER"-"$repo"
+image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
-fileport="${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}"
-
-docker container run --restart always --name $container \
-	-e DOCKER_USER="${DOCKER_USER}" \
-	--network "${DOCKER_USER}" \
-	-v "$(docker_bind_source "${fileport}")":/fileport \
-	-d $image serve "$@"
+docker container run --restart always --name "$container" \
+	-e DOCKER_USER="$DOCKER_USER" \
+	--network "$DOCKER_USER" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport/"$DOCKER_USER" /fileport)" \
+	-d "$image"
