@@ -15,10 +15,9 @@ echo
 echo "Starting $container from $image..."
 
 if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$container" 2>/dev/null); then
-    [ "$old_image" = "$image" ] &&
-        docker container start "$container" &&
-        # Existing container from same image is started, and we're done.
-        exit 0
+    [ "$old_image" = "$image" ] && docker container start "$container" &&
+        exit 0 || # Existing container from same image is started, and we're done.
+        echo "The existing container failed to start; we'll remove it, and create a new one..."
     docker container rm -f "$container" >/dev/null || exit $?
 fi
 
