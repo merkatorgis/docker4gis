@@ -34,10 +34,10 @@ docker container run --restart always --name "$container" \
 	-e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
 	-e POSTGRES_DB="$POSTGRES_DB" \
 	-e CONTAINER="$container" \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/secrets)":/secrets \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/certificates)":/certificates \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/fileport)":/fileport \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/runner)":/util/runner/log \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/certificates /certificates)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
 	--mount source="$container",target=/var/lib/postgresql/data \
 	-p "$POSTGIS_PORT":5432 \
 	--network "$DOCKER_USER" \

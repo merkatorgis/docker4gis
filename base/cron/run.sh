@@ -19,9 +19,9 @@ GEOSERVER_PASSWORD="${GEOSERVER_PASSWORD:-geoserver}"
 
 docker container run --restart always --name "$container" \
 	-e DOCKER_USER="$DOCKER_USER" \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/secrets)":/secrets \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/fileport)":/fileport \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/runner)":/util/runner/log \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
 	--network "$DOCKER_USER" \
 	-e "GEOSERVER_CONTAINER=$GEOSERVER_CONTAINER" \
 	-e "GEOSERVER_USER=$GEOSERVER_USER" \

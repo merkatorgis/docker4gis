@@ -25,9 +25,9 @@ docker container run --restart always --name "$container" \
 	-e XMS="$XMS" \
 	-e XMX="$XMX" \
 	--mount source="$container",target=/host \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/secrets)":/secrets \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/fileport)":/fileport \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/runner)":/util/runner/log \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
 	--network "$DOCKER_USER" \
 	-p "$TOMCAT_PORT":8080 \
 	"$@" \

@@ -61,7 +61,7 @@ docker container run --restart always --name "$container" \
 	-e "$(docker4gis/noop.sh API "$API")" \
 	-e "$(docker4gis/noop.sh APP "$APP")" \
 	-e "$(docker4gis/noop.sh HOMEDEST "$HOMEDEST")" \
-	-v "$(docker_bind_source "$DOCKER_BINDS_DIR"/certificates)":/certificates \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/certificates /certificates)" \
 	--mount source="$volume",target=/config \
 	-p "$PROXY_PORT":443 \
 	-p "$PROXY_PORT_HTTP":80 \

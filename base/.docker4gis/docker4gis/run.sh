@@ -22,19 +22,18 @@ if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$contain
     docker container rm -f "$container" >/dev/null || exit $?
 fi
 
-dir=$(mktemp -d)
+temp=$(mktemp -d)
 finish() {
-    rm -rf "$dir"
+    rm -rf "$temp"
     exit "${1:-$?}"
 }
 
 if
-    docker4gis="$(dirname "$0")"/.docker4gis.sh
-    docker4gis_dir=$("$docker4gis" "$dir" "$image")
+    dotdocker4gis="$(dirname "$0")"/.docker4gis.sh
+    BASE=$("$dotdocker4gis" "$temp" "$image")
 then
-    pushd "$docker4gis_dir" >/dev/null || finish 1
+    pushd "$BASE" >/dev/null || finish 1
     docker4gis/network.sh &&
-        . docker4gis/docker_bind_source &&
         # Execute the (base) image's run script,
         # passing args read from its args file,
         # substituting environment variables,

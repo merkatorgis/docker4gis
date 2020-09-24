@@ -18,6 +18,6 @@ image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
 docker volume create "$container" >/dev/null
 docker container run --rm --name "$container" \
-    -v "$(docker_bind_source "$src_dir")":/src \
+    -v "$(docker4gis/bind.sh "$src_dir" /src)" \
     --mount source="$container",target=/root/.m2 \
     "$image"
