@@ -16,9 +16,7 @@ image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 PGRST_JWT_SECRET=$(docker container exec "$DOCKER_USER-postgis" pg.sh force -Atc "select current_setting('app.jwt_secret')")
 
 proxy="$PROXY_HOST"
-if [ "$PROXY_PORT" ]; then
-	proxy="$proxy:$PROXY_PORT"
-fi
+[ "$PROXY_PORT" ] && proxy="$proxy:$PROXY_PORT"
 PGRST_SERVER_PROXY_URI="${PGRST_SERVER_PROXY_URI:-https://$proxy/$DOCKER_USER/api}"
 
 docker container run --restart always --name "$container" \

@@ -14,9 +14,7 @@ container="$DOCKER_USER"-"$repo"
 image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
 proxy="$PROXY_HOST"
-if [ "$PROXY_PORT" ]; then
-	proxy="$proxy:$PROXY_PORT"
-fi
+[ "$PROXY_PORT" ] && proxy="$proxy:$PROXY_PORT"
 API_URL="${API_URL:-https://$proxy/$DOCKER_USER/api}"
 
 docker container run --restart always --name "$container" \
