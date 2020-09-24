@@ -22,4 +22,3 @@ COPY run.sh /.docker4gis/run.sh
 # ONBUILD RUN touch /tmp/conf/args; \
 #     cp /tmp/conf/args /.docker4gis
 RUN touch /.docker4gis/args
-
