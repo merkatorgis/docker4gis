@@ -20,7 +20,7 @@ GEOSERVER_PASSWORD="${GEOSERVER_PASSWORD:-geoserver}"
 XMS="${XMS:-256m}"
 XMX="${XMX:-2g}"
 
-GEOSERVER_PORT=$(base/port.sh "${GEOSERVER_PORT:-58080}")
+GEOSERVER_PORT=$(docker4gis/port.sh "${GEOSERVER_PORT:-58080}")
 
 docker volume create "$container" >/dev/null
 docker container run --restart always --name "$container" \

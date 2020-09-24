@@ -11,7 +11,7 @@ if [ "$1" = maven ]; then
     tag="$2"
     src_dir=$(realpath "$3")
     if
-        DOCKER_USER=docker4gis .docker4gis/base/run.sh \
+        DOCKER_USER=docker4gis "$BASE"/docker4gis/run.sh \
             maven "$tag" "$src_dir"
     then
         webapps=conf/webapps

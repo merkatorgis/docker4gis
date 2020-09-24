@@ -26,6 +26,8 @@ if [ ! "$DOCKER_BINDS_DIR" ]; then
 	export DOCKER_BINDS_DIR
 fi
 
+log=$(realpath "$DOCKER_USER".log)
+
 echo "
 $(date)
 
@@ -51,22 +53,21 @@ XMX=$XMX
 
 POSTFIX_DESTINATION=$POSTFIX_DESTINATION
 POSTFIX_DOMAIN=$POSTFIX_DOMAIN
-" | tee -a "$DOCKER_USER".log
+" | tee -a "$log"
 
 read -rn 1 -p 'Press any key to continue...'
 
 image="$DOCKER_REGISTRY""$DOCKER_USER"/package:"$docker_tag"
 
 echo "
-Executing $image" | tee -a "$DOCKER_USER".log
+Executing $image" | tee -a "$log"
 
 container=$(docker container create "$image")
 docker container cp "$container":/.docker4gis .
 docker container rm "$container" >/dev/null
 
-.docker4gis/run.sh | tee -a "$DOCKER_USER".log
-
+cd .docker4gis
+./run.sh | tee -a "$log"
 echo "
-$(docker container ls)" | tee -a "$DOCKER_USER".log
-
-rm -rf .docker4gis
+$(docker container ls)" | tee -a "$log"
+rm -rf ../.docker4gis

@@ -33,8 +33,8 @@ if
     docker4gis_dir=$("$docker4gis" "$dir" "$image")
 then
     pushd "$docker4gis_dir" >/dev/null || finish 1
-    base/network.sh &&
-        . base/docker_bind_source &&
+    docker4gis/network.sh &&
+        . docker4gis/docker_bind_source &&
         # Execute the (base) image's run script,
         # passing args read from its args file,
         # substituting environment variables,

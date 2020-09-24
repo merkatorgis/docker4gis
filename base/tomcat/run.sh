@@ -16,7 +16,7 @@ image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 XMS="${XMS:-256m}"
 XMX="${XMX:-2g}"
 
-TOMCAT_PORT=$(base/port.sh "${TOMCAT_PORT:-9090}")
+TOMCAT_PORT=$(docker4gis/port.sh "${TOMCAT_PORT:-9090}")
 
 docker volume create "$container" >/dev/null
 docker container run --restart always --name "$container" \

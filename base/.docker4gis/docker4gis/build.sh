@@ -10,9 +10,15 @@ shift 2
 dir=$(dirname "$mainscript")/"$repo"
 dir=$(realpath "$dir")
 
+temp=$(mktemp -d)
+finish() {
+    rm -rf "$temp"
+    exit "${1:-$?}"
+}
+
 fail() {
     echo "$1" >&2
-    exit 1
+    finish 1
 }
 
 failed() {
@@ -52,14 +58,6 @@ buildscript=$(x "$dir/build.sh")
 dockerfile=$(f "$dir"/Dockerfile "true") ||
     dockerfile=$(f "$dir"/dockerfile "false")
 
-docker4gis() {
-    docker4gis="$(dirname "$0")"/.docker4gis.sh
-    docker4gis_dir=$("$docker4gis" "$dir" "$docker4gis_base_image")
-    # The $buildscript probably wants to mainly execute the "$BASE" script.
-    BASE=$(x "$docker4gis_dir"/build.sh)
-    export BASE
-}
-
 # Parse the Dockerfile's FROM clause.
 # sed:
 # -n: silent; do not print the whole (modified) file
@@ -68,14 +66,12 @@ docker4gis() {
 #   i: ignore case
 # Note that "$docker4gis_base_image" can be unset,
 # since building from a non-docker4gis base image is anything but abnormal.
-docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile") &&
-    docker4gis
-
-finish() {
-    # Clean up, if needed.
-    [ -d "$docker4gis_dir" ] && rm -rf "$docker4gis_dir"
-    exit "${1:-0}"
-}
+if docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile"); then
+    dotdocker4gis=$(x "$(dirname "$0")"/.docker4gis.sh)
+    BASE=$("$dotdocker4gis" "$temp" "$docker4gis_base_image")
+    export BASE
+    x "$BASE"/build.sh >/dev/null
+fi
 
 [ "$repo" = .package ] &&
     image="$DOCKER_REGISTRY""$DOCKER_USER"/package ||
@@ -85,10 +81,10 @@ finish() {
     container="$DOCKER_USER"-"$repo"
 echo
 echo "Building $image"
-docker container rm -f "$container" 2>/dev/null
+docker container rm -f "$container" >/dev/null 2>&1
 
 # Execute the actual build script,
-# which may or may not execute "$BASE",
+# which may or may not execute "$BASE"/build.sh,
 # which may or may not be set.
 pushd "$dir" >/dev/null || finish 1
 "$buildscript" "$@"

@@ -41,7 +41,7 @@ if [ "$action" = build ]; then
 	# ./ex build geoserver
 	# ./ex build app
 	"$0" test "$1" &&
-		"$DOCKER_BASE/.docker4gis/base/build.sh" "$0" "$@"
+		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" "$@"
 elif [ "$action" = package ]; then
 	# Create a runnable package.
 	# With a name, all images are pushed with that tag, and latest.
@@ -53,7 +53,7 @@ elif [ "$action" = package ]; then
 	# ./ex package 2.0.1
 	# ./ex package latest
 	export DOCKER_TAG=$1
-	"$DOCKER_BASE/.docker4gis/base/build.sh" "$0" .package "$DOCKER_TAG"
+	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" .package "$DOCKER_TAG"
 elif [ "$action" = run ]; then
 	# Run the current package.
 	# Examples:

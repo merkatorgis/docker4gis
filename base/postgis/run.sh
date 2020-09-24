@@ -21,7 +21,7 @@ image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
 
 SECRET="$SECRET"
 
-POSTGIS_PORT=$(base/port.sh "${POSTGIS_PORT:-5432}")
+POSTGIS_PORT=$(docker4gis/port.sh "${POSTGIS_PORT:-5432}")
 
 docker volume create "$container" >/dev/null
 docker container run --restart always --name "$container" \
@@ -29,7 +29,7 @@ docker container run --restart always --name "$container" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	-e SECRET="$SECRET" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
-	-e "$(base/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \
+	-e "$(docker4gis/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \
 	-e POSTGRES_USER="$POSTGRES_USER" \
 	-e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
 	-e POSTGRES_DB="$POSTGRES_DB" \
