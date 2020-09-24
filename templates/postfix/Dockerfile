@@ -1,4 +1,5 @@
-FROM docker4gis/postfix
+# do replace latest with a proper tag
+FROM docker4gis/postfix:latest
 
 ENV DESTINATION=example.com
 # And/or set POSTFIX_DESTINATION at run time
