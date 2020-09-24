@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = 'mysqld' ]; then
-	/tmp/conf/conf.sh
+	/tmp/conf.sh
 	exec docker-entrypoint.sh mysqld
 fi
 
