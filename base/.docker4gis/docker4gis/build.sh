@@ -55,8 +55,8 @@ f() {
 buildscript=$(x "$dir/build.sh")
 
 # Find the Dockerfile to read the FROM clause from.
-dockerfile=$(f "$dir"/Dockerfile "true") ||
-    dockerfile=$(f "$dir"/dockerfile "false")
+dockerfile=$(f "$dir"/Dockerfile true) ||
+    dockerfile=$(f "$dir"/dockerfile true)
 
 # Parse the Dockerfile's FROM clause.
 # sed:
@@ -74,8 +74,8 @@ if docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$doc
 fi
 
 [ "$repo" = .package ] &&
-    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/package ||
-    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo
+    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/package:dirty ||
+    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:dirty
 export IMAGE
 echo
 echo "Building $IMAGE"

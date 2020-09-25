@@ -1,7 +1,7 @@
 #!/bin/bash
 
 repo=$1
-tag=${2:-$(cat "$repo"/tag)}
+tag=$2
 shift 2
 
 DOCKER_REGISTRY=$DOCKER_REGISTRY

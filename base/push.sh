@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
@@ -15,13 +16,13 @@ dir=$(realpath "$dir")
 [ "$repo" = .package ] && repo=package
 image=$DOCKER_REGISTRY$DOCKER_USER/$repo
 
+docker image tag "$image":dirty "$image":latest
 docker image push "$image":latest
+docker image rm -f "$image":latest
 [ "$tag" ] || exit
 
-docker image tag "$image":latest "$image":"$tag"
+docker image tag "$image":dirty "$image":"$tag"
 docker image push "$image":"$tag"
+docker image rm -f "$image":dirty
 
 echo "$tag" >"$dir"/tag
-echo ">>> Tag '$tag' written to '$dir/tag'" >&2
-[ "$repo" = package ] ||
-    echo ">>> Consider updating the package." >&2
