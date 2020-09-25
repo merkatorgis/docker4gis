@@ -5,10 +5,10 @@ DOCKER_BASE=$DOCKER_BASE
 
 build() {
     mkdir -p conf
-    cp -r "$DOCKER_BASE"/plugins "$DOCKER_BASE"/.docker4gis conf
+    cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
     docker image build \
         -t "$IMAGE" .
-    rm -rf conf/plugins conf/.docker4gis
+    rm -rf conf/.plugins conf/.docker4gis
 }
 
 if [ "$1" = maven ] && maven_tag=$2 && src_dir=$(realpath "$3"); then

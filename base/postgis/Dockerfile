@@ -27,16 +27,16 @@ RUN /tmp/pgxn/install.sh
 COPY conf/safeupdate /tmp/safeupdate
 RUN /tmp/safeupdate/install.sh
 
-COPY conf/plugins/runner /tmp/runner
+COPY conf/.plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
 
-COPY conf/plugins/pg /tmp/pg
+COPY conf/.plugins/pg /tmp/pg
 RUN /tmp/pg/install.sh
 
-COPY conf/plugins/mail /tmp/mail
+COPY conf/.plugins/mail /tmp/mail
 RUN /tmp/mail/install.sh
 
-COPY conf/plugins/bats /tmp/bats
+COPY conf/.plugins/bats /tmp/bats
 RUN /tmp/bats/install.sh
 
 COPY conf/entrypoint /entrypoint

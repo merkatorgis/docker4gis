@@ -12,7 +12,7 @@ build() {
 }
 
 mkdir -p conf
-cp -r "$DOCKER_BASE"/plugins "$DOCKER_BASE"/.docker4gis conf
+cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
 if [ "$wwwroot" ]; then
     cp Dockerfile "$wwwroot"
     pushd "$wwwroot"
@@ -22,4 +22,4 @@ if [ "$wwwroot" ]; then
 else
     build
 fi
-rm -rf conf/plugins conf/.docker4gis
+rm -rf conf/.plugins conf/.docker4gis

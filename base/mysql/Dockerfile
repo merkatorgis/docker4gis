@@ -1,9 +1,9 @@
 FROM mysql:8.0.17
 
-COPY conf/plugins/mysql /tmp/mysql
+COPY conf/.plugins/mysql /tmp/mysql
 RUN /tmp/mysql/install.sh
 
-COPY conf/plugins/bats /tmp/bats
+COPY conf/.plugins/bats /tmp/bats
 RUN /tmp/bats/install.sh
 
 COPY conf/entrypoint /entrypoint

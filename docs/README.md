@@ -182,7 +182,7 @@ file, except for the extra .bats suffix.
 #### Plugin
 
 In any bash commands under test, you'll want to include the [bats plugin
-file](../base/plugins/bats/.bats.bash) like this (the test runner installs it in
+file](../base/.plugins/bats/.bats.bash) like this (the test runner installs it in
 your home directory):
 ```bash
 #!/bin/bash

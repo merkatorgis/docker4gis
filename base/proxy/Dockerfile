@@ -3,7 +3,7 @@ FROM alpine:3.12
 RUN apk update; apk add --no-cache \
 	ca-certificates wget bash
 
-COPY conf/plugins/bats /tmp/bats
+COPY conf/.plugins/bats /tmp/bats
 RUN /tmp/bats/install.sh
 
 COPY conf/certificates /tmp/conf/certificates

@@ -10,10 +10,10 @@ RUN apk update; apk add --no-cache \
 ENV PATH=/util:$PATH \
 	DESTINATION=merkator-api.com
 
-COPY conf/plugins/bats /tmp/bats
+COPY conf/.plugins/bats /tmp/bats
 RUN /tmp/bats/install.sh
 
-COPY conf/plugins/runner /tmp/runner
+COPY conf/.plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
 
 COPY conf/entrypoint /entrypoint
