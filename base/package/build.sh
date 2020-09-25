@@ -1,5 +1,6 @@
 #!/bin/bash
 
+package_tag=$1
 [ "$IMAGE" ] && extension=true
 IMAGE=${IMAGE:-docker4gis/$(basename "$(realpath .)")}
 DOCKER_BASE=$DOCKER_BASE
@@ -24,9 +25,10 @@ if [ "$extension" ]; then
         return 1
     }
     add_repo() {
-        # read tag from tag file
-        local tag
-        tag=$(cat "$repo_path"/tag 2>/dev/null) || tag=latest
+        local tag=latest
+        # if building a versioned package, read repo's tag from tag file
+        [ "$package_tag" ] && [ -f "$repo_path"/tag ] &&
+            tag=$(cat "$repo_path"/tag)
         local repo
         repo=$(basename "$repo_path")
         # shellcheck disable=SC2016

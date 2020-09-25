@@ -34,7 +34,7 @@ action=${1:-start}
 shift 1
 
 if [ "$action" = build ]; then
-	# Build new image for component.
+	# Build new image for component, tagging it as "latest".
 	# Examples:
 	# ./ex build proxy
 	# ./ex build postgis
@@ -42,18 +42,29 @@ if [ "$action" = build ]; then
 	# ./ex build app
 	"$0" test "$1" &&
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" "$@"
+elif [ "$action" = push ]; then
+	# Push a component's image to the registry.
+	# If a tag is provided, the "latest" image is tagged and pushed as such.
+	# The "latest" image is pushed in all cases.
+	# Examples:
+	# ./ex push api
+	# ./ex push api 137
+	"$DOCKER_BASE/push.sh" "$0" "$@"
 elif [ "$action" = package ]; then
 	# Create a runnable package.
-	# With a name, all images are pushed with that tag, and latest.
-	# Without a name all latest versions are used, and nothing gets pushed.
+	# With a name, versioned images are used,
+	# and the versioned as well as the latest package is pushed.
+	# Without a name all latest versions are used,
+	# and nothing gets pushed.
 	# Examples:
 	# ./ex package
 	# ./ex package 33282
 	# ./ex package 144
 	# ./ex package 2.0.1
 	# ./ex package latest
-	export DOCKER_TAG=$1
-	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" .package "$DOCKER_TAG"
+	tag=$1
+	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" .package "$tag"
+	[ "$tag" ] || exit 0 && "$0" push .package "$tag"
 elif [ "$action" = run ]; then
 	# Run the current package.
 	# Examples:
