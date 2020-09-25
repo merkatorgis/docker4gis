@@ -6,19 +6,24 @@ shift 2
 
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
+DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
+export DOCKER_ENV
 
-image=$DOCKER_REGISTRY"$DOCKER_USER"/"$repo":"$tag"
+IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 [ "$repo" = proxy ] &&
-    container="docker4gis-proxy" ||
-    container=$DOCKER_USER-"$repo"
+    CONTAINER=docker4gis-proxy ||
+    CONTAINER=$DOCKER_USER-$repo
+export IMAGE
+export CONTAINER
 echo
-echo "Starting $container from $image..."
+echo "Starting $CONTAINER from $IMAGE..."
 
-if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$container" 2>/dev/null); then
-    [ "$old_image" = "$image" ] && docker container start "$container" &&
+if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$CONTAINER" 2>/dev/null); then
+    [ "$old_image" = "$IMAGE" ] && docker container start "$CONTAINER" &&
         exit 0 || # Existing container from same image is started, and we're done.
         echo "The existing container failed to start; we'll remove it, and create a new one..."
-    docker container rm -f "$container" >/dev/null || exit $?
+    docker container rm -f "$CONTAINER" >/dev/null || exit $?
 fi
 
 temp=$(mktemp -d)
@@ -29,7 +34,7 @@ finish() {
 
 if
     dotdocker4gis="$(dirname "$0")"/.docker4gis.sh
-    BASE=$("$dotdocker4gis" "$temp" "$image")
+    BASE=$("$dotdocker4gis" "$temp" "$IMAGE")
 then
     pushd "$BASE" >/dev/null || finish 1
     docker4gis/network.sh &&
@@ -38,7 +43,7 @@ then
         # substituting environment variables,
         # and skipping lines starting with a #.
         envsubst <args | grep -v "^#" | xargs \
-            ./run.sh "$repo" "$tag" "$@"
+            ./run.sh "$@"
     popd >/dev/null || finish 1
 fi
 

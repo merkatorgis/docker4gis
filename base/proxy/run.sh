@@ -1,22 +1,17 @@
 #!/bin/bash
 set -e
 
-repo=$1
-tag=$2
-shift 2
-
 PROXY_HOST=${PROXY_HOST:-localhost}
 PROXY_PORT=${PROXY_PORT:-443}
 PROXY_PORT_HTTP=${PROXY_PORT_HTTP:-80}
 AUTOCERT=${AUTOCERT:-false}
 
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
-DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
-DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
+IMAGE=$IMAGE
+CONTAINER=$CONTAINER
 
-container=docker4gis-proxy
-image=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
+DOCKER_USER=$DOCKER_USER
+DOCKER_ENV=$DOCKER_ENV
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
 SECRET=$SECRET
 API=$API
@@ -43,16 +38,16 @@ urlhost() {
 	echo "$1" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-network=$container
+network=$CONTAINER
 docker4gis/network.sh "$network"
 
-volume=$container
+volume=$CONTAINER
 docker volume create "$volume" >/dev/null
 
 PROXY_PORT=$(docker4gis/port.sh "$PROXY_PORT")
 PROXY_PORT_HTTP=$(docker4gis/port.sh "$PROXY_PORT_HTTP")
 
-docker container run --restart always --name "$container" \
+docker container run --restart always --name "$CONTAINER" \
 	-e PROXY_HOST="$PROXY_HOST" \
 	-e PROXY_PORT="$PROXY_PORT" \
 	-e AUTOCERT="$AUTOCERT" \
@@ -67,10 +62,10 @@ docker container run --restart always --name "$container" \
 	-p "$PROXY_PORT_HTTP":80 \
 	--network "$network" \
 	--add-host="$(hostname)":"$(getip "$(hostname)")" \
-	-d "$image" proxy "$@"
+	-d "$IMAGE" proxy "$@"
 
-for network in $(docker container exec "$container" ls /config); do
+for network in $(docker container exec "$CONTAINER" ls /config); do
 	if docker network inspect "$network" 1>/dev/null 2>&1; then
-		docker network connect "$network" "$container"
+		docker network connect "$network" "$CONTAINER"
 	fi
 done

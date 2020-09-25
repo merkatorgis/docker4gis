@@ -3,16 +3,12 @@ set -e
 
 wwwroot=$1
 
+IMAGE=${IMAGE:-docker4gis/$(basename "$(realpath .)")}
 DOCKER_BASE=$DOCKER_BASE
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=${DOCKER_USER:-docker4gis}
-
-repo=$(basename "$(pwd)")
-image=$DOCKER_REGISTRY$DOCKER_USER/$repo
 
 build() {
     docker image build \
-        -t "$image" .
+        -t "$IMAGE" .
 }
 
 mkdir -p conf

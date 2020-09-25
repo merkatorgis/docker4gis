@@ -74,13 +74,15 @@ if docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$doc
 fi
 
 [ "$repo" = .package ] &&
-    image=$DOCKER_REGISTRY"$DOCKER_USER"/package ||
-    image=$DOCKER_REGISTRY"$DOCKER_USER"/"$repo"
-[ "$repo" = proxy ] &&
-    container="docker4gis-proxy" ||
-    container=$DOCKER_USER-"$repo"
+    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/package ||
+    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo
+export IMAGE
 echo
-echo "Building $image"
+echo "Building $IMAGE"
+
+[ "$repo" = proxy ] &&
+    container=docker4gis-proxy ||
+    container=$DOCKER_USER-$repo
 docker container rm -f "$container" >/dev/null 2>&1
 
 # Execute the actual build script,

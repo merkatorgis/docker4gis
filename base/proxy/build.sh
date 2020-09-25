@@ -1,22 +1,17 @@
 #!/bin/bash
 
+[ "$IMAGE" ] || base=true
+IMAGE=${IMAGE:-docker4gis/$(basename "$(realpath .)")}
 DOCKER_BASE=$DOCKER_BASE
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=${DOCKER_USER:-docker4gis}
-
-repo=proxy
-image=$DOCKER_REGISTRY$DOCKER_USER/$repo
 
 mkdir -p conf
 cp -r "$DOCKER_BASE"/plugins "$DOCKER_BASE"/.docker4gis conf
-if [ -d goproxy ]; then
-	# Build base image.
+if [ "$base" ]; then
 	goproxy/builder/run.sh &&
-		docker image build -t "$image" .
+		docker image build -t "$IMAGE" .
 else
-	# Build app image upon base image.
 	docker image build \
 		--build-arg DOCKER_USER="$DOCKER_USER" \
-		-t "$image" .
+		-t "$IMAGE" .
 fi
 rm -rf conf/plugins conf/.docker4gis

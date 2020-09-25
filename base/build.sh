@@ -4,6 +4,6 @@
 
 for component in "$@"; do
     dir=$(realpath "$component")
-    (cd "$dir" && ./build.sh) &
+    (cd "$dir" && [ -x ./build.sh ] && ./build.sh) &
 done
 wait

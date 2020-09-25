@@ -1,16 +1,12 @@
 #!/bin/bash
-# set -x
 
+[ "$IMAGE" ] && extension=true
+IMAGE=${IMAGE:-docker4gis/$(basename "$(realpath .)")}
 DOCKER_BASE=$DOCKER_BASE
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=${DOCKER_USER:-docker4gis}
-
-repo=$(basename "$(pwd)")
-image=$DOCKER_REGISTRY$DOCKER_USER/package
 
 mkdir -p conf
 
-if [ "$repo" = .package ]; then
+if [ "$extension" ]; then
     # we're building a concrete application's package image;
     # compile a list of commands to run its containers
     echo '#!/bin/bash' >conf/run.sh
@@ -48,6 +44,6 @@ fi
 
 cp -r "$DOCKER_BASE"/.docker4gis conf
 docker image build \
-    -t "$image" .
+    -t "$IMAGE" .
 
 rm -rf conf
