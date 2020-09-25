@@ -1,6 +1,7 @@
 #!/bin/bash
+set -e
 
-OGR_FDW_VERSION="${OGR_FDW_VERSION:-1.0.5}"
+OGR_FDW_VERSION=${OGR_FDW_VERSION:-1.0.5}
 
 # echo '@edge http://dl-3.alpinelinux.org/alpine/edge/main
 # http://dl-3.alpinelinux.org/alpine/edge/community
@@ -22,8 +23,8 @@ archive="${here}/pgsql-ogr-fdw-${OGR_FDW_VERSION}.tar.gz"
 src_dir=$(mktemp -d)
 
 tar --extract \
-    --file "${archive}" \
-    --directory "${src_dir}" \
+	--file "${archive}" \
+	--directory "${src_dir}" \
 	--strip-components 1
 pushd "${src_dir}"
 make

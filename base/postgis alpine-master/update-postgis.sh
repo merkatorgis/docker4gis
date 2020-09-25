@@ -3,9 +3,9 @@
 set -e
 
 # Perform all actions as $POSTGRES_USER
-export PGUSER="$POSTGRES_USER"
+export PGUSER=$POSTGRES_USER
 
-POSTGIS_VERSION="${POSTGIS_VERSION%%+*}"
+POSTGIS_VERSION=${POSTGIS_VERSION%%+*}
 
 # Load PostGIS into both template_database and $POSTGRES_DB
 for DB in template_postgis "$POSTGRES_DB" "${@}"; do

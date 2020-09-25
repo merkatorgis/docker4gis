@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-user="${1}"
-script="${2}"
+user=${1}
+script=${2}
 shift 2
 
 if ! getent passwd | grep "^${user}:"; then
@@ -10,28 +10,27 @@ if ! getent passwd | grep "^${user}:"; then
 fi
 
 conf="${script}.conf"
-if [ ! -f "${conf}" ]
-then
-	echo '#!/bin/bash' > "${conf}"
+if [ ! -f "${conf}" ]; then
+	echo '#!/bin/bash' >"${conf}"
 fi
 dir=$(dirname "${script}")
 logdir="/util/runner/log${dir}"
-echo mkdir -p "${logdir}" >> "${conf}"
-echo chown "${user}" "${logdir}" >> "${conf}"
+echo mkdir -p "${logdir}" >>"${conf}"
+echo chown "${user}" "${logdir}" >>"${conf}"
 
 echo "${user}   unix  -       n       n       -       -       pipe
-      user=${user} argv=/usr/local/bin/runner.sh ${script} $@" >> /etc/postfix/master.cf
+      user=${user} argv=/usr/local/bin/runner.sh ${script} $*" >>/etc/postfix/master.cf
 
 postconf -e 'transport_maps=hash:/etc/postfix/transport'
 
 if postfix status; then
 	# Run time, ${DESTINATION} known
-	echo "${user}@${DESTINATION} ${user}:" >> /etc/postfix/transport
+	echo "${user}@${DESTINATION} ${user}:" >>/etc/postfix/transport
 	postmap /etc/postfix/transport
 	"${conf}"
 	postfix reload
 else
 	# Build time, ${DESTINATION} prone to change
-	echo "${user}@{{DESTINATION}} ${user}:" >> /etc/postfix/transport.template
-	echo "${conf}" >> /onstart
+	echo "${user}@{{DESTINATION}} ${user}:" >>/etc/postfix/transport.template
+	echo "${conf}" >>/onstart
 fi

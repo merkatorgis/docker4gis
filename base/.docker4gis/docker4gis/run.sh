@@ -1,16 +1,16 @@
 #!/bin/bash
 
-repo="$1"
-tag="${2:-$(cat "$repo"/tag)}"
+repo=$1
+tag=${2:-$(cat "$repo"/tag)}
 shift 2
 
-DOCKER_REGISTRY="$DOCKER_REGISTRY"
-DOCKER_USER="$DOCKER_USER"
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER
 
-image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+image=$DOCKER_REGISTRY"$DOCKER_USER"/"$repo":"$tag"
 [ "$repo" = proxy ] &&
     container="docker4gis-proxy" ||
-    container="$DOCKER_USER"-"$repo"
+    container=$DOCKER_USER-"$repo"
 echo
 echo "Starting $container from $image..."
 

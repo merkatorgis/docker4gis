@@ -1,8 +1,8 @@
 #!/bin/bash
 
-to="$1"
+to=$1
 subject=$(echo "$2" | envsubst)
-login="${3:-noreply}"
+login=${3:-noreply}
 
 message=$(mktemp)
 cat | envsubst > "${message}"

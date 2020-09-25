@@ -1,7 +1,7 @@
 #!/bin/bash
 
-conf="$1"
+conf=$1
 
-pushd $(dirname "${conf}")
-	"${conf}"
-popd
+pushd "$(dirname "$conf")" || exit 1
+"$conf"
+popd || exit 1

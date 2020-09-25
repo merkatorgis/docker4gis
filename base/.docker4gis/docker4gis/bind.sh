@@ -1,7 +1,7 @@
 #!/bin/bash
 
-src="$1"
-dst="$2"
+src=$1
+dst=$2
 
 mkdir -p "$src"
 [ "$OS" = "Windows_NT" ] && src="/$src"

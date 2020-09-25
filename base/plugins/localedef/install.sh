@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GLIBC_VERSION="${GLIBC_VERSION:-2.27-r0}"
+GLIBC_VERSION=${GLIBC_VERSION:-2.27-r0}
 
 wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://raw.githubusercontent.com/sgerrand/alpine-pkg-glibc/master/sgerrand.rsa.pub
 

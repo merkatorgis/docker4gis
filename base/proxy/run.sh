@@ -1,27 +1,27 @@
 #!/bin/bash
 set -e
 
-repo="$1"
-tag="$2"
+repo=$1
+tag=$2
 shift 2
 
-PROXY_HOST="${PROXY_HOST:-localhost}"
-PROXY_PORT="${PROXY_PORT:-443}"
-PROXY_PORT_HTTP="${PROXY_PORT_HTTP:-80}"
-AUTOCERT="${AUTOCERT:-false}"
+PROXY_HOST=${PROXY_HOST:-localhost}
+PROXY_PORT=${PROXY_PORT:-443}
+PROXY_PORT_HTTP=${PROXY_PORT_HTTP:-80}
+AUTOCERT=${AUTOCERT:-false}
 
-DOCKER_REGISTRY="$DOCKER_REGISTRY"
-DOCKER_USER="$DOCKER_USER"
-DOCKER_ENV="${DOCKER_ENV:-DEVELOPMENT}"
-DOCKER_BINDS_DIR="$DOCKER_BINDS_DIR"
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER
+DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
 container=docker4gis-proxy
-image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+image=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 
-SECRET="$SECRET"
-API="$API"
-APP="$APP"
-HOMEDEST="$HOMEDEST"
+SECRET=$SECRET
+API=$API
+APP=$APP
+HOMEDEST=$HOMEDEST
 
 mkdir -p "$DOCKER_BINDS_DIR"/certificates
 
@@ -43,10 +43,10 @@ urlhost() {
 	echo "$1" | sed 's~.*//\([^:/]*\).*~\1~'
 }
 
-network="$container"
+network=$container
 docker4gis/network.sh "$network"
 
-volume="$container"
+volume=$container
 docker volume create "$volume" >/dev/null
 
 PROXY_PORT=$(docker4gis/port.sh "$PROXY_PORT")

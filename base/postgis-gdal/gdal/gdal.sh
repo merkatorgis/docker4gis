@@ -1,6 +1,7 @@
 #!/bin/bash
+set -e
 
-GDAL_VERSION="${GDAL_VERSION}"
+GDAL_VERSION=${GDAL_VERSION}
 
 archive=$(mktemp)
 src_dir=$(mktemp -d)
@@ -8,7 +9,7 @@ wget -O "${archive}" "https://github.com/OSGeo/gdal/archive/v${GDAL_VERSION}.tar
 tar --extract \
     --file "${archive}" \
     --directory "${src_dir}" \
-	--strip-components 1
+    --strip-components 1
 pushd "${src_dir}/gdal"
 ./configure --with-libkml --with-odbc
 make

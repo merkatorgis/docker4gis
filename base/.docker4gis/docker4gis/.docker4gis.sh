@@ -1,7 +1,7 @@
 #!/bin/bash
 
-dir="$1"
-docker4gis_image="$2"
+dir=$1
+docker4gis_image=$2
 
 # Copy the /.docker4gis directory out of the given image,
 # to the given directory,

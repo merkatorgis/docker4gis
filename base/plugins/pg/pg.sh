@@ -7,7 +7,7 @@ do
 	sleep 1
 done
 
-force="$1"
+force=$1
 if [ "${force}" = force ]
 then
 	shift 1

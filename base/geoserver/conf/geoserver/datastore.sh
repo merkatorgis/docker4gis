@@ -1,10 +1,10 @@
 #!/bin/bash
 
-DATASTORE_XML="$1"
+DATASTORE_XML=$1
 
 inject ()
 {
-	local key="$1"; local val="$2"
+	local key=$1; local val=$2
 	sed -i -e "s~<entry key=\"$key\">[^<]*</entry>~<entry key=\"$key\">$val</entry>~" "$DATASTORE_XML"
 }
 

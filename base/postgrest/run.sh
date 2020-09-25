@@ -1,23 +1,23 @@
 #!/bin/bash
 set -e
 
-repo="$1"
-tag="$2"
+repo=$1
+tag=$2
 shift 2
 
-DOCKER_REGISTRY="$DOCKER_REGISTRY"
-DOCKER_USER="$DOCKER_USER"
-DOCKER_ENV="${DOCKER_ENV:-DEVELOPMENT}"
-DOCKER_BINDS_DIR="$DOCKER_BINDS_DIR"
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER
+DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
-container="$DOCKER_USER"-"$repo"
-image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo":"$tag"
+container=$DOCKER_USER-$repo
+image=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 
 PGRST_JWT_SECRET=$(docker container exec "$DOCKER_USER-postgis" pg.sh force -Atc "select current_setting('app.jwt_secret')")
 
-proxy="$PROXY_HOST"
-[ "$PROXY_PORT" ] && proxy="$proxy:$PROXY_PORT"
-PGRST_SERVER_PROXY_URI="${PGRST_SERVER_PROXY_URI:-https://$proxy/$DOCKER_USER/api}"
+proxy=$PROXY_HOST
+[ "$PROXY_PORT" ] && proxy=$proxy:$PROXY_PORT
+PGRST_SERVER_PROXY_URI=${PGRST_SERVER_PROXY_URI:-https://$proxy/$DOCKER_USER/api}
 
 docker container run --restart always --name "$container" \
 	-e DOCKER_USER="$DOCKER_USER" \

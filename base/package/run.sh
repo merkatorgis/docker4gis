@@ -1,26 +1,26 @@
 #!/bin/bash
 set -e
 
-docker_tag="${1:-latest}"
+docker_tag=${1:-latest}
 
-export DOCKER_REGISTRY="$DOCKER_REGISTRY"
-export DOCKER_USER="$DOCKER_USER"
-export DOCKER_ENV="$DOCKER_ENV"
-export PROXY_HOST="$PROXY_HOST"
-export AUTOCERT="$AUTOCERT"
+export DOCKER_REGISTRY=$DOCKER_REGISTRY
+export DOCKER_USER=$DOCKER_USER
+export DOCKER_ENV=$DOCKER_ENV
+export PROXY_HOST=$PROXY_HOST
+export AUTOCERT=$AUTOCERT
 
-export SECRET="$SECRET"
-export APP="$APP"
-export API="$API"
-export HOMEDEST="$HOMEDEST"
+export SECRET=$SECRET
+export APP=$APP
+export API=$API
+export HOMEDEST=$HOMEDEST
 
-export XMS="$XMS"
-export XMX="$XMX"
+export XMS=$XMS
+export XMX=$XMX
 
-export POSTFIX_DESTINATION="$POSTFIX_DESTINATION"
-export POSTFIX_DOMAIN="$POSTFIX_DOMAIN"
+export POSTFIX_DESTINATION=$POSTFIX_DESTINATION
+export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
-export DOCKER_BINDS_DIR="$DOCKER_BINDS_DIR"
+export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 if [ ! "$DOCKER_BINDS_DIR" ]; then
 	DOCKER_BINDS_DIR=$(realpath ~)/docker-binds
 	export DOCKER_BINDS_DIR
@@ -57,7 +57,7 @@ POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
 read -rn 1 -p 'Press any key to continue...'
 
-image="$DOCKER_REGISTRY""$DOCKER_USER"/package:"$docker_tag"
+image=$DOCKER_REGISTRY$DOCKER_USER/package:$docker_tag
 echo "
 Executing $image" | tee -a "$log"
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-COMPONENT="$2" # gwc -> /geoserver/gwc/rest
+COMPONENT=$2 # gwc -> /geoserver/gwc/rest
 
 URL="http://${GEOSERVER_CONTAINER}:8080/geoserver"
 if [ "$COMPONENT" ]; then URL="$URL/$COMPONENT"; fi

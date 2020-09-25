@@ -1,12 +1,12 @@
 #!/bin/bash
 # set -x
 
-DOCKER_BASE="$DOCKER_BASE"
-DOCKER_REGISTRY="$DOCKER_REGISTRY"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
+DOCKER_BASE=$DOCKER_BASE
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=${DOCKER_USER:-docker4gis}
 
 repo=$(basename "$(pwd)")
-image="$DOCKER_REGISTRY""$DOCKER_USER"/package
+image=$DOCKER_REGISTRY$DOCKER_USER/package
 
 mkdir -p conf
 

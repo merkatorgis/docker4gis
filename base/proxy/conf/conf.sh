@@ -1,10 +1,10 @@
 #!/bin/sh
 
-DOCKER_USER="${DOCKER_USER}"
-SECRET="${SECRET}"
-HOMEDEST="${HOMEDEST}"
-API="${API}"
-APP="${APP}"
+DOCKER_USER=${DOCKER_USER}
+SECRET=${SECRET}
+HOMEDEST=${HOMEDEST}
+API=${API}
+APP=${APP}
 
 RESOURCES="http://${DOCKER_USER}-resources"
 GEOSERVER="http://${DOCKER_USER}-geoserver:8080/geoserver/"
@@ -35,9 +35,8 @@ swagger=${SWAGGER}
 swagger-ui.css.map=${SWAGGER}/swagger-ui.css.map
 swagger-ui-bundle.js.map=${SWAGGER}/swagger-ui-bundle.js.map
 swagger-ui-standalone-preset.js.map=${SWAGGER}/swagger-ui-standalone-preset.js.map
-" > "/config/${DOCKER_USER}"
+" >"/config/${DOCKER_USER}"
 
-for proxy in ${@}
-do
-    echo "${proxy}" >> "/config/${DOCKER_USER}"
+for proxy in ${@}; do
+    echo "${proxy}" >>"/config/${DOCKER_USER}"
 done

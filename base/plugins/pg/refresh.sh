@@ -8,7 +8,7 @@
 
 refresh()
 {
-	what="$1"
+	what=$1
 	message="${taskid} refreshing ${what}..."
 	echo "${message}"
 	if pg.sh -c "refresh materialized view ${what}"; then
@@ -24,9 +24,9 @@ if [ "$1" = 'run' ]; then
 	shift 1
 	exec runner.sh "$0" "$@"
 else
-	taskid="$1"
-	mv="$2"
-	force="$3"
+	taskid=$1
+	mv=$2
+	force=$3
 	if ! pg.sh -c "select from ${mv} limit 0" 1>/dev/null 2>&1; then
 		refresh "${mv}"
 	elif ! refresh "concurrently ${mv}" && [ "${force}" == 'force' ]; then

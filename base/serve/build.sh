@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-wwwroot="${1}"
+wwwroot=$1
 
-DOCKER_BASE="$DOCKER_BASE"
-DOCKER_REGISTRY="$DOCKER_REGISTRY"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
+DOCKER_BASE=$DOCKER_BASE
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=${DOCKER_USER:-docker4gis}
 
 repo=$(basename "$(pwd)")
-image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo"
+image=$DOCKER_REGISTRY$DOCKER_USER/$repo
 
 build() {
     docker image build \

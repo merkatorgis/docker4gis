@@ -1,10 +1,10 @@
 #!/bin/bash
 
-DOCKER_REGISTRY="$DOCKER_REGISTRY"
-DOCKER_USER="$DOCKER_USER"
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER
 
-mainscript="$1"
-repo="$2"
+mainscript=$1
+repo=$2
 shift 2
 
 dir=$(dirname "$mainscript")/"$repo"
@@ -22,8 +22,8 @@ fail() {
 }
 
 failed() {
-    local message="$1"
-    local survive="$2"
+    local message=$1
+    local survive=$2
     if [ "$survive" = "true" ]; then
         return 1
     else
@@ -32,22 +32,22 @@ failed() {
 }
 
 x() {
-    local file="$1"
-    local survive="$2"
+    local file=$1
+    local survive=$2
     if [ -x "$file" ]; then
         echo "$file"
     else
-        failed "Executable not found: $file." "$survive"
+        failed "Executable not found: '$file'." "$survive"
     fi
 }
 
 f() {
-    local file="$1"
-    local survive="$2"
+    local file=$1
+    local survive=$2
     if [ -f "$file" ]; then
         echo "$file"
     else
-        failed "File not found: $file." "$survive"
+        failed "File not found: '$file'." "$survive"
     fi
 }
 
@@ -74,11 +74,11 @@ if docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$doc
 fi
 
 [ "$repo" = .package ] &&
-    image="$DOCKER_REGISTRY""$DOCKER_USER"/package ||
-    image="$DOCKER_REGISTRY""$DOCKER_USER"/"$repo"
+    image=$DOCKER_REGISTRY"$DOCKER_USER"/package ||
+    image=$DOCKER_REGISTRY"$DOCKER_USER"/"$repo"
 [ "$repo" = proxy ] &&
     container="docker4gis-proxy" ||
-    container="$DOCKER_USER"-"$repo"
+    container=$DOCKER_USER-"$repo"
 echo
 echo "Building $image"
 docker container rm -f "$container" >/dev/null 2>&1

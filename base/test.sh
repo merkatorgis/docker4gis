@@ -1,13 +1,13 @@
 #!/bin/bash
 
-dir="${1:-test}"
+dir=${1:-test}
 
 if ! [ -d "$dir" ]; then
     if [ "$dir" = "test" ]; then
         echo "WARNING - consider adding some integration tests"
         exit 0
     else
-        echo "ERROR - cannot find directory $dir"
+        echo "ERROR - cannot find directory '$dir'"
         exit 22
     fi
 fi

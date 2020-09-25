@@ -1,5 +1,5 @@
 #!/bin/bash
 
-USER="$1"
+USER=$1
 
 su -c 'echo n | mail' "$USER"

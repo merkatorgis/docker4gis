@@ -2,10 +2,10 @@
 
 export MSYS_NO_PATHCONV=1
 
-src_volume="$1"
-dst_volume="$2"
+src_volume=$1
+dst_volume=$2
 
-docker volume create "${dst_volume}" > /dev/null
+docker volume create "${dst_volume}" >/dev/null
 
 docker container run \
 	--name docker-volume-mv \
@@ -23,7 +23,6 @@ docker container run \
 		done
 	'
 
-if ! docker volume rm "${src_volume}" > /dev/null
-then
+if ! docker volume rm "${src_volume}" >/dev/null; then
 	echo ' -> i.e. content is moved, but source volume remains to be removed manually'
 fi

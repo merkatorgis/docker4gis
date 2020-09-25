@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conf="$1"
+conf=$1
 
 pushd $(dirname "${conf}")
 	"${conf}"

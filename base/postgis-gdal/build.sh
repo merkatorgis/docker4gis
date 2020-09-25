@@ -1,13 +1,12 @@
 #!/bin/bash
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
+DOCKER_REGISTRY=${DOCKER_REGISTRY}
+DOCKER_USER=${DOCKER_USER:-docker4gis}
 
 repo=$(basename "$(pwd)")
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
+image=${DOCKER_REGISTRY}${DOCKER_USER}/${repo}
 
-echo; echo "Building ${image}"
-
-HERE=$(dirname "$0")
+echo
+echo "Building ${image}"
 
 docker image build -t "${image}" .
