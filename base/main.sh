@@ -64,7 +64,7 @@ test)
 	"$DOCKER_BASE/test.sh" "$1"
 	;;
 stop)
-	"$DOCKER_BASE/stop.sh" "$0"
+	"$DOCKER_BASE/stop.sh"
 	;;
 geoserver)
 	app_name=${1:-$DOCKER_USER}
