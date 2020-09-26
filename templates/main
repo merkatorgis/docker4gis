@@ -1,133 +1,72 @@
 #!/bin/bash
-set -e
 
-# edit here:
+# edit:
 export DOCKER_USER=template
 
-# Fork the merkatorgis/docker4gis repo and set the environment variable
+# Fork the merkatorgis/docker4gis repo and
+# set the OS environment variable
 # to the docker4gis/base directory:
 export DOCKER_BASE=$DOCKER_BASE
 
 # Either empty for Docker Hub:
-# export DOCKER_REGISTRY=''
+# export DOCKER_REGISTRY=
 # or a registry location (including the trailing slash), eg:
-# export DOCKER_REGISTRY=docker.merkator.com/
-# or set en enivronment variable:
-export DOCKER_REGISTRY=$DOCKER_REGISTRY
+export DOCKER_REGISTRY=docker.merkator.com/
 
-export DOCKER_ENV=DEVELOPMENT
-export DOCKER_BINDS_DIR="$DOCKER_BASE/../binds"
+export PROXY_HOST=
+export PROXY_PORT=
+export SECRET=
+export APP=
+export API=
+export HOMEDEST=
+
+export POSTFIX_DESTINATION=
+export POSTFIX_DOMAIN=
 
 export MSYS_NO_PATHCONV=1
 
-export PROXY_HOST=localhost
-export PROXY_PORT=${PROXY_PORT:-7443}
-export SECRET=$SECRET
-export APP=$APP
-export API=$API
-export HOMEDEST=$HOMEDEST
-
-export POSTFIX_DESTINATION=$POSTFIX_DESTINATION
-export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
-
-action=${1:-start}
-shift 1
-
-if [ "$action" = build ]; then
+case "$1" in
+build)
 	# Build new image for component, tagging it as "latest".
 	# Examples:
 	# ./ex build proxy
 	# ./ex build postgis
 	# ./ex build geoserver
 	# ./ex build app
-	"$0" test "$1" &&
-		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" "$@"
-elif [ "$action" = push ]; then
+	;;
+run) ;;
+
+latest) ;;
+
+clean) ;;
+
+push)
 	# Push a component's image to the registry.
 	# If a tag is provided, the "latest" image is tagged and pushed as such.
 	# The "latest" image is pushed in all cases.
 	# Examples:
 	# ./ex push api
 	# ./ex push api 137
-	"$DOCKER_BASE/push.sh" "$0" "$@"
-elif [ "$action" = package ]; then
-	# Create a runnable package.
-	# With a name, versioned images are used,
-	# and the versioned as well as the latest package is pushed.
-	# Without a name all latest versions are used,
-	# and nothing gets pushed.
-	# Examples:
-	# ./ex package
-	# ./ex package 33282
-	# ./ex package 144
-	# ./ex package 2.0.1
-	# ./ex package latest
-	tag=$1
-	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$0" .package "$tag"
-	[ "$tag" ] || exit 0 && "$0" push .package "$tag"
-elif [ "$action" = run ]; then
-	# Run the current package.
-	# Examples:
-	# ./ex run
-	# ./ex run 33282
-	# ./ex run 144
-	# ./ex run 2.0.1
-	echo '' | "$DOCKER_BASE/package/run.sh" "$1"
-elif [ "$action" = test ]; then
+	;;
+test)
 	# Run a specific component's unit tests,
 	# or the application's integration tests.
 	# Examples:
 	# ./ex test proxy
 	# ./ex test app
 	# ./ex test
-	"$DOCKER_BASE/test.sh" "$1"
-elif [ "$action" = prt ]; then
-	# Create a runnable package (latest), and run it.
-	# Examples:
-	# ./ex prt
-	"$0" package &&
-		"$0" run &&
-		"$0" test
-elif [ "$action" = brt ]; then
-	# Build new image for component, and run existing package.
-	# Examples:
-	# ./ex brt proxy
-	# ./ex brt postgis
-	# ./ex brt geoserver
-	# ./ex brt app
-	"$0" build "$@" &&
-		"$0" run &&
-		"$0" test
-elif [ "$action" = stop ]; then
+	;;
+stop)
 	# Stop running containers.
 	# Examples:
 	# ./ex stop
-	"$DOCKER_BASE/stop.sh" "$0"
-elif [ "$action" = latest ]; then
-	# Fetch latest images from the registry, and run the package.
-	# Examples:
-	# ./ex latest
-	"$DOCKER_BASE/latest.sh" "$0"
-elif [ "$action" = binds ]; then
-	# Echo the DOCKER_BINDS_DIR.
-	# Examples:
-	# ls -la $(./ex binds)
-	echo "$DOCKER_BINDS_DIR"
-elif [ "$action" = geoserver ]; then
+	;;
+geoserver)
 	# Write the GeoServer container's config to your working directory.
 	# Examples:
 	# ./ex geoserver
 	# ./ex geoserver app_name
-	app_name=${1:-$DOCKER_USER}
-	container="$DOCKER_USER-geoserver"
-	data_dir=$(docker container exec "$container" bash -c 'echo "$GEOSERVER_DATA_DIR"')
-	from="$container:$data_dir/workspaces/$app_name"
-	to="geoserver/conf/$app_name/workspaces"
-	echo "About to overwrite './$to/$app_name' with '$from'"
-	read -rn 1 -p 'Press any key to continue (or Ctrl-C to cancel)...'
-	echo
-	rm -rf "${to:?}/$app_name"
-	docker container cp "$from" "$to"
-else
-	echo "Unknown action: $action"
-fi
+	;;
+esac
+
+"$DOCKER_BASE/main.sh" "$0" "$@"

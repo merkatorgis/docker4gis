@@ -2,13 +2,12 @@
 
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+DOCKER_APP_DIR=$DOCKER_APP_DIR
 
-mainscript=$1
-repo=$2
-shift 2
+repo=$1
+shift 1
 
-dir=$(dirname "$mainscript")/"$repo"
-dir=$(realpath "$dir")
+dir=$DOCKER_APP_DIR/$repo
 
 temp=$(mktemp -d)
 finish() {

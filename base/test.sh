@@ -1,6 +1,9 @@
 #!/bin/bash
 
-dir=${1:-test}
+DOCKER_BASE=$(realpath "$(dirname "$0")")
+DOCKER_APP_DIR=$DOCKER_APP_DIR
+
+dir=$DOCKER_APP_DIR/${1:-test}
 
 if ! [ -d "$dir" ]; then
     if [ "$dir" = "test" ]; then

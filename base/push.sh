@@ -3,13 +3,12 @@ set -e
 
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+DOCKER_APP_DIR=$DOCKER_APP_DIR
 
-mainscript=$1
-repo=$2
-tag=$3
+repo=$1
+tag=$2
 
-dir=$(dirname "$mainscript")/"$repo"
-dir=$(realpath "$dir")
+dir=$DOCKER_APP_DIR/$repo
 [ "$repo" ] || exit 1
 [ -d "$dir" ] || exit 1
 
