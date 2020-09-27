@@ -46,16 +46,10 @@ run)
 latest)
 	eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh latest)"
 	;;
-clean)
-	for repo in "$DOCKER_APP_DIR"/*/; do
-		repo=$(basename "$repo")
-		docker image rm -f "$DOCKER_REGISTRY$DOCKER_USER/$repo:dirty" 2>/dev/null
-	done
-	;;
 push)
 	repo=$1
 	tag=$2
-	"$DOCKER_BASE/push.sh" "$repo" "$tag"
+	"$DOCKER_BASE/push.sh" "$repo" "$tag" || exit 1
 	[ "$tag" ] || exit 0 &&
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" .package &&
 		"$DOCKER_BASE/push.sh" .package "$tag"

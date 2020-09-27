@@ -18,7 +18,7 @@ if [ "$extension" ]; then
     (
         cd ..
         BASE='"$(dirname "$0")"' "$here"/list.sh
-    ) >>conf/run.sh
+    ) >>conf/run.sh || exit 1
 fi
 
 cp -r "$DOCKER_BASE"/.docker4gis conf

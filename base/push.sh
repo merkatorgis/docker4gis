@@ -15,13 +15,12 @@ dir=$DOCKER_APP_DIR/$repo
 [ "$repo" = .package ] && repo=package
 image=$DOCKER_REGISTRY$DOCKER_USER/$repo
 
-docker image tag "$image":dirty "$image":latest
 docker image push "$image":latest
-docker image rm -f "$image":latest
 [ "$tag" ] || exit
 
-docker image tag "$image":dirty "$image":"$tag"
+docker image tag "$image":latest "$image":"$tag"
 docker image push "$image":"$tag"
-docker image rm -f "$image":dirty
+docker image rm -f "$image":latest
 
 echo "$tag" >"$dir"/tag
+echo "> Tag file written; remember to commit changes"

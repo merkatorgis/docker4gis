@@ -72,9 +72,8 @@ if docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$doc
     x "$BASE"/build.sh >/dev/null
 fi
 
-[ "$repo" = .package ] &&
-    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/package:dirty ||
-    IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:dirty
+[ "$repo" = .package ] && repo=package
+IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:latest
 export IMAGE
 echo
 echo "Building $IMAGE"
@@ -89,6 +88,7 @@ docker container rm -f "$container" >/dev/null 2>&1
 # which may or may not be set.
 pushd "$dir" >/dev/null || finish 1
 "$buildscript" "$@"
+result=$?
 popd >/dev/null || finish 1
 
-finish
+finish "${result}"

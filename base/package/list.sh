@@ -9,6 +9,15 @@ DOCKER_APP_DIR=${DOCKER_APP_DIR:-.}
 
 # compile a list of commands to run all repos' containers
 
+temp=$(mktemp)
+finish() {
+    rm -f "$temp"
+    exit "${1:-0}"
+}
+error() {
+    echo "ERROR: $1" >&2
+    finish 1
+}
 pick_repo() {
     local item
     for item in "$@"; do
@@ -17,22 +26,36 @@ pick_repo() {
     return 1
 }
 add_repo() {
+    echo -n "Checking $repo... " >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
-    [ -f "$repo_path"/tag ] && tag=$(cat "$repo_path"/tag)
     if [ "$directive" = latest ]; then
-        docker image pull "$image:latest" >/dev/null 2>&1 &&
-            tag=latest ||
-            tag=tsetal
+        tag=latest
+        docker image pull "$image:latest" >/dev/null ||
+            error "image '$image:latest' not found in registry"
+    elif
+        [ "$directive" = dirty ] &&
+            # use latest image _if_ it exists locally
+            docker image tag "$image:latest" "$image:latest" >/dev/null 2>&1 &&
+            tag=latest
+    then
+        true
+    else
+        [ -f "$repo_path"/tag ] &&
+            tag=$(cat "$repo_path"/tag) ||
+            error "no tag file for '$repo'; have you pushed it?"
+        # use local image _if_ it exists
+        docker image tag "$image:$tag" "$image:$tag" >/dev/null 2>&1 ||
+            # otherwise, ensure it exists in the registry
+            docker image pull "$image:$tag" >/dev/null ||
+            error "image '$image:$tag' not found"
     fi
-    if [ "$directive" = dirty ] || [ "$tag" = tsetal ]; then
-        # use dirty image _if_ it exists
-        docker image tag "$image:dirty" "$image:dirty" >/dev/null 2>&1 &&
-            tag=dirty
+    if [ "$tag" ]; then
+        echo "$BASE/docker4gis/run.sh $repo $tag" >>"$temp"
+        echo "done" >&2
+    else
+        error "no tag for '$image'"
     fi
-    [ "$tag" = tsetal ] &&
-        echo "echo ERROR: no image found for '$image'" ||
-        echo "$BASE/docker4gis/run.sh $repo $tag"
 }
 first_repo() {
     pick_repo postgis mysql
@@ -52,3 +75,6 @@ for repo_path in "$DOCKER_APP_DIR"/*/; do
     repo=$(basename "$repo_path")
     last_repo && add_repo
 done
+
+cat "$temp"
+finish

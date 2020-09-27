@@ -38,8 +38,6 @@ run) ;;
 
 latest) ;;
 
-clean) ;;
-
 push)
 	# Push a component's image to the registry.
 	# If a tag is provided, the "latest" image is tagged and pushed as such.

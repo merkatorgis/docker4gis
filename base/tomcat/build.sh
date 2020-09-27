@@ -12,7 +12,8 @@ build() {
 }
 
 if [ "$1" = maven ] && maven_tag=$2 && src_dir=$(realpath "$3"); then
-    DOCKER_USER=docker4gis "$BASE"/docker4gis/run.sh maven "$maven_tag" "$src_dir" &&
+    DOCKER_REGISTRY='' DOCKER_USER=docker4gis \
+        "$BASE"/docker4gis/run.sh maven "$maven_tag" "$src_dir" &&
         (
             webapps=conf/webapps
             mkdir -p "$webapps"
