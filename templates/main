@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # edit:
-export DOCKER_USER=template
+export DOCKER_USER=provide_a_name
 
 # Fork the merkatorgis/docker4gis repo and
 # set the OS environment variable
@@ -9,9 +9,9 @@ export DOCKER_USER=template
 export DOCKER_BASE=$DOCKER_BASE
 
 # Either empty for Docker Hub:
-# export DOCKER_REGISTRY=
+export DOCKER_REGISTRY=
 # or a registry location (including the trailing slash), eg:
-export DOCKER_REGISTRY=docker.merkator.com/
+# export DOCKER_REGISTRY=docker.merkator.com/
 
 export PROXY_HOST=
 export PROXY_PORT=
