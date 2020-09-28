@@ -3,3 +3,5 @@
 # Environment variables are respected.
 # Lines _starting with_ # are ignored.
 ##
+# password
+# database_name
