@@ -15,7 +15,7 @@ finish() {
     exit "${1:-0}"
 }
 error() {
-    echo "ERROR: $1" >&2
+    echo "> ERROR: $1" >&2
     finish 1
 }
 pick_repo() {
