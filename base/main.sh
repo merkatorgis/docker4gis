@@ -48,7 +48,8 @@ run)
 	else
 		eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh dirty)" && echo &&
 			docker container ls
-	fi
+	fi && echo &&
+		this test
 	;;
 br)
 	this build "$1" && echo &&
