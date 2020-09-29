@@ -37,14 +37,26 @@ this() {
 case "$action" in
 build)
 	repo=$1
-	this test "$repo" &&
+	[ "$repo" ] || echo "Please pass the name of the component to build."
+	[ "$repo" ] && this test "$repo" &&
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$repo"
 	;;
 run)
-	eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh dirty)"
+	tag=$1
+	if [ "$tag" ]; then
+		"$DOCKER_BASE"/package/run.sh "$tag"
+	else
+		eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh dirty)" && echo &&
+			docker container ls
+	fi
+	;;
+br)
+	this build "$1" && echo &&
+		this run
 	;;
 latest)
-	eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh latest)"
+	eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh latest)" && echo &&
+		docker container ls
 	;;
 push)
 	repo=$1

@@ -35,9 +35,15 @@ build)
 	# ./ex build app
 	;;
 run) ;;
-
+br)
+	# Build, and then run
+	# Examples:
+	# ./ex br proxy
+	# ./ex br postgis
+	# ./ex br geoserver
+	# ./ex br app
+	;;
 latest) ;;
-
 push)
 	# Push a component's image to the registry.
 	# If a tag is provided, the "latest" image is tagged and pushed as such.
