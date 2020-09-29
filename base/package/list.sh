@@ -26,7 +26,6 @@ pick_repo() {
     return 1
 }
 add_repo() {
-    echo -n "Checking $repo... " >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
     if [ "$directive" = latest ]; then
@@ -43,7 +42,7 @@ add_repo() {
     else
         [ -f "$repo_path"/tag ] &&
             tag=$(cat "$repo_path"/tag) ||
-            error "no tag file for '$repo'; have you pushed it?"
+            error "no tag file for '$repo'; was it pushed already?"
         # use local image _if_ it exists
         docker image tag "$image:$tag" "$image:$tag" >/dev/null 2>&1 ||
             # otherwise, ensure it exists in the registry
@@ -52,7 +51,7 @@ add_repo() {
     fi
     if [ "$tag" ]; then
         echo "$BASE/docker4gis/run.sh $repo $tag" >>"$temp"
-        echo "done" >&2
+        echo "Taking $image:$tag" >&2
     else
         error "no tag for '$image'"
     fi
