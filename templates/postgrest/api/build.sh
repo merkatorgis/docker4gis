@@ -1,3 +1,3 @@
 #!/bin/bash
 
-"${DOCKER_BASE}/postgrest/build.sh"
+"$BASE"/build.sh

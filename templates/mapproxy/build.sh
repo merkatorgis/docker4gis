@@ -1,3 +1,3 @@
 #!/bin/bash
 
-"${DOCKER_BASE}/mapproxy/build.sh"
+"$BASE"/build.sh
