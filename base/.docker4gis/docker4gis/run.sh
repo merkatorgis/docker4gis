@@ -20,9 +20,11 @@ echo
 echo "Starting $CONTAINER from $IMAGE..."
 
 if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$CONTAINER" 2>/dev/null); then
-    [ "$old_image" = "$IMAGE" ] && docker container start "$CONTAINER" &&
-        exit 0 || # Existing container from same image is started, and we're done.
-        echo "The existing container failed to start; we'll remove it, and create a new one..."
+    if [ "$old_image" = "$IMAGE" ]; then
+        docker container start "$CONTAINER" &&
+            exit 0 || # Existing container from same image is started, and we're done.
+            echo "The existing container failed to start; we'll remove it, and create a new one..."
+    fi
     docker container rm -f "$CONTAINER" >/dev/null || exit $?
 fi
 
@@ -44,7 +46,8 @@ then
         # and skipping lines starting with a #.
         envsubst <args | grep -v "^#" | xargs \
             ./run.sh "$@"
+    result=$?
     popd >/dev/null || finish 1
 fi
 
-finish
+finish "$result"
