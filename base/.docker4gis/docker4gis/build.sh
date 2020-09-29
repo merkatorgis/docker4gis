@@ -1,5 +1,6 @@
 #!/bin/bash
 
+DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_APP_DIR=$DOCKER_APP_DIR
@@ -9,53 +10,33 @@ shift 1
 
 dir=$DOCKER_APP_DIR/$repo
 
+if [ "$repo" = .package ] && ! [ -d "$dir" ]; then
+    # Install the .package template.
+    cp -r "$DOCKER_BASE"/../templates/.package "$DOCKER_APP_DIR" &&
+        echo "> Package component installed; remember to commit changes."
+fi
+
 temp=$(mktemp -d)
 finish() {
+    local code=$1
+    local message=$2
+    [ "$message" ] && echo "$message" >&2
     rm -rf "$temp"
-    exit "${1:-$?}"
-}
-
-fail() {
-    echo "$1" >&2
-    finish 1
-}
-
-failed() {
-    local message=$1
-    local survive=$2
-    if [ "$survive" = "true" ]; then
-        return 1
-    else
-        fail "$message"
-    fi
+    exit "${code:-$?}"
 }
 
 x() {
-    local file=$1
-    local survive=$2
-    if [ -x "$file" ]; then
-        echo "$file"
-    else
-        failed "Executable not found: '$file'." "$survive"
-    fi
+    [ -x "$1" ] || finish 1 "Executable not found: '$1'."
 }
 
-f() {
-    local file=$1
-    local survive=$2
-    if [ -f "$file" ]; then
-        echo "$file"
-    else
-        failed "File not found: '$file'." "$survive"
-    fi
-}
+buildscript=$dir/build.sh
+# Ensure we have something to run.
+x "$buildscript"
 
-# Ensure we have something to do.
-buildscript=$(x "$dir/build.sh")
-
-# Find the Dockerfile to read the FROM clause from.
-dockerfile=$(f "$dir"/Dockerfile true) ||
-    dockerfile=$(f "$dir"/dockerfile true)
+# Find any Dockerfile to read the FROM clause from.
+dockerfile="$dir"/Dockerfile
+[ -f "$dockerfile" ] ||
+    dockerfile="$dir"/dockerfile
 
 # Parse the Dockerfile's FROM clause.
 # sed:
@@ -63,13 +44,17 @@ dockerfile=$(f "$dir"/Dockerfile true) ||
 # 's~regex~\groupno~ip':
 #   p: do print what's found
 #   i: ignore case
-# Note that "$docker4gis_base_image" can be unset,
+[ -f "$dockerfile" ] &&
+    docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile")
+
+# Note that "$docker4gis_base_image" may be unset even if "$dockerfile" isn't,
 # since building from a non-docker4gis base image is anything but abnormal.
-if docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile"); then
-    dotdocker4gis=$(x "$(dirname "$0")"/.docker4gis.sh)
-    BASE=$("$dotdocker4gis" "$temp" "$docker4gis_base_image")
+if [ "$docker4gis_base_image" ]; then
+    dotdocker4gis=$(dirname "$0")/.docker4gis.sh
+    x "$dotdocker4gis"
+    BASE=$("$dotdocker4gis" "$temp" "$docker4gis_base_image") || finish 1
+    x "$BASE"/build.sh
     export BASE
-    x "$BASE"/build.sh >/dev/null
 fi
 
 [ "$repo" = .package ] && repo=package
@@ -81,6 +66,8 @@ echo "Building $IMAGE"
 [ "$repo" = proxy ] &&
     container=docker4gis-proxy ||
     container=$DOCKER_USER-$repo
+# Remove any existing container, so that it gets replaced by a new one,
+# started from the new image we're going to build now.
 docker container rm -f "$container" >/dev/null 2>&1
 
 # Execute the actual build script,
@@ -91,4 +78,4 @@ pushd "$dir" >/dev/null || finish 1
 result=$?
 popd >/dev/null || finish 1
 
-finish "${result}"
+finish "$result"
