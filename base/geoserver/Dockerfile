@@ -1,4 +1,4 @@
-FROM docker4gis/tomcat:latest
+FROM docker4gis/tomcat:229
 
 ENV GEOSERVER_USER=admin \
 	GEOSERVER_PASSWORD=geoserver \
