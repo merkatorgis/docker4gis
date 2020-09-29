@@ -1,18 +1,29 @@
 #!/bin/bash
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
+IMAGE=${IMAGE:-docker4gis/$(basename "$(realpath .)")}
+DOCKER_BASE=$DOCKER_BASE
 
-repo=$(basename "$(pwd)")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}"
+build() {
+    mkdir -p conf
+    cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
+    docker image build \
+        -t "$IMAGE" .
+    rm -rf conf/.plugins conf/.docker4gis
+}
 
-echo; echo "Building ${image}"
-docker container rm -f "${container}" 2>/dev/null
-
-here=$(dirname "$0")
-
-mkdir -p conf
-cp -r "${here}/../plugins" "conf"
-docker image build -t "${image}" .
-rm -rf "conf/plugins"
+if [ "$1" = maven ] && maven_tag=$2 && src_dir=$(realpath "$3"); then
+    DOCKER_REGISTRY='' DOCKER_USER=docker4gis \
+        "$BASE"/docker4gis/run.sh maven "$maven_tag" "$src_dir" &&
+        (
+            webapps=conf/webapps
+            mkdir -p "$webapps"
+            war_project=$(basename "$src_dir")
+            war_file=$webapps/$war_project.war
+            cp "$src_dir"/target/*.war "$war_file"
+            build
+            rm -f "$war_file"
+            [ "$(ls "$webapps")" ] || rm -rf "$webapps"
+        )
+else
+    build
+fi

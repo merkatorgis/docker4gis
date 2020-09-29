@@ -1,9 +1,10 @@
 #!/bin/bash
+set -e
 
-PGXN_VERSION="${PGXN_VERSION:-1.3}"
+PGXN_VERSION=${PGXN_VERSION:-1.3}
 
 apk add --no-cache --virtual .build-deps \
-	py-setuptools
+    py-setuptools
 
 here=$(dirname "$0")
 archive="${here}/pgxnclient-${PGXN_VERSION}.tar.gz"
@@ -12,7 +13,7 @@ src_dir=$(mktemp -d)
 tar --extract \
     --file "${archive}" \
     --directory "${src_dir}" \
-	--strip-components 1
+    --strip-components 1
 
 pushd "${src_dir}"
 python setup.py install

@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = serve ]; then
+	shift 1
+	wwwroot=/wwwroot
+	[ "$DYNAMIC" ] && wwwroot=/fileport
+	cp /serve.json "$wwwroot"
+	if [ "$SINGLE" ]; then
+		exec serve --listen 80 --single "$wwwroot"
+	else
+		exec serve --listen 80 "$wwwroot"
+	fi
+fi
+
+exec "$@"

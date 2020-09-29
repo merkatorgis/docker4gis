@@ -2,9 +2,9 @@
 set -e
 
 here=$(dirname "$0")
-docker image build -t goproxy "${here}"
+docker image build -t goproxy "$here"
 
 export MSYS_NO_PATHCONV=1
 docker container run --rm \
-	-v "$(docker_bind_source "${PWD}/goproxy")":/usr/src/goproxy \
+	-v "$("$DOCKER_BASE"/.docker4gis/docker4gis/bind.sh "$PWD"/goproxy /usr/src/goproxy)" \
 	goproxy

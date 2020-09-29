@@ -10,9 +10,16 @@ RUN apk update; apk add --no-cache \
 ENV PATH=/util:$PATH \
 	DESTINATION=merkator-api.com
 
-ADD conf /tmp/conf
+COPY conf/.plugins/bats /tmp/bats
+RUN /tmp/bats/install.sh
 
-RUN /tmp/conf/plugins/bats/install.sh
+COPY conf/.plugins/runner /tmp/runner
+RUN /tmp/runner/install.sh
+
+COPY conf/entrypoint /entrypoint
+COPY conf/addmailbox.sh /usr/local/bin/addmailbox.sh
+COPY conf/api.sh /usr/local/bin/api.sh
+COPY conf/readmail.sh /usr/local/bin/readmail.sh
 
 RUN	mkdir -p     /var/spool/postfix/ /var/spool/postfix/pid /var/mail; \
 	chown root   /var/spool/postfix/ /var/spool/postfix/pid; \
@@ -24,14 +31,16 @@ RUN	mkdir -p     /var/spool/postfix/ /var/spool/postfix/pid /var/mail; \
 	# Disable SMTPUTF8, because libraries (ICU) are missing in alpine
 	postconf -e smtputf8_enable=no; \
 	# Update aliases database. It's not used, but postfix complains if the .db file is missing
-	postalias /etc/postfix/aliases; \
-	mv /tmp/conf/entrypoint/* /; \
-	mv /tmp/conf/util         /util; \
-	/tmp/conf/plugins/runner/install.sh
+	postalias /etc/postfix/aliases
 
 EXPOSE 25
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["postfix"]
 
-ONBUILD ADD conf /tmp/conf
+COPY conf/.docker4gis /.docker4gis
+COPY build.sh /.docker4gis/build.sh
+COPY run.sh /.docker4gis/run.sh
+ONBUILD COPY conf /tmp/conf
+ONBUILD RUN touch /tmp/conf/args; \
+	cp /tmp/conf/args /.docker4gis

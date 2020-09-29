@@ -1,3 +1,3 @@
 #!/bin/bash
 
-"${DOCKER_BASE}/postfix/build.sh"
+"$BASE"/build.sh

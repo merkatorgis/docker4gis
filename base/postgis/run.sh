@@ -1,55 +1,47 @@
 #!/bin/bash
+set -e
 
-POSTGRES_USER="${1:-postgres}"
-POSTGRES_PASSWORD="${2:-postgres}"
-POSTGRES_DB="${3:-$DOCKER_USER}"
+POSTGRES_USER=${1:-postgres}
+POSTGRES_PASSWORD=${2:-postgres}
+POSTGRES_DB=${3:-$DOCKER_USER}
 
-SHM_SIZE="${SHM_SIZE:-64m}"
+SHM_SIZE=${SHM_SIZE:-64m}
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER}"
-DOCKER_TAG="${DOCKER_TAG}"
-DOCKER_ENV="${DOCKER_ENV}"
-DOCKER_BINDS_DIR="${DOCKER_BINDS_DIR}"
+IMAGE=$IMAGE
+CONTAINER=$CONTAINER
 
-repo=$(basename "$0")
-container="${DOCKER_USER}-${repo}"
-image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:${DOCKER_TAG}"
+DOCKER_USER=$DOCKER_USER
+DOCKER_ENV=$DOCKER_ENV
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
-SECRET="${SECRET}"
+SECRET=$SECRET
 
-if .run/start.sh "${image}" "${container}"; then exit; fi
+POSTGIS_PORT=$(docker4gis/port.sh "${POSTGIS_PORT:-5432}")
 
-postfix_domain=
-if [ "${POSTFIX_DOMAIN}" != '' ]; then
-	postfix_domain="-e POSTFIX_DOMAIN=${POSTFIX_DOMAIN}"
-fi
-
-POSTGIS_PORT=$(.run/port.sh "${POSTGIS_PORT:-5432}")
-
-docker volume create "$container"
-docker container run --restart always --name $container \
+docker volume create "$CONTAINER" >/dev/null
+docker container run --restart always --name "$CONTAINER" \
 	--shm-size="$SHM_SIZE" \
-	-e DOCKER_USER="${DOCKER_USER}" \
-	-e SECRET=$SECRET \
-	-e DOCKER_ENV=$DOCKER_ENV \
-	${postfix_domain} \
-	-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-	-e POSTGRES_DB=$POSTGRES_DB \
-	-e POSTGRES_USER=$POSTGRES_USER \
-	-e POSTGIS_HOST=$POSTGIS_HOST \
-	-e CONTAINER=$container \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/secrets")":/secrets \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/certificates")":/certificates \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/fileport")":/fileport \
-	-v "$(docker_bind_source "${DOCKER_BINDS_DIR}/runner")":/util/runner/log \
-	--mount source="$container",target=/var/lib/postgresql/data \
-	-p "${POSTGIS_PORT}":5432 \
-	--network "${DOCKER_USER}" \
-	-d $image
+	-e DOCKER_USER="$DOCKER_USER" \
+	-e SECRET="$SECRET" \
+	-e DOCKER_ENV="$DOCKER_ENV" \
+	-e "$(docker4gis/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \
+	-e POSTGRES_USER="$POSTGRES_USER" \
+	-e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+	-e POSTGRES_DB="$POSTGRES_DB" \
+	-e CONTAINER="$CONTAINER" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/certificates /certificates)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
+	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
+	--mount source="$CONTAINER",target=/var/lib/postgresql/data \
+	-p "$POSTGIS_PORT":5432 \
+	--network "$DOCKER_USER" \
+	-d "$IMAGE"
 
-# wait for db
-while [ ! $(docker container exec "$container" pg.sh -Atc "select current_setting('app.ddl_done', true)") = true ]
+while
+	sql="select current_setting('app.ddl_done', true)"
+	result=$(docker container exec "$CONTAINER" pg.sh -Atc "$sql")
+	[ "$result" != "true" ]
 do
 	sleep 1
 done

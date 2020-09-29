@@ -1,28 +1,17 @@
 #!/bin/bash
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER:-docker4gis}"
+[ "$IMAGE" ] || base=true
+IMAGE=${IMAGE:-docker4gis/$(basename "$(realpath .)")}
+DOCKER_BASE=$DOCKER_BASE
 
-# repo=$(basename "$(pwd)")
-container=docker4gis-proxy
-image="${DOCKER_REGISTRY}${DOCKER_USER}/proxy"
-
-. "${DOCKER_BASE}/docker_bind_source"
-
-echo
-echo "Building ${image}"
-
-here=$(dirname "$0")
-
-cp -r "${here}/../plugins" "conf"
-if [ -d goproxy ]; then # building base
-	if goproxy/builder/run.sh; then
-		docker image build -t "${image}" .
-	fi
-else # building upon base
-	docker container rm -f "${container}" 2>/dev/null
+mkdir -p conf
+cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
+if [ "$base" ]; then
+	goproxy/builder/run.sh &&
+		docker image build -t "$IMAGE" .
+else
 	docker image build \
-		--build-arg DOCKER_USER="${DOCKER_USER}" \
-		-t "${image}" .
+		--build-arg DOCKER_USER="$DOCKER_USER" \
+		-t "$IMAGE" .
 fi
-rm -rf "conf/plugins"
+rm -rf conf/.plugins conf/.docker4gis

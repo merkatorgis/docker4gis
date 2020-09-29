@@ -1,5 +1,0 @@
-FROM pdok/mapproxy
-
-COPY conf /srv/mapproxy/config
-
-ONBUILD COPY conf /srv/mapproxy/config
