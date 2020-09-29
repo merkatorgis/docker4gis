@@ -15,6 +15,6 @@ docker container rm "$container" >/dev/null
 if [ -d "$dir"/.docker4gis ]; then
     echo "$dir"/.docker4gis
 else
-    echo "/.docker4gis directory not written from image $docker4gis_image" >&2
+    echo "/.docker4gis directory not written from image '$docker4gis_image'" >&2
     exit 1
 fi
