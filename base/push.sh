@@ -11,6 +11,8 @@ tag=$2
 [ "$repo" ] || echo "Please pass the name of the component to push."
 [ "$repo" ] || exit 1
 
+[ "$tag" = latest ] && tag=
+
 dir=$DOCKER_APP_DIR/$repo
 ls -d "$dir"/ >/dev/null || exit 1
 
@@ -21,18 +23,21 @@ integer() {
 # Refuse an integer tag that is not higher than any integer package tag,
 # so that we can use the given repo's tag as the tag for the updated package
 # as well.
-if [ "$repo" != .package ] && [ "$tag" ] && ! integer "$tag"; then
-    [ "$tag" != latest ] &&
-        echo "> WARNING: given tag ($tag) is neither 'latest' nor a positive integer number." &&
-        read -rn 1 -p 'Type Y to continue anyway... ' answer && echo &&
-        [ "$answer" = Y ] || exit 1
+[ "$tag" ] && [ "$repo" != .package ] && if ! integer "$tag"; then
+    echo "> WARNING: given tag ($tag) is not a positive integer number."
+    read -rn 1 -p 'Continue anyway? [yN] ' answer && echo
+    [ "$answer" = y ] || exit 1
 else
     [ -f "$DOCKER_APP_DIR"/.package/tag ] &&
         package_tag=$(cat "$DOCKER_APP_DIR"/.package/tag) &&
         integer "$package_tag" &&
-        if [ "$tag" -le "$package_tag" ]; then
-            echo "> ERROR: given tag ($tag) shoud be higher than current package's tag ($package_tag)."
+        if [ "$tag" -lt "$package_tag" ]; then
+            echo "> ERROR: given tag ($tag) should never be lower than current package's tag ($package_tag)."
             exit 1
+        elif [ "$tag" -eq "$package_tag" ]; then
+            echo "> WARNING: given tag ($tag) is not higher than current package's tag ($package_tag)."
+            read -rn 1 -p 'Continue anyway? [yN] ' answer && echo
+            [ "$answer" = y ] || exit 1
         fi
 fi
 
