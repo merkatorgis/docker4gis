@@ -1,4 +1,3 @@
-# do replace latest with a proper tag
 FROM docker4gis/postgis:latest
 
 ENV POSTFIX_DOMAIN=template.example.com

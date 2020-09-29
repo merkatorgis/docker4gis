@@ -1,4 +1,4 @@
-FROM swaggerapi/swagger-ui
+FROM swaggerapi/swagger-ui:latest
 
 COPY conf/interceptors.js /usr/share/nginx/configurator/interceptors.js
 

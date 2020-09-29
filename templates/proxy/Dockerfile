@@ -1,4 +1,3 @@
-# do replace latest with a proper tag
 FROM docker4gis/proxy:latest
 
 # These default values are overwritten by run time environment values, if set:

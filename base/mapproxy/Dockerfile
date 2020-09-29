@@ -1,4 +1,4 @@
-FROM pdok/mapproxy
+FROM pdok/mapproxy:latest
 
 COPY conf /srv/mapproxy/config
 

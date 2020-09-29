@@ -1,4 +1,4 @@
-FROM pdok/mapserver
+FROM pdok/mapserver:latest
 
 ONBUILD COPY conf /srv/data
 

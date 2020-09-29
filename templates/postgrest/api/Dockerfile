@@ -1,4 +1,3 @@
-# do replace latest with a proper tag
 FROM docker4gis/postgrest:latest
 
 # ENV PGRST_DB_POOL=100
