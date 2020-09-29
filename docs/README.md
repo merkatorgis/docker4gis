@@ -11,6 +11,7 @@
   - [Setup app directory](#setup-app-directory)
 - [Building things](#building-things)
 - [Running things](#running-things)
+  - [On the server](#on-the-server)
 - [Testing things](#testing-things)
   - [Unit tests](#unit-tests)
   - [Integration tests](#integration-tests)
@@ -104,29 +105,35 @@ your app's proxy image
 
 ## Running things
 
-When you've built all your images, create a runnable package with `./app
-package`, then `./app run` will run your app. That is, it'll run the `latest`
-version of it; see the [package](package.md) docs for details about versioning.
+`./app run` will run your app in your development environment. It will also run
+any integration tests.
 
 Where `./app run` creates containers from images (start existing containers),
 `./app stop` will stop all the app's containers.
 
-When you're happy about your changes, save a version to the Docker registry with
-`./app package {tag}`. This can be the Docker Hub, or any other public or
-private registry. The docker4gis `registry` base image facilitates setting up a
-private registry.
-
-Once your images are in a registry, they're accessible there from your servers.
-On a server, the images are never built, only run. So the only thing you need
-there, is the little run script that runs the package. See its
-[docs](package.md) for details.
+When you're happy about your changes to a specific component, save a version to
+the Docker registry with `./app push {component} {tag}`. The registry can be the
+Docker Hub, or any other public or private registry. The docker4gis `registry`
+base image facilitates setting up a private registry.
 
 When working on a project with several colleagues, all will have their focus on
 different components. You don't need to constantly build all the images; instead
 you can update all at once to the most recently pushed version through `./app
 latest`. That will remove all existing containers, update all images, and then
-run everything. It's also possible to `./app package latest` to push everything,
-without creating a new tag.
+run everything. To store a newly built, but not yet versioned image of a
+specific component, use `./app push {component}` (without any tag).
+
+### On the server
+
+Once your images are in a registry, they're accessible there from your servers.
+On a server, the images are never built, only run. So the only thing you need
+there, is the little run script that runs the package.
+
+Copy the `$DOCKER_BASE/package/run.sh` script to the server, and edit the needed
+environment values. Then just execute it, passing a specific tag, and it will
+pull the images from the registry, and run the containers.
+
+Note that you might need to login to your registry first.
 
 ## Testing things
 
@@ -155,8 +162,8 @@ build {component}` - _if any test fails, the build is canceled_.
 
 And since in practise, you'll repeatedly want to see a successfully built image
 running your recent changes, and check if everything is ok, there is this
-"build, run, and test" action: `./app brt {component}`; it's really just a
-schortcut for `./app build {component} && ./app run && ./app test`.
+"build, run, and test" action: `./app br {component}`; it's really just a
+schortcut for `./app build {component} && ./app run`.
 
 ### Bash Automated Testing System
 
@@ -182,8 +189,8 @@ file, except for the extra .bats suffix.
 #### Plugin
 
 In any bash commands under test, you'll want to include the [bats plugin
-file](../base/.plugins/bats/.bats.bash) like this (the test runner installs it in
-your home directory):
+file](../base/.plugins/bats/.bats.bash) like this (the test runner installs it
+in your home directory):
 ```bash
 #!/bin/bash
 # shellcheck source=/dev/null
