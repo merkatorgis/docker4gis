@@ -1,65 +1,28 @@
 #!/bin/bash
-set -e
 
-push=$1
+# shellcheck disable=SC2016
+echo -n '#!/bin/bash
 
-DOCKER_REGISTRY=${DOCKER_REGISTRY}
-DOCKER_USER=${DOCKER_USER}
-DOCKER_TAG=${DOCKER_TAG:-latest}
+tag=$1
+[ "$tag" ] || echo "Please pass a specific tag."
+[ "$tag" ] || exit 1
 
-image=${DOCKER_REGISTRY}${DOCKER_USER}/package:${DOCKER_TAG}
+export DOCKER_ENV=$DOCKER_ENV
+export PROXY_HOST=$PROXY_HOST
+export AUTOCERT=$AUTOCERT
 
-echo
-echo "Building ${image}"
+export SECRET=$SECRET
+export APP=$APP
+export API=$API
+export HOMEDEST=$HOMEDEST
 
-here=$(dirname "$0")
+export XMS=$XMS
+export XMX=$XMX
 
-run="${here}/conf/.run"
-mkdir -p "${run}"
+export POSTFIX_DESTINATION=$POSTFIX_DESTINATION
+export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
-cp "${DOCKER_BASE}/network.sh" "${run}"
-cp "${DOCKER_BASE}/port.sh" "${run}"
-cp "${DOCKER_BASE}/start.sh" "${run}"
-cp "${DOCKER_BASE}/docker_bind_source" "${run}"
-
-main="${run}/${DOCKER_USER}.sh"
-echo '#!/bin/bash' >"${main}"
-if chmod +x "${main}" 2>/dev/null; then true; fi
-
-echo "export DOCKER_REGISTRY=${DOCKER_REGISTRY}" >>"${main}"
-echo "export DOCKER_USER=${DOCKER_USER}" >>"${main}"
-echo "export DOCKER_TAG=${DOCKER_TAG}" >>"${main}"
-echo ".run/network.sh" >>"${main}"
-echo ". .run/docker_bind_source" >>"${main}"
-
-save() {
-	repo=$1
-	tag=${2:-true}
-	_image=${DOCKER_REGISTRY}${DOCKER_USER}/${repo}
-	if ! docker image inspect "${_image}:latest" 1>/dev/null 2>&1; then
-		# Component whitout an image.
-		return
-	fi
-	if [ "${DOCKER_TAG}" != latest ]; then
-		if "${tag}"; then
-			docker image tag "${_image}:latest" "${_image}:${DOCKER_TAG}"
-		fi
-		docker image push "${_image}:latest"
-		docker image push "${_image}:${DOCKER_TAG}"
-	elif [ "${push}" = latest ]; then
-		docker image push "${_image}:latest"
-	fi
-}
-
-component() {
-	envs=${envs}
-	repo=$1
-	src="$2/run.sh"
-	shift 2
-	if [ -f "${src}" -a -d "${here}/../${repo}" ]; then
-		cp "${src}" "${run}"
-		mv "${run}/run.sh" "${run}/${repo}"
-		echo "${envs} .run/${repo} $@" >>"${main}"
-		save "${repo}"
-	fi
-}
+eval "$(docker container run --rm '
+echo -n "$DOCKER_REGISTRY$DOCKER_USER/package"
+# shellcheck disable=SC2016
+echo ':"$tag" /run.sh)"'
