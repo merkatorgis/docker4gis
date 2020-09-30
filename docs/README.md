@@ -129,9 +129,21 @@ Once your images are in a registry, they're accessible there from your servers.
 On a server, the images are never built, only run. So the only thing you need
 there, is the little run script that runs the package.
 
-Copy the `$DOCKER_BASE/package/run.sh` script to the server, and edit the needed
-environment values. Then just execute it, passing a specific tag, and it will
-pull the images from the registry, and run the containers.
+On the server, run:
+```
+docker container run --rm {DOCKER_REGISTRY}{DOCKER_UESR}/package:{tag} > {DOCKER_USER}
+```
+e.g.
+```
+docker container run --rm docker.example.com/theapp/package:237 > theapp
+```
+and edit the needed environment values.
+
+Then just source it, passing a specific tag, and it will pull the images from
+the registry, and run the containers. So the example is run like:
+```
+. theapp 237
+```
 
 Note that you might need to login to your registry first.
 

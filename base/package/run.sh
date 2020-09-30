@@ -1,25 +1,7 @@
 #!/bin/bash
-set -e
 
-docker_tag=${1:-latest}
-
-export DOCKER_REGISTRY=$DOCKER_REGISTRY
-export DOCKER_USER=$DOCKER_USER
-export DOCKER_ENV=$DOCKER_ENV
-export PROXY_HOST=$PROXY_HOST
-export AUTOCERT=$AUTOCERT
-
-export SECRET=$SECRET
-export APP=$APP
-export API=$API
-export HOMEDEST=$HOMEDEST
-
-export XMS=$XMS
-export XMX=$XMX
-
-export POSTFIX_DESTINATION=$POSTFIX_DESTINATION
-export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
-
+# shellcheck disable=SC2016
+echo '
 export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 if [ ! "$DOCKER_BINDS_DIR" ]; then
 	DOCKER_BINDS_DIR=$(realpath ~)/docker-binds
@@ -31,7 +13,7 @@ log=$(realpath "$DOCKER_USER".log)
 echo "
 $(date)
 
-Running package '$DOCKER_USER' version: $docker_tag
+Running package $DOCKER_USER version: $TAG
 
 With these settings:
 
@@ -55,14 +37,13 @@ POSTFIX_DESTINATION=$POSTFIX_DESTINATION
 POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 " | tee -a "$log"
 
-read -rn 1 -p 'Press any key to continue...'
+read -rn 1 -p "Press any key to continue..."
 
-image=$DOCKER_REGISTRY$DOCKER_USER/package:$docker_tag
 echo "
-Executing $image" | tee -a "$log"
+Executing $DOCKER_REGISTRY$DOCKER_USER/package:$tag" | tee -a "$log"
 
 temp=$(mktemp -d)
-container=$(docker container create "$image")
+container=$(docker container create "$DOCKER_REGISTRY$DOCKER_USER/package:$tag")
 docker container cp "$container":/.docker4gis "$temp"
 docker container rm "$container" >/dev/null
 "$temp"/.docker4gis/run.sh | tee -a "$log"
@@ -70,3 +51,4 @@ rm -rf "$temp"
 
 echo "
 $(docker container ls)" | tee -a "$log"
+'

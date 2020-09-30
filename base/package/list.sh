@@ -25,6 +25,9 @@ pick_repo() {
     done
     return 1
 }
+local_image_exists() {
+    docker image tag "$1" "$1" >/dev/null 2>&1
+}
 add_repo() {
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
@@ -32,20 +35,16 @@ add_repo() {
         tag=latest
         docker image pull "$image:latest" >/dev/null ||
             error "image '$image:latest' not found in registry"
-    elif
-        [ "$directive" = dirty ] &&
-            # use latest image _if_ it exists locally
-            docker image tag "$image:latest" "$image:latest" >/dev/null 2>&1 &&
-            tag=latest
-    then
-        true
+    elif [ "$directive" = dirty ] && local_image_exists "$image:latest"; then
+        # use latest image _if_ it exists locally
+        tag=latest
     else
-        [ -f "$repo_path"/tag ] &&
-            tag=$(cat "$repo_path"/tag) ||
-            error "no tag file for '$repo'; was it pushed already?"
+        [ -f "$repo_path"/tag ] ||
+            error "no tag file for '$repo'; was it pushed already?" &&
+            tag=$(cat "$repo_path"/tag)
         # use local image _if_ it exists
-        docker image tag "$image:$tag" "$image:$tag" >/dev/null 2>&1 ||
-            # otherwise, ensure it exists in the registry
+        local_image_exists "$image:$tag" ||
+            # otherwise, try to find it in the registry
             docker image pull "$image:$tag" >/dev/null ||
             error "image '$image:$tag' not found"
     fi
