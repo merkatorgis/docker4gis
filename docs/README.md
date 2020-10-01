@@ -83,9 +83,8 @@ GitHub Desktop.
 ### Setup app directory
 
 Create a directory for your app's code on your local file system. Make a
-directory `docker` inside it. Copy the template [.package](/templates/.package)
-directory and the template [main script](/templates/main) to this `docker`
-directory.
+directory `docker` inside it. Copy the template [main script](/templates/main)
+to this `docker` directory.
 
 Rename the main script to a short name for your specific app (your're going to
 type that name quite a lot in the terminal). Then edit the main script to set
@@ -108,8 +107,8 @@ your app's proxy image
 `./app run` will run your app in your development environment. It will also run
 any integration tests.
 
-Where `./app run` creates containers from images (start existing containers),
-`./app stop` will stop all the app's containers.
+Where `./app run` creates containers from images (or starts existing
+containers), `./app stop` will stop all the app's containers.
 
 When you're happy about your changes to a specific component, save a version to
 the Docker registry with `./app push {component} {tag}`. The registry can be the
@@ -131,18 +130,19 @@ there, is the little run script that runs the package.
 
 On the server, run:
 ```
-docker container run --rm {DOCKER_REGISTRY}{DOCKER_UESR}/package:{tag} > {DOCKER_USER}
+docker container run --rm {DOCKER_REGISTRY}{DOCKER_USER}/package:{tag} > {DOCKER_USER}
 ```
 e.g.
 ```
 docker container run --rm docker.example.com/theapp/package:237 > theapp
 ```
-and edit the needed environment values.
+Then, make it executable: `chmod +x theapp` and edit the needed environment
+values.
 
-Then just source it, passing a specific tag, and it will pull the images from
-the registry, and run the containers. So the example is run like:
+When you run it, pass a specific tag, and it will pull the images from the
+registry, and run the containers. So the example is run like:
 ```
-. theapp 237
+./theapp 237
 ```
 
 Note that you might need to login to your registry first.
