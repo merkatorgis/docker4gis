@@ -1,7 +1,12 @@
 #!/bin/bash
 
+echo "export DOCKER_USER=$DOCKER_USER"
+echo "export DOCKER_REGISTRY=$DOCKER_REGISTRY"
 # shellcheck disable=SC2016
 echo '
+[ "$tag" ] || echo "Please pass a specific tag."
+[ "$tag" ] || exit 1
+
 export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 if [ ! "$DOCKER_BINDS_DIR" ]; then
 	DOCKER_BINDS_DIR=$(realpath ~)/docker-binds
@@ -13,7 +18,7 @@ log=$(realpath "$DOCKER_USER".log)
 echo "
 $(date)
 
-Running package $DOCKER_USER version: $TAG
+Running package $DOCKER_USER version: $tag
 
 With these settings:
 

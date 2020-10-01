@@ -4,8 +4,6 @@
 echo -n '#!/bin/bash
 
 tag=$1
-[ "$tag" ] || echo "Please pass a specific tag."
-[ "$tag" ] || exit 1
 
 export DOCKER_ENV=$DOCKER_ENV
 export PROXY_HOST=$PROXY_HOST
