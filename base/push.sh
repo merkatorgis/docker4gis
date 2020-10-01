@@ -31,10 +31,7 @@ else
     [ -f "$DOCKER_APP_DIR"/.package/tag ] &&
         package_tag=$(cat "$DOCKER_APP_DIR"/.package/tag) &&
         integer "$package_tag" &&
-        if [ "$tag" -lt "$package_tag" ]; then
-            echo "> ERROR: given tag ($tag) should never be lower than current package's tag ($package_tag)."
-            exit 1
-        elif [ "$tag" -eq "$package_tag" ]; then
+        if [ "$tag" -le "$package_tag" ]; then
             echo "> WARNING: given tag ($tag) is not higher than current package's tag ($package_tag)."
             read -rn 1 -p 'Continue anyway? [yN] ' answer && echo
             [ "$answer" = y ] || exit 1
