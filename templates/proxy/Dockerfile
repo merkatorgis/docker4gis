@@ -1,4 +1,4 @@
-FROM docker4gis/proxy:232
+FROM docker4gis/proxy:239
 
 # These default values are overwritten by run time environment values, if set:
 ENV API="http://$DOCKER_USER-api:8080/"
