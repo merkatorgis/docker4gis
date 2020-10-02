@@ -11,7 +11,7 @@ Quickly pull up a stable baseline for your Geographical Information System, by e
 - MapFish for printing maps in PDF templates
 - Postfix mailserver
 - Cron for scheduled tasks
-- (Elm Single Page App server - currently unavailabe)
+- Elm Single Page App
 - Tomcat Java API server
 - HTTP static file server
 - Reverse Proxy
