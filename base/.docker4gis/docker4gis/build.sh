@@ -45,7 +45,7 @@ dockerfile="$dir"/Dockerfile
 #   p: do print what's found
 #   i: ignore case
 [ -f "$dockerfile" ] &&
-    docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile" | head -n 1)
+    docker4gis_base_image=$(sed -n 's~^FROM\s\+\(docker4gis/\S\+\).*~\1~ip' "$dockerfile" | tail -n 1)
 
 # Note that "$docker4gis_base_image" may be unset even if "$dockerfile" isn't,
 # since building from a non-docker4gis base image is anything but abnormal.

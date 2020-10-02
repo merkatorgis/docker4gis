@@ -1,4 +1,4 @@
-FROM docker4gis/elm:237 as builder
+FROM docker4gis/elm:238 as builder
 
 FROM docker4gis/serve:237
 ENV SINGLE=true
