@@ -1,0 +1,6 @@
+FROM docker4gis/elm:237 as builder
+
+FROM docker4gis/serve:237
+ENV SINGLE=true
+RUN rm -rf /wwwroot
+COPY --from=builder /elm/build /wwwroot
