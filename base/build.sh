@@ -1,15 +1,9 @@
 #!/bin/bash
 
-basedir=$(dirname "$1")
-repo="$2"
-shift 2
+# this is just a tool for development of docker4gis features
 
-curdir=$(pwd);
-cd "${basedir}"; basedir=$(pwd) # make the path absolute
-
-. "${DOCKER_BASE}/docker_bind_source"
-
-cd "${basedir}/${repo}"
-./build.sh "$@"
-
-cd "${curdir}"
+for component in "$@"; do
+    dir=$(realpath "$(dirname "$0")"/"$component")
+    (cd "$dir" && [ -x ./build.sh ] && ./build.sh) &
+done
+wait

@@ -11,6 +11,7 @@
   - [Setup app directory](#setup-app-directory)
 - [Building things](#building-things)
 - [Running things](#running-things)
+  - [On the server](#on-the-server)
 - [Testing things](#testing-things)
   - [Unit tests](#unit-tests)
   - [Integration tests](#integration-tests)
@@ -82,9 +83,8 @@ GitHub Desktop.
 ### Setup app directory
 
 Create a directory for your app's code on your local file system. Make a
-directory `docker` inside it. Copy the template [.package](/templates/.package)
-directory and the template [main script](/templates/main) to this `docker`
-directory.
+directory `docker` inside it. Copy the template [main script](/templates/main)
+to this `docker` directory.
 
 Rename the main script to a short name for your specific app (your're going to
 type that name quite a lot in the terminal). Then edit the main script to set
@@ -104,29 +104,48 @@ your app's proxy image
 
 ## Running things
 
-When you've built all your images, create a runnable package with `./app
-package`, then `./app run` will run your app. That is, it'll run the `latest`
-version of it; see the [package](package.md) docs for details about versioning.
+`./app run` will run your app in your development environment. It will also run
+any integration tests.
 
-Where `./app run` creates containers from images (start existing containers),
-`./app stop` will stop all the app's containers.
+Where `./app run` creates containers from images (or starts existing
+containers), `./app stop` will stop all the app's containers.
 
-When you're happy about your changes, save a version to the Docker registry with
-`./app package {tag}`. This can be the Docker Hub, or any other public or
-private registry. The docker4gis `registry` base image facilitates setting up a
-private registry.
-
-Once your images are in a registry, they're accessible there from your servers.
-On a server, the images are never built, only run. So the only thing you need
-there, is the little run script that runs the package. See its
-[docs](package.md) for details.
+When you're happy about your changes to a specific component, save a version to
+the Docker registry with `./app push {component} {tag}`. The registry can be the
+Docker Hub, or any other public or private registry. The docker4gis `registry`
+base image facilitates setting up a private registry.
 
 When working on a project with several colleagues, all will have their focus on
 different components. You don't need to constantly build all the images; instead
 you can update all at once to the most recently pushed version through `./app
 latest`. That will remove all existing containers, update all images, and then
-run everything. It's also possible to `./app package latest` to push everything,
-without creating a new tag.
+run everything. To store a newly built, but not yet versioned image of a
+specific component, use `./app push {component}` (without any tag).
+
+### On the server
+
+Once your images are in a registry, they're accessible there from your servers.
+On a server, the images are never built, only run. So the only thing you need
+there, is the little run script that runs the package.
+
+On the server, run:
+```
+docker container run --rm {DOCKER_REGISTRY}{DOCKER_USER}/package:{tag} > {DOCKER_USER}
+```
+e.g.
+```
+docker container run --rm docker.example.com/theapp/package:237 > theapp
+```
+Then, make it executable: `chmod +x theapp` and edit the needed environment
+values.
+
+When you run it, pass a specific tag, and it will pull the images from the
+registry, and run the containers. So the example is run like:
+```
+./theapp 237
+```
+
+Note that you might need to login to your registry first.
 
 ## Testing things
 
@@ -155,8 +174,8 @@ build {component}` - _if any test fails, the build is canceled_.
 
 And since in practise, you'll repeatedly want to see a successfully built image
 running your recent changes, and check if everything is ok, there is this
-"build, run, and test" action: `./app brt {component}`; it's really just a
-schortcut for `./app build {component} && ./app run && ./app test`.
+"build, run, and test" action: `./app br {component}`; it's really just a
+schortcut for `./app build {component} && ./app run`.
 
 ### Bash Automated Testing System
 
@@ -182,8 +201,8 @@ file, except for the extra .bats suffix.
 #### Plugin
 
 In any bash commands under test, you'll want to include the [bats plugin
-file](../base/plugins/bats/.bats.bash) like this (the test runner installs it in
-your home directory):
+file](../base/.plugins/bats/.bats.bash) like this (the test runner installs it
+in your home directory):
 ```bash
 #!/bin/bash
 # shellcheck source=/dev/null
@@ -197,12 +216,17 @@ small testable subroutines, eg:
 ```bash
 #!/bin/bash
 ID=$1
+
 LOADER_ROOT_DIR=${LOADER_ROOT_DIR:-"/fileport/$DOCKER_USER"}
+
 # shellcheck source=/dev/null
 source ~/.bats.bash
+
 @sub 1 check_running "$(basename "$0")"
+
 @sub 2 dir "$LOADER_ROOT_DIR"
 dir="${output:?}"
+
 klicmeldnr=$(ls "$dir"/extracted)
 echo "$ID $klicmeldnr converting in $dir ..."
 @sub 3 run_loader "$dir"
@@ -228,10 +252,9 @@ In case the main script needs to survive a failing subroutine, use `@subvive`
 instead of `@sub`, eg:
 ```bash
 ...
-xml=$(ls "$dir"/extracted/*/GI_*.xml)
-if ! @subvive 3 check_size_time "$xml"; then
-    @sub 4 email_too_big "$xml"
-    exit 3
+if @subvive 1 daytime; then
+    timestring=${output:?}
+    daytime=true
 fi
 ...
 ```

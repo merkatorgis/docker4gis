@@ -1,3 +1,3 @@
 #!/bin/bash
 
-"${DOCKER_BASE}/mapfish/build.sh"
+"$BASE"/build.sh

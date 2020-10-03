@@ -1,17 +1,15 @@
 #!/bin/bash
 
-DOCKER_REGISTRY="${DOCKER_REGISTRY}"
-DOCKER_USER="${DOCKER_USER}"
+DOCKER_REGISTRY=${DOCKER_REGISTRY}
+DOCKER_USER=${DOCKER_USER}
 
-main_script="$1"
+main_script=$1
 
-for file in $(dirname "${main_script}")/*
-do
-    if [ -d "${file}" ]
-    then
+for file in "$(dirname "${main_script}")"/*; do
+    if [ -d "${file}" ]; then
         repo=$(basename "${file}")
-        container="${DOCKER_USER}-${repo}"
-        image="${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:latest"
+        container=${DOCKER_USER}-${repo}
+        image=${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:latest
 
         docker container rm -f "${container}" 2>/dev/null
         docker image pull "${image}"

@@ -1,6 +1,7 @@
 #!/bin/bash
+set -e
 
-PGJWT_ISH="${PGJWT_ISH:-0f1aa16}"
+PGJWT_ISH=${PGJWT_ISH:-0f1aa16}
 
 apk add --no-cache --virtual .build-deps \
 	openssh make

@@ -1,7 +1,8 @@
 #!/bin/bash
+set -e
 
-# ODBC_FDW_VERSION="${ODBC_FDW_VERSION:-0.3.0}"
-ODBC_FDW_VERSION="${ODBC_FDW_VERSION:-e4d5fe8}"
+# ODBC_FDW_VERSION=${ODBC_FDW_VERSION:-0.3.0}
+ODBC_FDW_VERSION=${ODBC_FDW_VERSION:-e4d5fe8}
 
 apk add --no-cache --virtual .build-deps \
 	make cmake g++ unixodbc-dev postgresql-dev

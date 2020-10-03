@@ -11,8 +11,8 @@ Quickly pull up a stable baseline for your Geographical Information System, by e
 - MapFish for printing maps in PDF templates
 - Postfix mailserver
 - Cron for scheduled tasks
-- Elm Single Page App server
-- Tomcat or Glassfish Java API server
+- Elm Single Page App
+- Tomcat Java API server
 - HTTP static file server
 - Reverse Proxy
 - Docker registry
@@ -22,6 +22,10 @@ Enjoy having exactly the same setup on each server __and__ develepment environme
 Set up a new environment by copying a 10-line script, setting 5 environment variables, and issuing a 1-word command.
 
 Migrate each environment to the next release by issuing the same 1-word command, adding the version number.
+
+--- NOTE: the current version has a lot of breaking changes. ---
+
+--- The good news is that the main new feature is: preventing breaking changes. ---
 
 ## Community-strengthened
 
