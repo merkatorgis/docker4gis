@@ -5,6 +5,7 @@ SECRET=${SECRET}
 HOMEDEST=${HOMEDEST}
 API=${API}
 APP=${APP}
+AUTH_PATH=${AUTH_PATH}
 
 RESOURCES="http://${DOCKER_USER}-resources"
 GEOSERVER="http://${DOCKER_USER}-geoserver:8080/geoserver/"
@@ -15,7 +16,8 @@ SWAGGER="http://${DOCKER_USER}-swagger:8080"
 
 echo DOCKER_USER="${DOCKER_USER}"
 
-echo "secret=${SECRET}
+echo "authPath=${AUTH_PATH}
+secret=${SECRET}
 homedest=${HOMEDEST}
 api=${API}
 app=${APP}
