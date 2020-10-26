@@ -25,6 +25,7 @@ type proxy struct {
 type config struct {
 	secret   string
 	homedest string
+	authPath string
 	proxies  map[string]*proxy
 }
 
@@ -34,7 +35,6 @@ var proxyPort = os.Getenv("PROXY_PORT")
 var useAutocert = os.Getenv("AUTOCERT")
 var dockerEnv = os.Getenv("DOCKER_ENV")
 var dockerUser = os.Getenv("DOCKER_USER")
-var authPath = os.Getenv("AUTH_PATH")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
 var reverseProxyInsecure *httputil.ReverseProxy
@@ -89,6 +89,9 @@ func main() {
 				} else if key == "homedest" {
 					configs[app].homedest = value
 					log.Printf("%s.homedest=%s", app, value)
+				} else if key == "authPath" {
+					configs[app].authPath = value
+					log.Printf("%s.authPath=%s", app, value)
 				} else {
 					defineProxy(app, key, value)
 				}
@@ -244,7 +247,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					} else {
 						if proxy.authorise {
-							if req, err := http.NewRequest("GET", authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+							if req, err := http.NewRequest("GET", config.authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
 								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 								return
 							} else {

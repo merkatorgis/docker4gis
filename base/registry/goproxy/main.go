@@ -9,9 +9,13 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"golang.org/x/crypto/acme/autocert"
 )
 
-var host = os.Getenv("REGISTRY_HOST")
+var proxyHost = os.Getenv("REGISTRY_HOST")
+var useAutocert = os.Getenv("AUTOCERT")
+var dockerEnv = os.Getenv("DOCKER_ENV")
 var registry *httputil.ReverseProxy
 
 func init() {
@@ -23,10 +27,23 @@ func init() {
 }
 
 func main() {
-	crt := "/certificates/" + host + ".crt"
-	key := "/certificates/" + host + ".key"
-	log.Println("Starting")
-	log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
+	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
+		crt := "/certificates/" + proxyHost + ".crt"
+		key := "/certificates/" + proxyHost + ".key"
+		log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
+	} else {
+		m := &autocert.Manager{
+			Cache:      autocert.DirCache("/config/autocert"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(proxyHost),
+		}
+		s := &http.Server{
+			Addr:      ":https",
+			TLSConfig: m.TLSConfig(),
+			Handler:   http.HandlerFunc(handler),
+		}
+		log.Fatal(s.ListenAndServeTLS("", ""))
+	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
