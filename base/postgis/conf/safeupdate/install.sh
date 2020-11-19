@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apk add --no-cache --virtual .build-deps \
-    alpine-sdk py-setuptools
+    alpine-sdk py3-setuptools
 
 pgxn install safeupdate
 
