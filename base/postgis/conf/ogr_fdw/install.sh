@@ -13,9 +13,10 @@ OGR_FDW_VERSION=${OGR_FDW_VERSION:-1.0.5}
 # apk add --upgrade apk-tools@edge 2>/dev/null
 
 apk add --no-cache --virtual .build-deps \
-	make cmake g++ \
+	alpine-sdk \
 	unixodbc-dev \
-	postgresql-dev
+	postgresql-dev \
+	gdal-dev
 
 here=$(dirname "$0")
 # archive="https://github.com/pramsey/pgsql-ogr-fdw/archive/v${OGR_FDW_VERSION}.tar.gz"

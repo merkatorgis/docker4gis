@@ -27,5 +27,5 @@ $$;
 create constraint trigger check_users_role_exists
 after insert or update on web.users
 for each row
-execute function web.check_users_role_exists()
+execute procedure web.check_users_role_exists()
 ;

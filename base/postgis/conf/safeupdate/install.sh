@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apk add --no-cache --virtual .build-deps \
-    py-setuptools make gcc libc-dev clang llvm5
+    alpine-sdk py-setuptools
 
 pgxn install safeupdate
 

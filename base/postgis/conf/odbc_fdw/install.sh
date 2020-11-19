@@ -5,7 +5,7 @@ set -e
 ODBC_FDW_VERSION=${ODBC_FDW_VERSION:-e4d5fe8}
 
 apk add --no-cache --virtual .build-deps \
-	make cmake g++ unixodbc-dev postgresql-dev
+	alpine-sdk unixodbc-dev postgresql-dev
 
 here=$(dirname "$0")
 # archive="https://github.com/CartoDB/odbc_fdw/archive/${ODBC_FDW_VERSION}.tar.gz"

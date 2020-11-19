@@ -1,5 +1,9 @@
 #!/bin/bash
 
+while ! update-postgis.sh; do
+    sleep 1
+done
+
 pg.sh -c "alter database ${POSTGRES_DB} set app.ddl_done to false"
 
 pg.sh -c "create extension if not exists ogr_fdw"
