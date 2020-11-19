@@ -4,7 +4,7 @@ set -e
 PLSH_ISH=${PLSH_ISH:-bae6f78}
 
 apk add --no-cache --virtual .build-deps \
-	g++ make clang llvm
+	alpine-sdk
 
 here=$(dirname "$0")
 archive="${here}/plsh-${PLSH_ISH}.zip"
