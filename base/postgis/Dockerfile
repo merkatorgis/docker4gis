@@ -1,5 +1,5 @@
-ARG POSTGRESQL_VERSION=10
-ARG POSTGIS_VERSION=2.5
+ARG POSTGRESQL_VERSION=13
+ARG POSTGIS_VERSION=3.0
 
 # <- postgres:10 <- debian:stretch-slim
 FROM postgis/postgis:${POSTGRESQL_VERSION}-${POSTGIS_VERSION}
@@ -97,9 +97,9 @@ RUN cd /pgxnclient-${PGXN_VERSION}; \
 	${PYTHON} setup.py install
 
 # install extension safeupdate from pgxn
-RUN pgxn install safeupdate; \
-	echo "shared_preload_libraries=safeupdate" \
-	>> /etc/postgresql/postgresql.conf
+# https://github.com/eradman/pg-safeupdate
+# http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
+RUN pgxn install safeupdate
 
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
