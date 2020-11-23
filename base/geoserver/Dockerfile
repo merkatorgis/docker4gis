@@ -13,6 +13,7 @@ ENV GEOSERVER_VERSION=2.16.0
 RUN mkdir -p /tmp/conf/webapps/geoserver; \
 	unzip -qo /tmp/conf/geoserver/dist/geoserver-"$GEOSERVER_VERSION"-war.zip -d /tmp/conf/geoserver/dist; \
 	unzip -qo /tmp/conf/geoserver/dist/geoserver.war -d /tmp/conf/webapps/geoserver; \
+	rm -rf /tmp/conf/webapps/geoserver/data/workspaces/*; \
 	mv /tmp/conf/geoserver/global.xml /tmp/conf/webapps/geoserver/data; \
 	mv /tmp/conf/geoserver/logging.xml /tmp/conf/webapps/geoserver/data; \
 	mv /tmp/conf/geoserver/logs /tmp/conf/webapps/geoserver/data
