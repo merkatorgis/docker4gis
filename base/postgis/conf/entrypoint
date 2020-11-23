@@ -10,6 +10,8 @@ if [ "$1" = 'postgis' ]; then
 	# configure postgresql for startup
 	/conf.sh
 
+	# clear the "last" file (see last.sh and the end of onstart.sh)
+	echo '' >/last
 	# kick off configuration scripts after the database has started
 	/onstart.sh &
 

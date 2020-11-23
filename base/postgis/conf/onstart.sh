@@ -30,3 +30,7 @@ find /tmp/conf -name "conf.sh" -exec /subconf.sh {} \;
 pg.sh -c "alter database ${POSTGRES_DB} set session_preload_libraries = 'safeupdate'"
 
 pg.sh -c "alter database ${POSTGRES_DB} set app.ddl_done to true"
+
+# see last.sh
+# shellcheck disable=SC1091
+source /last

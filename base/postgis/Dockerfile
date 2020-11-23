@@ -132,6 +132,9 @@ COPY conf/web /tmp/web
 # install database server administrative scripts
 COPY ["conf/entrypoint", "conf/init.sh", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
 
+# install tool last.sh
+COPY conf/last.sh /usr/local/bin
+
 # include a "client" image's conf scripts where onstart.sh will find them
 ONBUILD COPY conf /tmp/conf
 
