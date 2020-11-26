@@ -3,9 +3,19 @@ set -e
 
 if [ "$1" = 'postgis' ]; then
 	export PGUSER=${POSTGRES_USER}
+
+	# start the mail sending deamon
 	postfix.sh
-	/tmp/conf.sh
-	/tmp/onstart.sh &
+
+	# configure postgresql for startup
+	/conf.sh
+
+	# clear the "last" file (see last.sh and the end of onstart.sh)
+	echo '' >/last
+	# kick off configuration scripts after the database has started
+	/onstart.sh &
+
+	# run the database server
 	exec docker-entrypoint.sh postgres -c 'config_file=/etc/postgresql/postgresql.conf'
 fi
 
