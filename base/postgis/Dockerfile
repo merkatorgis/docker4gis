@@ -27,9 +27,6 @@ RUN apt install -y \
 	postgresql-${POSTGRESQL_VERSION}-ogr-fdw \
 	postgresql-${POSTGRESQL_VERSION}-plsh
 
-# install package tdsodbc for SQL Server connections
-RUN apt install -y tdsodbc
-
 ARG MYSQL_VERSION=0.8.16-1
 # install mysql repository to
 # install package mysql-connector-odbc
@@ -100,6 +97,30 @@ RUN cd /pgxnclient-${PGXN_VERSION}; \
 # https://github.com/eradman/pg-safeupdate
 # http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
 RUN pgxn install safeupdate
+
+# install the Microsoft ODBC driver for SQL Server
+# https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15
+ENV BUILD_TOOLS="${BUILD_TOOLS} curl"
+ENV BUILD_TOOLS="${BUILD_TOOLS} apt-transport-https"
+ENV BUILD_TOOLS="${BUILD_TOOLS} ca-certificates"
+RUN apt install -y ${BUILD_TOOLS}
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+#Download appropriate package for the OS version
+# https://www.ionos.com/digitalguide/server/know-how/how-to-check-debian-version/
+# https://unix.stackexchange.com/a/316087
+RUN curl https://packages.microsoft.com/config/debian/$(cut -d. -f1 /etc/debian_version)/prod.list \
+	> /etc/apt/sources.list.d/mssql-release.list
+RUN apt-get update; \
+	ACCEPT_EULA=Y apt-get install -y msodbcsql17
+# optional: for bcp and sqlcmd
+RUN ACCEPT_EULA=Y apt-get install -y mssql-tools; \
+	echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile; \
+	echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc; \
+	. ~/.bashrc
+# optional: for unixODBC development headers
+RUN apt-get install -y unixodbc-dev
+# optional: kerberos library for debian-slim distributions
+RUN apt-get install -y libgssapi-krb5-2
 
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
