@@ -1,13 +1,24 @@
 #!/bin/sh
 
-if ! which runner.sh
-then
+if ! which runner.sh; then
 	echo "ERROR: install the runner plugin, required by the mail plugin" >&2
 	exit 1
 fi
 
-apk update; apk add --no-cache \
-	mailx rsyslog postfix shadow bash gettext
+if which apk; then # Alpine
+	apk update
+	apk add --no-cache \
+		mailx rsyslog postfix shadow bash gettext
+fi
+
+if which apt; then # Debian?
+	apt update
+	apt add -y sudo postfix
+	# for `mail`
+	apt add -y mailutils
+	# for `envsubst`
+	apt add -y gettext-base
+fi
 
 # prevent "postdrop: warning: unable to look up public/pickup: No such file or directory"
 mkfifo /var/spool/postfix/public/pickup
