@@ -1,4 +1,4 @@
-FROM docker4gis/postgis:latest
+FROM docker4gis/postgis:11-alpine
 
 RUN apk update; apk add --no-cache \
 	bash curl wget unzip grep sed
