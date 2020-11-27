@@ -3,6 +3,7 @@ set -e
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -12,7 +13,7 @@ GEOSERVER_CONTAINER=${GEOSERVER_CONTAINER:-$DOCKER_USER-geoserver}
 GEOSERVER_USER=${GEOSERVER_USER:-admin}
 GEOSERVER_PASSWORD=${GEOSERVER_PASSWORD:-geoserver}
 
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \

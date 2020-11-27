@@ -6,6 +6,7 @@ MYSQL_DATABASE=${2:-$DOCKER_USER}
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -18,7 +19,7 @@ gateway=$(docker network inspect "$DOCKER_USER" | grep 'Gateway' | grep -oP '\d+
 MYSQL_PORT=$(docker4gis/port.sh "${MYSQL_PORT:-3306}")
 
 docker volume create "$CONTAINER" >/dev/null
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	-e SECRET="$SECRET" \
 	-e DOCKER_ENV="$DOCKER_ENV" \

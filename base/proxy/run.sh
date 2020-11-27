@@ -8,6 +8,7 @@ AUTOCERT=${AUTOCERT:-false}
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -47,7 +48,7 @@ docker volume create "$volume" >/dev/null
 PROXY_PORT=$(docker4gis/port.sh "$PROXY_PORT")
 PROXY_PORT_HTTP=$(docker4gis/port.sh "$PROXY_PORT_HTTP")
 
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e PROXY_HOST="$PROXY_HOST" \
 	-e PROXY_PORT="$PROXY_PORT" \
 	-e AUTOCERT="$AUTOCERT" \

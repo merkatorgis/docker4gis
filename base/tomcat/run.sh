@@ -3,6 +3,7 @@ set -e
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -14,7 +15,7 @@ XMX=${XMX:-2g}
 TOMCAT_PORT=$(docker4gis/port.sh "${TOMCAT_PORT:-9090}")
 
 docker volume create "$CONTAINER" >/dev/null
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
 	-e XMS="$XMS" \
