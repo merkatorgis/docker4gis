@@ -9,12 +9,16 @@ DOCKER_USER=$DOCKER_USER
 DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
 export DOCKER_ENV
+[ "$DOCKER_ENV" = DEVELOPMENT ] &&
+    RESTART=no ||
+    RESTART=always
+export RESTART
 
 IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
+export IMAGE
 [ "$repo" = proxy ] &&
     CONTAINER=docker4gis-proxy ||
     CONTAINER=$DOCKER_USER-$repo
-export IMAGE
 export CONTAINER
 echo
 echo "Starting $CONTAINER from $IMAGE..."

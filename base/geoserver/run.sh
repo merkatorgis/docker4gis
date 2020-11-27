@@ -3,6 +3,7 @@ set -e
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -17,7 +18,7 @@ XMX=${XMX:-2g}
 
 GEOSERVER_PORT=$(docker4gis/port.sh "${GEOSERVER_PORT:-58080}")
 
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
 	-e XMS="$XMS" \

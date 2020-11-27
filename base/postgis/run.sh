@@ -9,6 +9,7 @@ SHM_SIZE=${SHM_SIZE:-64m}
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -19,7 +20,7 @@ SECRET=$SECRET
 POSTGIS_PORT=$(docker4gis/port.sh "${POSTGIS_PORT:-5432}")
 
 docker volume create "$CONTAINER" >/dev/null
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	--shm-size="$SHM_SIZE" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	-e SECRET="$SECRET" \
