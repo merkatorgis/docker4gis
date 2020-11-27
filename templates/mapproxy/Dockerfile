@@ -1,1 +1,1 @@
-FROM docker4gis/mapproxy:229
+FROM docker4gis/mapproxy:249
