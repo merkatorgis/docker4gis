@@ -1,4 +1,4 @@
-FROM docker4gis/tomcat:229
+FROM docker4gis/tomcat:249
 
 ENV GEOSERVER_USER=admin \
 	GEOSERVER_PASSWORD=geoserver \
@@ -13,6 +13,10 @@ ENV GEOSERVER_VERSION=2.16.0
 RUN mkdir -p /tmp/conf/webapps/geoserver; \
 	unzip -qo /tmp/conf/geoserver/dist/geoserver-"$GEOSERVER_VERSION"-war.zip -d /tmp/conf/geoserver/dist; \
 	unzip -qo /tmp/conf/geoserver/dist/geoserver.war -d /tmp/conf/webapps/geoserver; \
+	rm -rf /tmp/conf/webapps/geoserver/data/coverages/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/data/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/gwc-layers/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/layergroups/*; \
 	rm -rf /tmp/conf/webapps/geoserver/data/workspaces/*; \
 	mv /tmp/conf/geoserver/global.xml /tmp/conf/webapps/geoserver/data; \
 	mv /tmp/conf/geoserver/logging.xml /tmp/conf/webapps/geoserver/data; \
