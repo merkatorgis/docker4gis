@@ -16,6 +16,7 @@ DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
 SECRET=$SECRET
 API=$API
+AUTH_PATH=$AUTH_PATH
 APP=$APP
 HOMEDEST=$HOMEDEST
 
@@ -55,6 +56,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
 	-e "$(docker4gis/noop.sh SECRET "$SECRET")" \
 	-e "$(docker4gis/noop.sh API "$API")" \
+	-e "$(docker4gis/noop.sh AUTH_PATH "$AUTH_PATH")" \
 	-e "$(docker4gis/noop.sh APP "$APP")" \
 	-e "$(docker4gis/noop.sh HOMEDEST "$HOMEDEST")" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/certificates /certificates)" \

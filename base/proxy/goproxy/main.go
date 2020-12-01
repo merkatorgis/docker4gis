@@ -248,11 +248,13 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 					} else {
 						if proxy.authorise {
 							if req, err := http.NewRequest("GET", config.authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+								log.Printf("authorise -> error in http.NewRequest: %v", err)
 								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 								return
 							} else {
 								req.Header = r.Header
 								if res, e := http.DefaultClient.Do(req); e != nil {
+									log.Printf("authorise -> error in http.DefaultClient.Do: %v", e)
 									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 									return
 								} else if res.StatusCode/100 != 2 {
