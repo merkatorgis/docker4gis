@@ -247,19 +247,31 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					} else {
 						if proxy.authorise {
+							// Have the request authorised before putting it through.
 							if req, err := http.NewRequest("GET", config.authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
 								log.Printf("authorise -> error in http.NewRequest: %v", err)
 								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 								return
 							} else {
 								req.Header = r.Header
-								if res, e := http.DefaultClient.Do(req); e != nil {
-									log.Printf("authorise -> error in http.DefaultClient.Do: %v", e)
+								if res, errDo := http.DefaultClient.Do(req); errDo != nil {
+									log.Printf("authorise -> error in http.DefaultClient.Do: %v", errDo)
 									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 									return
 								} else if res.StatusCode/100 != 2 {
+									// authPath request returned a non-OK response
 									http.Error(w, http.StatusText(res.StatusCode), res.StatusCode)
 									return
+								} else {
+									defer res.Body.Close()
+									if bodyBytes, errReadAll := ioutil.ReadAll(res.Body); errReadAll != nil {
+										log.Printf("authorise -> error reading response body: %v", errReadAll)
+										http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+										return
+									} else {
+										// authorisation succeeded; pass through what they responded with
+										r.Header.Set("Authorization", string(bodyBytes))
+									}
 								}
 							}
 						}
