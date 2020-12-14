@@ -248,7 +248,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 					} else {
 						if proxy.authorise {
 							// Have the request authorised before putting it through.
-							if req, err := http.NewRequest("GET", config.authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+							if req, err := http.NewRequest("GET", config.authPath+"?method="+r.Method+"&path="+path+"&query="+url.QueryEscape(r.URL.RawQuery), http.NoBody); err != nil {
 								log.Printf("authorise -> error in http.NewRequest: %v", err)
 								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 								return
