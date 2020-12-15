@@ -15,6 +15,7 @@ export DOCKER_REGISTRY=
 
 export PROXY_HOST=
 export PROXY_PORT=
+export PROXY_PORT_HTTP=
 export SECRET=
 export API=
 export AUTH_PATH=
