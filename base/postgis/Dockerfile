@@ -37,6 +37,14 @@ RUN apt install -y lsb-release wget; \
 	DEBIAN_FRONTEND=noninteractive dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
 	apt update; \
 	apt install -y mysql-connector-odbc
+# install proper paths to the odbc drivers
+RUN template=$(mktemp); \
+	add() { echo "$1" >> "$template"; }; \
+	add '[MySQL ODBC 8.0 Unicode Driver]'; \
+	add 'Driver=/usr/lib/x86_64-linux-gnu/odbc/libmyodbc8w.so'; \
+	add '[MySQL ODBC 8.0 ANSI Driver]'; \
+	add 'Driver=/usr/lib/x86_64-linux-gnu/odbc/libmyodbc8a.so'; \
+	odbcinst -i -d -f "$template"
 
 # install packages needed for building several components
 ENV BUILD_TOOLS="build-essential"
