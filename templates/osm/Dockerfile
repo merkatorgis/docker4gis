@@ -1,4 +1,4 @@
-FROM docker4gis/osm:latest
+FROM docker4gis/osm:267
 
 # See https://github.com/Overv/openstreetmap-tile-server
 
