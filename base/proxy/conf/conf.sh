@@ -13,6 +13,7 @@ MAPFISH="http://${DOCKER_USER}-mapfish:8080"
 MAPSERVER="http://${DOCKER_USER}-mapserver"
 MAPPROXY="http://${DOCKER_USER}-mapproxy"
 SWAGGER="http://${DOCKER_USER}-swagger:8080"
+OSM="http://${DOCKER_USER}-osm"
 
 echo DOCKER_USER="${DOCKER_USER}"
 
@@ -33,6 +34,7 @@ mapfish=${MAPFISH}
 resources=${RESOURCES}
 mapserver=${MAPSERVER}
 mapproxy=${MAPPROXY}
+osm=${OSM}
 swagger=${SWAGGER}
 swagger-ui.css.map=${SWAGGER}/swagger-ui.css.map
 swagger-ui-bundle.js.map=${SWAGGER}/swagger-ui-bundle.js.map

@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = 'osm' ]; then
+	log=/var/lib/mod_tile/import.log
+	touch "$log"
+	if ! grep "$DOWNLOAD_PBF" "$log"; then
+		/run.sh import
+		echo "$DOWNLOAD_PBF" "$(date)" >>"$log"
+	fi
+	/run.sh run
+fi
+
+exec "$@"

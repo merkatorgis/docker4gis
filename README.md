@@ -9,6 +9,7 @@ Quickly pull up a stable baseline for your Geographical Information System, by e
 - GeoServer and MapServer for map services
 - MapProxy for caching or transfroming map services
 - MapFish for printing maps in PDF templates
+- OpenStreetMap tile renderer/server
 - Postfix mailserver
 - Cron for scheduled tasks
 - Elm Single Page App
