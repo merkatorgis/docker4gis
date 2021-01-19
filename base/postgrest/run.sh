@@ -3,6 +3,7 @@ set -e
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
+RESTART=$RESTART
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -14,7 +15,7 @@ proxy=$PROXY_HOST
 [ "$PROXY_PORT" ] && proxy=$proxy:$PROXY_PORT
 PGRST_SERVER_PROXY_URI=${PGRST_SERVER_PROXY_URI:-https://$proxy/$DOCKER_USER/api}
 
-docker container run --restart always --name "$CONTAINER" \
+docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
 	--network "$DOCKER_USER" \
 	-e PGRST_DB_URI="postgresql://web_authenticator:postgrest@$DOCKER_USER-postgis/$DOCKER_USER" \

@@ -20,6 +20,9 @@ export XMX=$XMX
 export POSTFIX_DESTINATION=$POSTFIX_DESTINATION
 export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
+export OSM_THREADS=$OSM_THREADS
+export OSM_CACHE_MB=$OSM_CACHE_MB
+
 eval "$(docker container run --rm '
 echo -n "$DOCKER_REGISTRY$DOCKER_USER/package"
 # shellcheck disable=SC2016

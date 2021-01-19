@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/tls"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -25,6 +27,7 @@ type proxy struct {
 type config struct {
 	secret   string
 	homedest string
+	authPath string
 	proxies  map[string]*proxy
 }
 
@@ -34,7 +37,6 @@ var proxyPort = os.Getenv("PROXY_PORT")
 var useAutocert = os.Getenv("AUTOCERT")
 var dockerEnv = os.Getenv("DOCKER_ENV")
 var dockerUser = os.Getenv("DOCKER_USER")
-var authPath = os.Getenv("AUTH_PATH")
 var passThroughProxy *httputil.ReverseProxy
 var reverseProxy *httputil.ReverseProxy
 var reverseProxyInsecure *httputil.ReverseProxy
@@ -89,6 +91,9 @@ func main() {
 				} else if key == "homedest" {
 					configs[app].homedest = value
 					log.Printf("%s.homedest=%s", app, value)
+				} else if key == "authPath" {
+					configs[app].authPath = value
+					log.Printf("%s.authPath=%s", app, value)
 				} else {
 					defineProxy(app, key, value)
 				}
@@ -101,12 +106,16 @@ func main() {
 	}
 
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Redirect http to https
-		log.Printf("%s %s http->https %s", r.RemoteAddr, r.Method, r.URL.String())
-		url := r.URL
-		url.Host = proxyHost + ":" + proxyPort
-		url.Scheme = "https"
-		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
+		if dockerEnv == "DEVELOPMENT" {
+			handler(w, r)
+		} else {
+			// Redirect http to https
+			log.Printf("%s %s http->https %s", r.RemoteAddr, r.Method, r.URL.String())
+			url := r.URL
+			url.Host = proxyHost + ":" + proxyPort
+			url.Scheme = "https"
+			http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
+		}
 	}))
 
 	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
@@ -178,6 +187,22 @@ func defineProxy(app, key, value string) {
 	}
 }
 
+// copy of https://golang.org/pkg/net/http/httputil/?m=all#drainBody
+func drainBody(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
+	if b == nil || b == http.NoBody {
+		// No copying needed. Preserve the magic sentinel meaning of NoBody.
+		return http.NoBody, http.NoBody, nil
+	}
+	var buf bytes.Buffer
+	if _, err = buf.ReadFrom(b); err != nil {
+		return nil, b, err
+	}
+	if err = b.Close(); err != nil {
+		return nil, b, err
+	}
+	return ioutil.NopCloser(&buf), ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+}
+
 func reverse(w http.ResponseWriter, r *http.Request) {
 	referer, _ := url.Parse(r.Referer())
 	refererParts := strings.Split(referer.Path+"//", "/") //  + "//" to cater for empty Referer
@@ -244,17 +269,44 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					} else {
 						if proxy.authorise {
-							if req, err := http.NewRequest("GET", authPath+"?method="+r.Method+"&path="+path, http.NoBody); err != nil {
+							// Have the request authorised before putting it through.
+							if body, originalBody, errDrainBody := drainBody(r.Body); errDrainBody != nil {
+								log.Printf("authorise -> error getting the reqest's body: %v", errDrainBody)
+								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+								return
+							} else if req, errNewRequest := http.NewRequest("POST", config.authPath, body); errNewRequest != nil {
+								log.Printf("authorise -> error in http.NewRequest: %v", errNewRequest)
 								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 								return
 							} else {
 								req.Header = r.Header
-								if res, e := http.DefaultClient.Do(req); e != nil {
+								if req.Header.Get("content-type") == "" {
+									req.Header.Set("content-type", "application/json")
+								}
+								query := r.URL.Query()
+								query.Add("AUTH_PATH_PATH", path)
+								query.Add("AUTH_PATH_METHOD", r.Method)
+								req.URL.RawQuery = query.Encode()
+								if res, errDo := http.DefaultClient.Do(req); errDo != nil {
+									log.Printf("authorise -> error in http.DefaultClient.Do: %v", errDo)
 									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 									return
 								} else if res.StatusCode/100 != 2 {
+									log.Printf("authorise -> authPath request returned a non-OK response: %d", res.StatusCode)
 									http.Error(w, http.StatusText(res.StatusCode), res.StatusCode)
 									return
+								} else {
+									defer res.Body.Close()
+									if bodyBytes, errReadAll := ioutil.ReadAll(res.Body); errReadAll != nil {
+										log.Printf("authorise -> error reading response body: %v", errReadAll)
+										http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+										return
+									} else {
+										// authorisation succeeded; pass through what they responded with
+										r.Header.Set("Authorization", string(bodyBytes))
+										// restore the original request body
+										r.Body = originalBody
+									}
 								}
 							}
 						}
@@ -271,7 +323,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						}
 						forwardedHost := r.Host
 						forwardedProto := "https"
-						forwardedPath := "/"+ app + key
+						forwardedPath := "/" + app + key
 						forwarded := "for=" + forwardedFor + ";host=" + forwardedHost + ";proto=" + forwardedProto + ";path=" + forwardedPath
 						r.Header.Set("Forwarded", forwarded)
 						r.Header.Set("X-Forwarded-For", forwardedFor)

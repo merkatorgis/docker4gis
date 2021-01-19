@@ -1,4 +1,4 @@
-FROM docker4gis/tomcat:229
+FROM docker4gis/tomcat:249
 
 ENV GEOSERVER_USER=admin \
 	GEOSERVER_PASSWORD=geoserver \
@@ -13,6 +13,11 @@ ENV GEOSERVER_VERSION=2.16.0
 RUN mkdir -p /tmp/conf/webapps/geoserver; \
 	unzip -qo /tmp/conf/geoserver/dist/geoserver-"$GEOSERVER_VERSION"-war.zip -d /tmp/conf/geoserver/dist; \
 	unzip -qo /tmp/conf/geoserver/dist/geoserver.war -d /tmp/conf/webapps/geoserver; \
+	rm -rf /tmp/conf/webapps/geoserver/data/coverages/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/data/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/gwc-layers/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/layergroups/*; \
+	rm -rf /tmp/conf/webapps/geoserver/data/workspaces/*; \
 	mv /tmp/conf/geoserver/global.xml /tmp/conf/webapps/geoserver/data; \
 	mv /tmp/conf/geoserver/logging.xml /tmp/conf/webapps/geoserver/data; \
 	mv /tmp/conf/geoserver/logs /tmp/conf/webapps/geoserver/data
@@ -28,9 +33,9 @@ RUN rm /tmp/conf/webapps/geoserver/WEB-INF/lib/jai_*.jar; \
 	mv /tmp/conf/geoserver/jai/jai_imageio-1_1/lib/*.jar $JAVA_HOME/lib/ext/; \
 	mv /tmp/conf/geoserver/jai/jai_imageio-1_1/lib/*.so  $JAVA_HOME/lib/amd64/
 
-# COPY conf/.docker4gis /.docker4gis
+COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh
 COPY run.sh /.docker4gis/run.sh
-# ONBUILD COPY conf /tmp/conf
-# ONBUILD RUN touch /tmp/conf/args; \
-# 	cp /tmp/conf/args /.docker4gis
+ONBUILD COPY conf /tmp/conf
+ONBUILD RUN touch /tmp/conf/args; \
+	cp /tmp/conf/args /.docker4gis

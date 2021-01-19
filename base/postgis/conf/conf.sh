@@ -7,7 +7,7 @@ echo "
 	export POSTGIS_ADDRESS=${CONTAINER}
 	export POSTGIS_DB=${POSTGRES_DB}
 	export POSTGIS_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${CONTAINER}/${POSTGRES_DB}
-" > /secrets/.pg
+" >/secrets/.pg
 
 if [ -f /secrets/postgresql.key -a -f /secrets/postgresql.crt -a -f /secrets/root.key -a -f /secrets/root.crt -a -f /secrets/server.key -a -f /secrets/server.crt ]; then
 	cp /secrets/postgresql.key /secrets/postgresql.crt /secrets/root.key /secrets/root.crt /secrets/server.key /secrets/server.crt /etc/postgresql/
@@ -18,7 +18,7 @@ else
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer:always
 basicConstraints = CA:true
-subjectAltName=email:move" >> /etc/ssl/openssl.cnf
+subjectAltName=email:move" >>/etc/ssl/openssl.cnf
 
 	# CA
 	openssl req -new -nodes -text -out root.csr \
@@ -33,7 +33,7 @@ subjectAltName=email:move" >> /etc/ssl/openssl.cnf
 	openssl x509 -req -in postgresql.csr -text -days 365 \
 		-CA root.crt -CAkey root.key -CAcreateserial \
 		-out postgresql.crt
-	
+
 	cp postgresql.key postgresql.crt root.crt /certificates/
 
 	# Server
@@ -44,16 +44,14 @@ subjectAltName=email:move" >> /etc/ssl/openssl.cnf
 		-out server.crt
 
 	mv *.crt *.key /etc/postgresql/
-	cp /etc/postgresql/*.crt /etc/postgresql/*.key /secrets/ 
+	cp /etc/postgresql/*.crt /etc/postgresql/*.key /secrets/
 fi
 
 chown -R postgres:postgres /etc/postgresql/ /secrets/*
 chmod og-rwx /etc/postgresql/*.key /secrets/root.key /secrets/server.*
 
-if [ ${DOCKER_ENV} = DEVELOPMENT ]
-then
-	cp /tmp/init.sh /docker-entrypoint-initdb.d
-elif [ -f /docker-entrypoint-initdb.d/init.sh ]
-then
+if [ ${DOCKER_ENV} = DEVELOPMENT ]; then
+	cp /init.sh /docker-entrypoint-initdb.d
+elif [ -f /docker-entrypoint-initdb.d/init.sh ]; then
 	rm -f /docker-entrypoint-initdb.d/init.sh
 fi

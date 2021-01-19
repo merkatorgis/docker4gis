@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = 'osm' ]; then
+	log=/var/lib/mod_tile/import.log
+	touch "$log"
+	if ! grep "$DOWNLOAD_PBF" "$log"; then
+		/run.sh import
+		# This was meant as maybe a means to eventually support multiple regions,
+		# but it looks like that is never going to work with this repo.
+		# So this could be changed to a simple [ -f /var/lib/mod_tile/planet-import-complete ]
+		# but it shouldn't do any harm as it is.
+		echo "$DOWNLOAD_PBF" "$(date)" >>"$log"
+	fi
+	/run.sh run
+fi
+
+exec "$@"
