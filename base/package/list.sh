@@ -29,6 +29,7 @@ local_image_exists() {
     docker image tag "$1" "$1" >/dev/null 2>&1
 }
 add_repo() {
+    echo "Fetching $repo..." >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
     if [ "$directive" = latest ]; then
@@ -50,7 +51,7 @@ add_repo() {
     fi
     if [ "$tag" ]; then
         echo "$BASE/docker4gis/run.sh $repo $tag" >>"$temp"
-        echo "Taking $image:$tag" >&2
+        echo "$image:$tag" >&2
     else
         error "no tag for '$image'"
     fi
