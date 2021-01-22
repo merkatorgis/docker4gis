@@ -29,6 +29,11 @@ local_image_exists() {
     docker image tag "$1" "$1" >/dev/null 2>&1
 }
 add_repo() {
+
+    # Skip test as this is not a repo, but the folder containing the tests to
+    # run after the containers are started.
+    [ "$repo" = test ] && return
+
     echo "Fetching $repo..." >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
