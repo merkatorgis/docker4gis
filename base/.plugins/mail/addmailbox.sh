@@ -3,7 +3,7 @@
 login=${1}
 comment=${2}
 
-adduser -D "${login}"
+adduser --disabled-password --gecos "" "${login}"
 usermod -c "${comment}" "${login}"
 
-echo "ALL ALL=(${login}) NOPASSWD: ALL" >> /etc/sudoers
+echo "ALL ALL=(${login}) NOPASSWD: ALL" >>/etc/sudoers

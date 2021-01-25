@@ -13,11 +13,12 @@ fi
 
 if which apt; then # Debian?
 	apt update
-	apt add -y sudo postfix
+	apt install -y sudo
+	DEBIAN_FRONTEND=noninteractive apt install -y postfix
 	# for `mail`
-	apt add -y mailutils
+	apt install -y mailutils
 	# for `envsubst`
-	apt add -y gettext-base
+	apt install -y gettext-base
 fi
 
 # prevent "postdrop: warning: unable to look up public/pickup: No such file or directory"
