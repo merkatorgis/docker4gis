@@ -1,4 +1,7 @@
-FROM node:12.18.4
+FROM node:15.6.0-alpine3.12
+
+RUN apk update; apk add --no-cache \
+    bash
 
 RUN npm install -g serve
 
