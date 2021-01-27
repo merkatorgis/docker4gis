@@ -19,6 +19,7 @@ ENV PYTHON=${PYTHON}
 
 # install packages we want throughout
 RUN apt install -y \
+	apt-transport-https \
 	${PYTHON} \
 	${PYTHON}-psycopg2
 
