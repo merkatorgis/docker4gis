@@ -3,3 +3,8 @@
 # Environment variables are respected.
 # Lines _starting with_ # are ignored.
 ##
+# database name:
+${DOCKER_USER}
+##
+# schema name:
+${DOCKER_USER}
