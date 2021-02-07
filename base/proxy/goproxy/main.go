@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -203,6 +204,27 @@ func drainBody(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
 	return ioutil.NopCloser(&buf), ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 }
 
+func bodyString(body io.ReadCloser) (content string, err error) {
+	defer body.Close()
+	if bytes, err := ioutil.ReadAll(body); err != nil {
+		return "", err
+	} else {
+		return string(bytes), nil
+	}
+}
+
+func internalServerError(w http.ResponseWriter, message string, value interface{}) {
+	log.Printf("authorise -> error "+message+": %v", value)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+type authPathBody struct {
+	Method string
+	Path   string
+	Query  url.Values
+	Body   string
+}
+
 func reverse(w http.ResponseWriter, r *http.Request) {
 	referer, _ := url.Parse(r.Referer())
 	refererParts := strings.Split(referer.Path+"//", "/") //  + "//" to cater for empty Referer
@@ -271,39 +293,33 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						if proxy.authorise {
 							// Have the request authorised before putting it through.
 							if body, originalBody, errDrainBody := drainBody(r.Body); errDrainBody != nil {
-								log.Printf("authorise -> error getting the reqest's body: %v", errDrainBody)
-								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+								internalServerError(w, "getting the request's body", errDrainBody)
 								return
-							} else if req, errNewRequest := http.NewRequest("POST", config.authPath, body); errNewRequest != nil {
-								log.Printf("authorise -> error in http.NewRequest: %v", errNewRequest)
-								http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+							} else if bodyContent, errBodyString := bodyString(body); errBodyString != nil {
+								internalServerError(w, "reading the request's body", errBodyString)
+								return
+							} else if jsonBody, errMarshal := json.Marshal(authPathBody{r.Method, path, r.URL.Query(), bodyContent}); errMarshal != nil {
+								internalServerError(w, "marshalling the AuthPathBody", errMarshal)
+								return
+							} else if req, errNewRequest := http.NewRequest("POST", config.authPath, bytes.NewReader(jsonBody)); errNewRequest != nil {
+								internalServerError(w, "in http.NewRequest", errNewRequest)
 								return
 							} else {
 								req.Header = r.Header
-								if req.Header.Get("content-type") == "" {
-									req.Header.Set("content-type", "application/json")
-								}
-								query := r.URL.Query()
-								query.Add("AUTH_PATH_PATH", path)
-								query.Add("AUTH_PATH_METHOD", r.Method)
-								req.URL.RawQuery = query.Encode()
+								req.Header.Set("content-type", "application/json")
 								if res, errDo := http.DefaultClient.Do(req); errDo != nil {
-									log.Printf("authorise -> error in http.DefaultClient.Do: %v", errDo)
-									http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+									internalServerError(w, "in http.DefaultClient.Do", errDo)
 									return
 								} else if res.StatusCode/100 != 2 {
-									log.Printf("authorise -> authPath request returned a non-OK response: %d", res.StatusCode)
-									http.Error(w, http.StatusText(res.StatusCode), res.StatusCode)
+									internalServerError(w, "the request returned a non-OK response", res.StatusCode)
 									return
 								} else {
-									defer res.Body.Close()
-									if bodyBytes, errReadAll := ioutil.ReadAll(res.Body); errReadAll != nil {
-										log.Printf("authorise -> error reading response body: %v", errReadAll)
-										http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+									if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
+										internalServerError(w, "reading response body", errAuthorization)
 										return
 									} else {
 										// authorisation succeeded; pass through what they responded with
-										r.Header.Set("Authorization", string(bodyBytes))
+										r.Header.Set("Authorization", authorization)
 										// restore the original request body
 										r.Body = originalBody
 									}
