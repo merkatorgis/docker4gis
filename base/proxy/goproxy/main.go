@@ -306,7 +306,9 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								return
 							} else {
 								req.Header = r.Header
+								req.Header.Del("accept-encoding")
 								req.Header.Set("content-type", "application/json")
+								req.Header.Set("accept", "application/json, application/*, text/*")
 								if res, errDo := http.DefaultClient.Do(req); errDo != nil {
 									internalServerError(w, "in http.DefaultClient.Do", errDo)
 									return
