@@ -310,6 +310,9 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								if res, errDo := http.DefaultClient.Do(req); errDo != nil {
 									internalServerError(w, "in http.DefaultClient.Do", errDo)
 									return
+								} else if res.StatusCode == http.StatusUnauthorized {
+									http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+									return
 								} else if res.StatusCode/100 != 2 {
 									internalServerError(w, "the request returned a non-OK response", res.StatusCode)
 									return
