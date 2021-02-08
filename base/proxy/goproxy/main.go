@@ -318,16 +318,14 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								} else if res.StatusCode/100 != 2 {
 									internalServerError(w, "the request returned a non-OK response", res.StatusCode)
 									return
+								} else if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
+									internalServerError(w, "reading response body", errAuthorization)
+									return
 								} else {
-									if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
-										internalServerError(w, "reading response body", errAuthorization)
-										return
-									} else {
-										// authorisation succeeded; pass through what they responded with
-										r.Header.Set("Authorization", authorization)
-										// restore the original request body
-										r.Body = originalBody
-									}
+									// authorisation succeeded; pass through what they responded with
+									r.Header.Set("Authorization", authorization)
+									// restore the original request body
+									r.Body = originalBody
 								}
 							}
 						}
