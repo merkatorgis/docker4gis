@@ -305,7 +305,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								internalServerError(w, "in http.NewRequest", errNewRequest)
 								return
 							} else {
-								req.Header = r.Header
+								req.Header = r.Header.Clone()
 								req.Header.Del("accept-encoding")
 								req.Header.Set("content-type", "application/json")
 								req.Header.Set("accept", "application/json, application/*, text/*")
