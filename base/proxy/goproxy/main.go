@@ -107,9 +107,11 @@ func main() {
 	}
 
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if dockerEnv == "DEVELOPMENT" {
-			handler(w, r)
-		} else if host, _, err := net.SplitHostPort(r.Host); err != nil {
+		// if dockerEnv == "DEVELOPMENT" {
+		// 	handler(w, r)
+		// } else
+		if host, _, err := net.SplitHostPort(r.Host); err != nil {
+			log.Printf("%+v", err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
 			// Redirect http to https
