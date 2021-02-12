@@ -109,11 +109,13 @@ func main() {
 	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if dockerEnv == "DEVELOPMENT" {
 			handler(w, r)
+		} else if host, _, err := net.SplitHostPort(r.Host); err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
 			// Redirect http to https
 			log.Printf("%s %s http->https %s", r.RemoteAddr, r.Method, r.URL.String())
 			url := r.URL
-			url.Host = proxyHost + ":" + proxyPort
+			url.Host = host + ":" + proxyPort
 			url.Scheme = "https"
 			http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 		}
