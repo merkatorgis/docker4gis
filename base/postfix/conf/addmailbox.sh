@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 login=${1}
 comment=${2}

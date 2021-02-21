@@ -11,7 +11,11 @@ if [ "$1" = 'postfix' ]; then
 
 	postconf -e "$(postconf export_environment) DESTINATION=${DESTINATION}"
 
+	# see api.sh
+	cp /usr/local/bin/runner.sh "/usr/local/bin/$DOCKER_USER"
+
 	touch /onstart
+	# shellcheck source=/dev/null
 	. /onstart
 
 	postconf -e "maillog_file = /dev/stdout"
