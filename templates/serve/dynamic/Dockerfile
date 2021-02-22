@@ -1,3 +1,3 @@
-FROM docker4gis/serve:276
+FROM docker4gis/serve:297
 
 ENV DYNAMIC=true
