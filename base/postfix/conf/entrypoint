@@ -3,11 +3,9 @@
 if [ "$1" = 'postfix' ]; then
 	postconf -e "myorigin=${DESTINATION}"
 
+	# shellcheck disable=SC2016
 	default_destination='$myhostname localhost.$mydomain localhost'
 	postconf -e "mydestination=${default_destination} ${DESTINATION}"
-	cp /etc/postfix/transport.template /etc/postfix/transport
-	sed -i -e "s/{{DESTINATION}}/${DESTINATION}/g" /etc/postfix/transport
-	postmap /etc/postfix/transport
 
 	postconf -e "$(postconf export_environment) DESTINATION=${DESTINATION}"
 
