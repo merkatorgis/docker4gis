@@ -1,11 +1,5 @@
 [![Merkator logo](logo.png)](https://www.merkator.com/)
 
-# ATTENTION: WE'VE MOVED
-This Git repo now resides on [our Azure DevOps space](https://dev.azure.com/merkatordev/docker4gis).
-Please visit us there, and update your links. Thank you.
-
-This repo here on GitHub is no longer maintained, and kept just for reference.
-
 # docker4gis
 
 Quickly pull up a stable baseline for your Geographical Information System, by extending some of the Docker images for common GIS components:
