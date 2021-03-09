@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# TODO: Replace with actual path to angular code
 wwwroot="$(pwd)/../../code/woningvoorraad"
 
 # "$wwwroot"/.npmrc provides any Nexus credentials to the builder
