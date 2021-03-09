@@ -1,36 +1,35 @@
 #!/bin/bash
 set -e
 
+# if @buildtime, save for runtime
+if ! [ "$DOCKER_USER" ]; then
+	echo "$0" "$@" >>/onstart
+	exit
+fi
+
 user=${1}
-script=${2}
+script=$(realpath "$2")
 shift 2
 
-if ! getent passwd | grep "^${user}:"; then
-	addmailbox.sh "${user}"
-fi
+addmailbox.sh "$user"
 
 conf="${script}.conf"
-if [ ! -f "${conf}" ]; then
-	echo '#!/bin/bash' >"${conf}"
-fi
-dir=$(dirname "${script}")
-logdir="/util/runner/log${dir}"
-echo mkdir -p "${logdir}" >>"${conf}"
-echo chown "${user}" "${logdir}" >>"${conf}"
+[ -f "${conf}" ] || echo '#!/bin/bash' >"${conf}"
+chmod +x "$conf"
+"$conf" "$user"
+
+logdir="/util/runner/log/$DOCKER_USER/$user$(dirname "${script}")"
+mkdir -p "$logdir"
+chown --recursive "$user" "$logdir"
+
+# see /entrypoint
+runner=$DOCKER_USER
 
 echo "${user}   unix  -       n       n       -       -       pipe
-      user=${user} argv=/usr/local/bin/runner.sh ${script} $*" >>/etc/postfix/master.cf
+      user=${user} argv=/usr/local/bin/$runner ${script} $*" >>/etc/postfix/master.cf
 
 postconf -e 'transport_maps=hash:/etc/postfix/transport'
 
-if postfix status; then
-	# Run time, ${DESTINATION} known
-	echo "${user}@${DESTINATION} ${user}:" >>/etc/postfix/transport
-	postmap /etc/postfix/transport
-	"${conf}"
-	postfix reload
-else
-	# Build time, ${DESTINATION} prone to change
-	echo "${user}@{{DESTINATION}} ${user}:" >>/etc/postfix/transport.template
-	echo "${conf}" >>/onstart
-fi
+echo "${user}@${DESTINATION} ${user}:" >>/etc/postfix/transport
+postmap /etc/postfix/transport
+postfix reload
