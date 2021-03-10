@@ -1,7 +1,8 @@
-FROM docker4gis/angular:latest as builder
+FROM docker4gis/angular:302 as builder
 
-FROM docker4gis/serve:249
+FROM docker4gis/serve:297
 ENV SINGLE=true
 RUN rm -rf /wwwroot
-# TODO: Replace with actual path to dist
-COPY --from=builder /src/dist/woningvoorraad/ /wwwroot
+
+# TODO: edit to set the correct dist path:
+COPY --from=builder /src/dist/app/ /wwwroot
