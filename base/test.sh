@@ -19,7 +19,7 @@ echo "Running any tests in $dir..."
 
 find "$dir" -name "test.sh" -exec {} \;
 
-if find "$dir" -name "*.bats" >/dev/null 2>&1; then
+if [ "$(find "$dir" -name "*.bats")" ]; then
     "$DOCKER_BASE"/.plugins/bats/install.sh
     if ! command -v bats >/dev/null 2>&1; then
         bats_url=https://github.com/bats-core/bats-core
