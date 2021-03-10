@@ -15,11 +15,18 @@ if ! [ -d "$dir" ]; then
     fi
 fi
 
-echo "Running any tests in $dir..."
+sh_tests=$(find "$dir" -name "test.sh")
+bats_tests=$(find "$dir" -name "*.bats")
 
-find "$dir" -name "test.sh" -exec {} \;
+if [ "$sh_tests" ] || [ "$bats_tests" ]; then
+    echo "Running tests in $dir..."
+else
+    exit 0
+fi
 
-if find "$dir" -name "*.bats" >/dev/null 2>&1; then
+time find "$dir" -name "test.sh" -exec {} \;
+
+if [ "$bats_tests" ]; then
     "$DOCKER_BASE"/.plugins/bats/install.sh
     if ! command -v bats >/dev/null 2>&1; then
         bats_url=https://github.com/bats-core/bats-core
