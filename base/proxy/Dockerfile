@@ -1,11 +1,10 @@
-FROM golang:1.15.2 as builder
-WORKDIR /go/src/github.com/merkatorgis/docker4gis/goproxy
-RUN go get -u golang.org/x/crypto/...
-COPY goproxy/main.go .
+FROM golang:1.16.2 as builder
+COPY goproxy /goproxy
+WORKDIR /goproxy
 RUN CGO_ENABLED=0 GOOS=linux go build -v -a -tags netgo -ldflags -w .
 
 FROM alpine:3.12
-COPY --from=builder /go/src/github.com/merkatorgis/docker4gis/goproxy/goproxy /
+COPY --from=builder /goproxy/proxy /
 
 RUN apk update; apk add --no-cache \
 	ca-certificates wget bash

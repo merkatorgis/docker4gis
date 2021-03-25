@@ -15,6 +15,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gorilla/handlers"
+
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -123,7 +125,7 @@ func main() {
 	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
 		crt := "/certificates/" + proxyHost + ".crt"
 		key := "/certificates/" + proxyHost + ".key"
-		log.Fatal(http.ListenAndServeTLS(":443", crt, key, http.HandlerFunc(handler)))
+		log.Fatal(http.ListenAndServeTLS(":443", crt, key, handlers.CompressHandler(http.HandlerFunc(handler))))
 	} else {
 		m := &autocert.Manager{
 			Cache:      autocert.DirCache("/config/autocert"),
@@ -133,7 +135,7 @@ func main() {
 		s := &http.Server{
 			Addr:      ":https",
 			TLSConfig: m.TLSConfig(),
-			Handler:   http.HandlerFunc(handler),
+			Handler:   handlers.CompressHandler(http.HandlerFunc(handler)),
 		}
 		log.Fatal(s.ListenAndServeTLS("", ""))
 	}

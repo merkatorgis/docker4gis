@@ -5,7 +5,7 @@ if [ "$1" = 'proxy' ]; then
 	shift 1
 	/conf.sh "$@"
 	cp -u /tmp/conf/certificates/* /certificates
-	exec /goproxy
+	exec /proxy
 fi
 
 exec "$@"
