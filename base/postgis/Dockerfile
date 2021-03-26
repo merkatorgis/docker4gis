@@ -91,21 +91,36 @@ ADD conf/src/michelp-pgjwt-${PGJWT_VERSION}.tar.gz /
 RUN cd /michelp-pgjwt-${PGJWT_VERSION}; \
 	make install
 
-ARG PGXN_VERSION=1.3
+ARG PGXN_VERSION=1.3.1
 # compile & install PostgreSQL Extension Network client
 ENV PGXN_VERSION=${PGXN_VERSION}
 # install package python-setuptools,
 # which is also needed when running the pgxn client
 RUN apt install -y ${PYTHON}-setuptools
-# https://github.com/pgxn/pgxnclient/archive/v1.3.tar.gz
+# https://github.com/pgxn/pgxnclient/archive/v${PGXN_VERSION}.tar.gz
 ADD conf/src/pgxnclient-${PGXN_VERSION}.tar.gz /
-RUN cd /pgxnclient-${PGXN_VERSION}; \
-	${PYTHON} setup.py install
+# next line currently (2021-03-25) fails with:
+#24 2.278   File "/tmp/easy_install-c300t4st/pytest-runner-5.3.0/temp/easy_install-0hocwk0l/setuptools_scm-6.0.1/src/setuptools_scm/__init__.py", line 15, in <module>
+#24 2.278   File "/tmp/easy_install-c300t4st/pytest-runner-5.3.0/temp/easy_install-0hocwk0l/setuptools_scm-6.0.1/src/setuptools_scm/version.py", line 42
+#24 2.278     trace(f"tag '{tag}' parsed to {result}")
+#24 2.278                                           ^
+#24 2.278 SyntaxError: invalid syntax
+# RUN cd /pgxnclient-${PGXN_VERSION}; \
+# 	${PYTHON} setup.py install
 
 # install extension safeupdate from pgxn
 # https://github.com/eradman/pg-safeupdate
 # http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
-RUN pgxn install safeupdate
+# cannot install from pgxn due to failing pgxnclient install (see above)
+# RUN pgxn install safeupdate
+ARG PGSAFEUPDATE_VERSION=1.3
+# compile & install install extension safeupdate
+ENV PGSAFEUPDATE_VERSION=${PGSAFEUPDATE_VERSION}
+# https://github.com/eradman/pg-safeupdate/archive/refs/tags/${PGSAFEUPDATE_VERSION}.tar.gz
+ADD conf/src/pg-safeupdate-${PGSAFEUPDATE_VERSION}.tar.gz /
+RUN cd /pg-safeupdate-${PGSAFEUPDATE_VERSION} && \
+	make && \
+	make install
 
 # install the Microsoft ODBC driver for SQL Server
 # https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15
