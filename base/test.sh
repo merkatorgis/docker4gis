@@ -24,7 +24,9 @@ else
     exit 0
 fi
 
-time find "$dir" -name "test.sh" -exec {} \;
+if [ "$sh_tests" ]; then
+    time find "$dir" -name "test.sh" -exec {} \;
+fi
 
 if [ "$bats_tests" ]; then
     "$DOCKER_BASE"/.plugins/bats/install.sh
