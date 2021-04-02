@@ -16,7 +16,7 @@ COPY conf/certificates /tmp/conf/certificates
 COPY conf/entrypoint /entrypoint
 COPY conf/conf.sh /conf.sh
 
-EXPOSE 80 443
+EXPOSE 80 443 8080
 
 ENTRYPOINT ["/entrypoint"]
 CMD ["proxy"]
