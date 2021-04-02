@@ -1,4 +1,4 @@
-FROM camptocamp/mapfish_print:3.22
+FROM camptocamp/mapfish_print:3.28
 
 ADD conf /tmp/conf
 
