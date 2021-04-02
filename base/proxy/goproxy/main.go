@@ -132,6 +132,10 @@ func main() {
 		}
 	}))
 
+	go http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r)
+	}))
+
 	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
 		crt := "/certificates/" + proxyHost + ".crt"
 		key := "/certificates/" + proxyHost + ".key"
