@@ -10,12 +10,14 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/gorilla/handlers"
+	"golang.org/x/net/publicsuffix"
 
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -34,15 +36,18 @@ type config struct {
 	proxies  map[string]*proxy
 }
 
-var configs = make(map[string]*config)
-var proxyHost = os.Getenv("PROXY_HOST")
-var proxyPort = os.Getenv("PROXY_PORT")
-var useAutocert = os.Getenv("AUTOCERT")
-var dockerEnv = os.Getenv("DOCKER_ENV")
-var dockerUser = os.Getenv("DOCKER_USER")
-var passThroughProxy *httputil.ReverseProxy
-var reverseProxy *httputil.ReverseProxy
-var reverseProxyInsecure *httputil.ReverseProxy
+var (
+	configs              = make(map[string]*config)
+	proxyHost            = os.Getenv("PROXY_HOST")
+	proxyPort            = os.Getenv("PROXY_PORT")
+	useAutocert          = os.Getenv("AUTOCERT")
+	dockerEnv            = os.Getenv("DOCKER_ENV")
+	dockerUser           = os.Getenv("DOCKER_USER")
+	passThroughProxy     *httputil.ReverseProxy
+	reverseProxy         *httputil.ReverseProxy
+	reverseProxyInsecure *httputil.ReverseProxy
+	jar                  *cookiejar.Jar
+)
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
@@ -60,6 +65,11 @@ func init() {
 		Director:       reverseDirector,
 		ModifyResponse: modifyResponse,
 		Transport:      transportInsecure,
+	}
+	if j, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
+		log.Fatal(err)
+	} else {
+		jar = j
 	}
 }
 
@@ -382,6 +392,24 @@ func reverseDirector(r *http.Request) {
 		// explicitly disable User-Agent so it's not set to default value
 		r.Header.Set("User-Agent", "")
 	}
+	for _, cookie := range jar.Cookies(r.URL) {
+		if _, err := r.Cookie(cookie.Name); err != nil {
+			// this cookie was set by an earlier response,
+			// but is missing on the request
+			r.AddCookie(cookie)
+		}
+	}
+}
+
+func modifyResponse(r *http.Response) error {
+	// save cookies in the jar, so they can be added if missing on later requests
+	jar.SetCookies(r.Request.URL, r.Cookies())
+	// CORS
+	r.Header.Set("Access-Control-Allow-Origin", "*")
+	// Deze twee hieronder zouden eigenlijk niet nodig moeten zijn, maar het blijkt er wel beter van te worden..
+	r.Header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
+	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
+	return nil
 }
 
 func passThroughDirector(r *http.Request) {
@@ -392,12 +420,4 @@ func passThroughDirector(r *http.Request) {
 	r.URL = target
 	r.Host = target.Host
 	log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
-}
-
-func modifyResponse(r *http.Response) error {
-	r.Header.Set("Access-Control-Allow-Origin", "*")
-	// Deze twee hieronder zouden eigenlijk niet nodig moeten zijn, maar het blijkt er wel beter van te worden..
-	r.Header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
-	return nil
 }
