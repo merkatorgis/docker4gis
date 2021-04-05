@@ -4,8 +4,6 @@ WORKDIR /goproxy
 RUN CGO_ENABLED=0 GOOS=linux go build -v -a -tags netgo -ldflags -w .
 
 FROM alpine:3.12
-COPY --from=builder /goproxy/proxy /
-
 RUN apk update; apk add --no-cache \
 	ca-certificates wget bash
 
@@ -30,3 +28,5 @@ COPY run.sh /.docker4gis/run.sh
 ONBUILD COPY conf /tmp/conf
 ONBUILD RUN touch /tmp/conf/args; \
 	cp /tmp/conf/args /.docker4gis
+
+COPY --from=builder /goproxy/proxy /
