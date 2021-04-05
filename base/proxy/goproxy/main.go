@@ -282,7 +282,8 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 					if username, password, ok := r.BasicAuth(); ok && username == "access_token" {
 						r.Header.Del("Authorization")
 						if key == "/geoserver/" {
-							// for geoserver, read any "access_token" from basic auth, and pass it on as a viewparam
+							// for geoserver, read any "access_token" from basic
+							// auth, and pass it on as a viewparam
 							query := r.URL.Query()
 							viewparams := query.Get("viewparams")
 							if viewparams == "" {
@@ -308,7 +309,8 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					} else {
 						if proxy.authorise {
-							// Have the request authorised before putting it through.
+							// Have the request authorised before putting it
+							// through.
 							if body, originalBody, errDrainBody := drainBody(r.Body); errDrainBody != nil {
 								internalServerError(w, "getting the request's body", errDrainBody)
 								return
@@ -339,7 +341,8 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 									internalServerError(w, "reading response body", errAuthorization)
 									return
 								} else {
-									// authorisation succeeded; pass through what they responded with
+									// authorisation succeeded; pass through
+									// what they responded with
 									r.Header.Set("Authorization", strings.Trim(authorization, `"`))
 									// restore the original request body
 									r.Body = originalBody
@@ -391,22 +394,28 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 }
 
 func reverseDirector(r *http.Request) {
-	log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	if _, ok := r.Header["User-Agent"]; !ok {
 		// explicitly disable User-Agent so it's not set to default value
 		r.Header.Set("User-Agent", "")
 	}
-	for _, cookie := range jar.Cookies(r.URL) {
-		if _, err := r.Cookie(cookie.Name); err != nil {
-			// this cookie was set by an earlier response,
-			// but is missing on the request
-			r.AddCookie(cookie)
+	// Prevent forwarding other destinations' cookies:
+	clone := r.Clone(r.Context())
+	r.Header.Del("Cookie")
+	for _, jarred := range jar.Cookies(r.URL) {
+		// repopulate with just the cookies jarred for this URL
+		if cloned, err := clone.Cookie(jarred.Name); err != nil {
+			// jarred cookie not found in the request
+			r.AddCookie(jarred)
+		} else {
+			// jarred cookie found in the request
+			r.AddCookie(cloned)
 		}
 	}
+	log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 }
 
 func modifyResponse(r *http.Response) error {
-	// save cookies in the jar, so they can be added if missing on later requests
+	// save this destination's cookies in the jar
 	jar.SetCookies(r.Request.URL, r.Cookies())
 	// CORS
 	r.Header.Set("Access-Control-Allow-Origin", "*")
