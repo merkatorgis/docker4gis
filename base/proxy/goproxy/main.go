@@ -340,7 +340,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 									return
 								} else {
 									// authorisation succeeded; pass through what they responded with
-									r.Header.Set("Authorization", authorization)
+									r.Header.Set("Authorization", strings.Trim(authorization, `"`))
 									// restore the original request body
 									r.Body = originalBody
 								}
