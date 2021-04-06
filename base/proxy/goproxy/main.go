@@ -402,12 +402,9 @@ func reverseDirector(r *http.Request) {
 	clone := r.Clone(r.Context())
 	r.Header.Del("Cookie")
 	for _, jarred := range jar.Cookies(r.URL) {
-		// repopulate with just the cookies jarred for this URL
-		if cloned, err := clone.Cookie(jarred.Name); err != nil {
-			// jarred cookie not found in the request
-			r.AddCookie(jarred)
-		} else {
-			// jarred cookie found in the request
+		// repopulate with just those cookies from the request that were
+		// previously jarred for this URL
+		if cloned, err := clone.Cookie(jarred.Name); err == nil {
 			r.AddCookie(cloned)
 		}
 	}
