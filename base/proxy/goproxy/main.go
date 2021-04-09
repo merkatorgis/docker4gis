@@ -37,16 +37,15 @@ type config struct {
 }
 
 var (
-	configs              = make(map[string]*config)
-	proxyHost            = os.Getenv("PROXY_HOST")
-	proxyPort            = os.Getenv("PROXY_PORT")
-	useAutocert          = os.Getenv("AUTOCERT")
-	dockerEnv            = os.Getenv("DOCKER_ENV")
-	dockerUser           = os.Getenv("DOCKER_USER")
-	passThroughProxy     *httputil.ReverseProxy
-	reverseProxy         *httputil.ReverseProxy
-	reverseProxyInsecure *httputil.ReverseProxy
-	jar                  *cookiejar.Jar
+	configs           = make(map[string]*config)
+	proxyHost         = os.Getenv("PROXY_HOST")
+	proxyPort         = os.Getenv("PROXY_PORT")
+	useAutocert       = os.Getenv("AUTOCERT")
+	dockerEnv         = os.Getenv("DOCKER_ENV")
+	dockerUser        = os.Getenv("DOCKER_USER")
+	passThroughProxy  *httputil.ReverseProxy
+	jar               *cookiejar.Jar
+	transportInsecure *http.Transport
 )
 
 func init() {
@@ -54,18 +53,9 @@ func init() {
 		Director:       passThroughDirector,
 		ModifyResponse: modifyResponse,
 	}
-	reverseProxy = &httputil.ReverseProxy{
-		Director:       reverseDirector,
-		ModifyResponse: modifyResponse,
-	}
-	transportInsecure := http.DefaultTransport.(*http.Transport)
+	transportInsecure = http.DefaultTransport.(*http.Transport)
 	configInsecure := &tls.Config{InsecureSkipVerify: true}
 	transportInsecure.TLSClientConfig = configInsecure
-	reverseProxyInsecure = &httputil.ReverseProxy{
-		Director:       reverseDirector,
-		ModifyResponse: modifyResponse,
-		Transport:      transportInsecure,
-	}
 	if j, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
 		log.Fatal(err)
 	} else {
@@ -328,6 +318,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								req.Header.Del("accept-encoding")
 								req.Header.Set("content-type", "application/json")
 								req.Header.Set("accept", "application/json, application/*, text/*")
+								filterCookies(req)
 								if res, errDo := http.DefaultClient.Do(req); errDo != nil {
 									internalServerError(w, "in http.DefaultClient.Do", errDo)
 									return
@@ -349,6 +340,7 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 								}
 							}
 						}
+						hasApp := strings.HasPrefix(r.URL.Path, "/"+app)
 						target := proxy.target
 						r.URL.Scheme = target.Scheme
 						r.URL.Host = target.Host
@@ -378,10 +370,43 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 						} else {
 							r.Host = target.Host
 						}
+						modifyResponse := func(r *http.Response) error {
+							if err := modifyResponse(r); err != nil {
+								return err
+							}
+							// collect the response's cookies, with  Domain and
+							// Path rewritten for the proxy client's perspective
+							var cookies []*http.Cookie
+							for _, cookie := range r.Cookies() {
+								cookie.Domain = ""
+								if (key == "/app/" || key == "/api/") && (cookie.Path == "" || cookie.Path == "/") {
+									cookie.Path = "/"
+								} else {
+									cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
+								}
+								if hasApp {
+									cookie.Path = "/" + app + cookie.Path
+								}
+								cookies = append(cookies, cookie)
+							}
+							// replace all cookies with the rewritten ones
+							r.Header.Del("Set-Cookie")
+							for _, cookie := range cookies {
+								r.Header.Add("Set-Cookie", cookie.String())
+							}
+							return nil
+						}
 						if proxy.insecure {
-							reverseProxyInsecure.ServeHTTP(w, r)
+							(&httputil.ReverseProxy{
+								Director:       reverseDirector,
+								ModifyResponse: modifyResponse,
+								Transport:      transportInsecure,
+							}).ServeHTTP(w, r)
 						} else {
-							reverseProxy.ServeHTTP(w, r)
+							(&httputil.ReverseProxy{
+								Director:       reverseDirector,
+								ModifyResponse: modifyResponse,
+							}).ServeHTTP(w, r)
 						}
 					}
 					return
@@ -398,6 +423,11 @@ func reverseDirector(r *http.Request) {
 		// explicitly disable User-Agent so it's not set to default value
 		r.Header.Set("User-Agent", "")
 	}
+	filterCookies(r)
+	log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
+}
+
+func filterCookies(r *http.Request) {
 	// Prevent forwarding other destinations' cookies:
 	clone := r.Clone(r.Context())
 	r.Header.Del("Cookie")
@@ -408,7 +438,6 @@ func reverseDirector(r *http.Request) {
 			r.AddCookie(cloned)
 		}
 	}
-	log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 }
 
 func modifyResponse(r *http.Response) error {
