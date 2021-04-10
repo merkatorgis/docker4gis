@@ -2,14 +2,8 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"crypto/tls"
-	"encoding/json"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httputil"
@@ -38,26 +32,17 @@ type config struct {
 }
 
 var (
-	configs           = make(map[string]*config)
-	proxyHost         = os.Getenv("PROXY_HOST")
-	proxyPort         = os.Getenv("PROXY_PORT")
-	useAutocert       = os.Getenv("AUTOCERT")
-	dockerEnv         = os.Getenv("DOCKER_ENV")
-	dockerUser        = os.Getenv("DOCKER_USER")
-	passThroughProxy  *httputil.ReverseProxy
-	jar               *cookiejar.Jar
-	transportInsecure *http.Transport
+	configs          = make(map[string]*config)
+	proxyHost        = os.Getenv("PROXY_HOST")
+	proxyPort        = os.Getenv("PROXY_PORT")
+	useAutocert      = os.Getenv("AUTOCERT")
+	dockerEnv        = os.Getenv("DOCKER_ENV")
+	dockerUser       = os.Getenv("DOCKER_USER")
+	passThroughProxy *httputil.ReverseProxy
+	jar              *cookiejar.Jar
 )
 
 func init() {
-	transportInsecure = http.DefaultTransport.(*http.Transport)
-	configInsecure := &tls.Config{InsecureSkipVerify: true}
-	transportInsecure.TLSClientConfig = configInsecure
-	if j, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
-		log.Fatal(err)
-	} else {
-		jar = j
-	}
 	passThroughProxy = &httputil.ReverseProxy{
 		ModifyResponse: modifyResponse,
 		Director: func(r *http.Request) {
@@ -71,6 +56,11 @@ func init() {
 			log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
 		},
 	}
+	if newJar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
+		log.Fatal(err)
+	} else {
+		jar = newJar
+	}
 }
 
 func main() {
@@ -78,7 +68,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	// loop over config files (one per app)
 	for _, fileInfo := range fileInfos {
 		if fileInfo.Mode().IsDir() {
 			continue
@@ -89,7 +79,7 @@ func main() {
 			log.Fatal(err)
 		}
 		defer file.Close()
-
+		// parse each line into a config for this app
 		configs[app] = &config{
 			proxies: make(map[string]*proxy),
 		}
@@ -112,13 +102,12 @@ func main() {
 				}
 			}
 		}
-
 		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	go http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	go http.ListenAndServe(":80", handlers.CompressHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if dockerEnv == "DEVELOPMENT" {
 			handler(w, r)
 		} else {
@@ -130,11 +119,9 @@ func main() {
 			url.Scheme = "https"
 			http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 		}
-	}))
+	})))
 
-	go http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handler(w, r)
-	}))
+	go http.ListenAndServe(":8080", handlers.CompressHandler(http.HandlerFunc(handler)))
 
 	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
 		crt := "/certificates/" + proxyHost + ".crt"
@@ -252,95 +239,6 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
-func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string, config *config, proxy *proxy) *httputil.ReverseProxy {
-	transport := http.DefaultTransport
-	if proxy.insecure {
-		transport = transportInsecure
-	}
-	hasApp := strings.HasPrefix(r.URL.Path, "/"+app)
-	return &httputil.ReverseProxy{
-		Transport: transport,
-		Director: func(r *http.Request) {
-			basicAuthAccessToken(r, key)
-			if err := validateSecret(r, key, config.secret); err != nil {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
-			}
-			if proxy.authorise {
-				if authorised, err := authorise(r, path, config.authPath); err != nil {
-					log.Printf("authorise -> error: %v", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return
-				} else if !authorised {
-					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-					return
-				}
-			}
-			target := proxy.target
-			r.URL.Scheme = target.Scheme
-			r.URL.Host = target.Host
-			r.URL.Path = target.Path + strings.SplitN(path, "/", 3)[2] // alles na de tweede slash
-			forwardedFor := r.Header.Get("X-Real-Ip")
-			if forwardedFor == "" {
-				forwardedFor = r.Header.Get("X-Forwarded-For")
-			}
-			if forwardedFor == "" {
-				forwardedFor, _, _ = net.SplitHostPort(r.RemoteAddr)
-			}
-			forwardedHost := r.Host
-			forwardedProto := "https"
-			forwardedPath := "/" + app + key
-			forwarded := "for=" + forwardedFor + ";host=" + forwardedHost + ";proto=" + forwardedProto + ";path=" + forwardedPath
-			r.Header.Set("Forwarded", forwarded)
-			r.Header.Set("X-Forwarded-For", forwardedFor)
-			r.Header.Set("X-Forwarded-Host", forwardedHost)
-			r.Header.Set("X-Forwarded-Proto", forwardedProto)
-			r.Header.Set("X-Forwarded-Path", forwardedPath)
-			r.Header.Set("X-Script-Name", forwardedPath)
-			if proxy.impersonate {
-				r.Host = proxyHost
-				if target.Port() != "" {
-					r.Host += ":" + target.Port()
-				}
-			} else {
-				r.Host = target.Host
-			}
-			if _, ok := r.Header["User-Agent"]; !ok {
-				// explicitly disable User-Agent so it's not set to default value
-				r.Header.Set("User-Agent", "")
-			}
-			filterCookies(r)
-			log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
-		},
-		ModifyResponse: func(r *http.Response) error {
-			if err := modifyResponse(r); err != nil {
-				return err
-			}
-			// collect the response's cookies, with  Domain and Path rewritten
-			// for the proxy client's perspective
-			var cookies []*http.Cookie
-			for _, cookie := range r.Cookies() {
-				cookie.Domain = ""
-				if (key == "/app/" || key == "/api/") && (cookie.Path == "" || cookie.Path == "/") {
-					cookie.Path = "/"
-				} else {
-					cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
-				}
-				if hasApp {
-					cookie.Path = "/" + app + cookie.Path
-				}
-				cookies = append(cookies, cookie)
-			}
-			// replace all cookies with the rewritten ones
-			r.Header.Del("Set-Cookie")
-			for _, cookie := range cookies {
-				r.Header.Add("Set-Cookie", cookie.String())
-			}
-			return nil
-		},
-	}
-}
-
 func filterCookies(r *http.Request) {
 	// Prevent forwarding other destinations' cookies:
 	clone := r.Clone(r.Context())
@@ -364,103 +262,4 @@ func modifyResponse(r *http.Response) error {
 	r.Header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
 	return nil
-}
-
-func basicAuthAccessToken(r *http.Request, key string) {
-	if username, password, ok := r.BasicAuth(); ok && username == "access_token" {
-		r.Header.Del("Authorization")
-		if key == "/geoserver/" {
-			// for geoserver, read any "access_token" from basic auth, and pass
-			// it on as a viewparam
-			query := r.URL.Query()
-			viewparams := query.Get("viewparams")
-			if viewparams == "" {
-				viewparams = query.Get("VIEWPARAMS")
-			}
-			if strings.Contains(viewparams, username) {
-				log.Printf("access_token provided in viewparams as well as in basic auth; using the viewparams value")
-			} else {
-				param := username + ":" + password
-				if viewparams == "" {
-					viewparams = param
-				} else {
-					viewparams = viewparams + ";" + param
-				}
-				query.Set("VIEWPARAMS", viewparams)
-				r.URL.RawQuery = query.Encode()
-				log.Printf("Basic Auth access_token passed in VIEWPARAMS")
-			}
-		}
-	}
-}
-
-func validateSecret(r *http.Request, key string, secret string) error {
-	if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != secret {
-		return fmt.Errorf("invalid secret: %s", r.FormValue("secret"))
-	} else {
-		return nil
-	}
-}
-
-func authorise(r *http.Request, path string, authPath string) (authorised bool, err error) {
-	// copy of https://golang.org/pkg/net/http/httputil/?m=all#drainBody
-	drainBody := func(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
-		if b == nil || b == http.NoBody {
-			// No copying needed. Preserve the magic sentinel meaning of NoBody.
-			return http.NoBody, http.NoBody, nil
-		}
-		var buf bytes.Buffer
-		if _, err = buf.ReadFrom(b); err != nil {
-			return nil, b, err
-		}
-		if err = b.Close(); err != nil {
-			return nil, b, err
-		}
-		return ioutil.NopCloser(&buf), ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
-	}
-	bodyString := func(body io.ReadCloser) (content string, err error) {
-		defer body.Close()
-		if bytes, err := ioutil.ReadAll(body); err != nil {
-			return "", err
-		} else {
-			return string(bytes), nil
-		}
-	}
-	type authPathBody struct {
-		Method string
-		Path   string
-		Query  url.Values
-		Body   string
-	}
-	// Have the request authorised before putting it through.
-	if body, originalBody, errDrainBody := drainBody(r.Body); errDrainBody != nil {
-		return false, errDrainBody
-	} else if bodyContent, errBodyString := bodyString(body); errBodyString != nil {
-		return false, errBodyString
-	} else if jsonBody, errMarshal := json.Marshal(authPathBody{r.Method, path, r.URL.Query(), bodyContent}); errMarshal != nil {
-		return false, errMarshal
-	} else if req, errNewRequest := http.NewRequest("POST", authPath, bytes.NewReader(jsonBody)); errNewRequest != nil {
-		return false, errNewRequest
-	} else {
-		req.Header = r.Header.Clone()
-		req.Header.Del("accept-encoding")
-		req.Header.Set("content-type", "application/json")
-		req.Header.Set("accept", "application/json, application/*, text/*")
-		filterCookies(req)
-		if res, errDo := http.DefaultClient.Do(req); errDo != nil {
-			return false, errDo
-		} else if res.StatusCode == http.StatusUnauthorized {
-			return false, nil
-		} else if res.StatusCode/100 != 2 {
-			return false, fmt.Errorf("the authPath response has status: %d", res.StatusCode)
-		} else if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
-			return false, errAuthorization
-		} else {
-			// authorisation succeeded; pass through what they responded with
-			r.Header.Set("Authorization", strings.Trim(authorization, `"`))
-			// restore the original request body
-			r.Body = originalBody
-			return true, nil
-		}
-	}
 }
