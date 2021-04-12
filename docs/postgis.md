@@ -45,7 +45,7 @@ reload the data. Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
    1. `docker container stop {name}` all containers connected to the database.
    1. Also disconnect all other database users (PGAdmin?)
 1. Dump all the data:
-   1. `docker container exec -ti appname-postgis dump.sh`
+   1. `docker container exec appname-postgis dump.sh`
 1. Remove the "old" database files:
    1. `docker container rm -f appname-postgis`
    1. `docker volume rm appname-postgis`
