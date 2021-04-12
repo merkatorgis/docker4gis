@@ -3,7 +3,6 @@ set -e
 
 POSTGRES_DB=${1:-$DOCKER_USER}
 PGRST_DB_SCHEMA=${2:-$DOCKER_USER}
-shift 2
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
@@ -17,7 +16,7 @@ PGRST_JWT_SECRET=$(docker container exec "$DOCKER_USER-postgis" pg.sh force -Atc
 
 proxy=$PROXY_HOST
 [ "$PROXY_PORT" ] && proxy=$proxy:$PROXY_PORT
-PGRST_SERVER_PROXY_URI=${PGRST_SERVER_PROXY_URI:-https://$proxy/$DOCKER_USER/api}
+PGRST_OPENAPI_SERVER_PROXY_URI=${PGRST_OPENAPI_SERVER_PROXY_URI:-https://$proxy/$DOCKER_USER/api}
 
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
@@ -27,7 +26,6 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e PGRST_JWT_SECRET="$PGRST_JWT_SECRET" \
 	-e PGRST_PRE_REQUEST="public.pre_request" \
 	-e PGRST_DB_ANON_ROLE="web_anon" \
-	-e PGRST_SERVER_PROXY_URI="$PGRST_SERVER_PROXY_URI" \
+	-e PGRST_OPENAPI_SERVER_PROXY_URI="$PGRST_OPENAPI_SERVER_PROXY_URI" \
 	-e PGRST_SERVER_PORT="8080" \
-	"$@" \
 	-d "$IMAGE"
