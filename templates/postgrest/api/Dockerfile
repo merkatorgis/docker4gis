@@ -1,4 +1,4 @@
-FROM docker4gis/postgrest:279
+FROM docker4gis/postgrest:318
 
 # ENV PGRST_DB_POOL=100
 # ENV PGRST_DB_EXTRA_SEARCH_PATH=public

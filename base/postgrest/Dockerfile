@@ -1,4 +1,4 @@
-FROM postgrest/postgrest:v6.0.2
+FROM postgrest/postgrest:v7.0.1
 
 ENV PGRST_DB_POOL=100 \
     PGRST_DB_EXTRA_SEARCH_PATH=public \
