@@ -22,6 +22,13 @@ if ! pg.sh -c "select current_setting('app.configured')" >/dev/null 2>&1 &&
     for f in "$dump.roles" "$dump.backup" "$dump.backup.lst"; do
         mv "$f" "$f.$(date -I'seconds')"
     done
+
+    if ! pg.sh -c "select current_setting('app.jwt_secret')" >/dev/null 2>&1; then
+        # fix missing setting; cf web/1.sh
+        jwt_secret=$(pg.sh -Atc 'select gen_random_uuid()::text || gen_random_uuid()::text')
+        pg.sh -c "alter database $POSTGRES_DB set app.jwt_secret to '$jwt_secret'"
+    fi
+
 else
     # start with existing database
 
