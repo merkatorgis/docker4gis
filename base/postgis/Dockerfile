@@ -1,5 +1,5 @@
 ARG POSTGRESQL_VERSION=13
-ARG POSTGIS_VERSION=3.0
+ARG POSTGIS_VERSION=3.1
 
 # <- postgres:10 <- debian:stretch-slim
 FROM postgis/postgis:${POSTGRESQL_VERSION}-${POSTGIS_VERSION}
@@ -177,8 +177,8 @@ COPY conf/web /tmp/web
 # install database server administrative scripts
 COPY ["conf/entrypoint", "conf/init.sh", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
 
-# install tool last.sh
-COPY conf/last.sh /usr/local/bin
+# install tools
+COPY conf/last.sh conf/dump.sh /usr/local/bin/
 
 # include a "client" image's conf scripts where onstart.sh will find them
 ONBUILD COPY conf /tmp/conf
