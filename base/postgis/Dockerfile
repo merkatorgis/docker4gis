@@ -178,7 +178,9 @@ COPY conf/web /tmp/web
 COPY ["conf/entrypoint", "conf/init.sh", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
 
 # install tools
-COPY conf/last.sh conf/dump.sh /usr/local/bin/
+COPY conf/last.sh /usr/local/bin/
+COPY conf/dump_restore /usr/local/bin/dump
+COPY conf/dump_restore /usr/local/bin/restore
 
 # include a "client" image's conf scripts where onstart.sh will find them
 ONBUILD COPY conf /tmp/conf

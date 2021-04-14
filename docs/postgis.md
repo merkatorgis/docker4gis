@@ -34,19 +34,25 @@ Since each `conf/subdir/conf.sh` is run at container start, you could create reu
 
 To keep track of the schema version in the database, the utility creates a `__version()` function in each schema, that returns the current version number.
 
-## Upgrade
+## Upgrade / dump & restore
 
 To move an existing database from one major version of PostgreSQL to another (
 e.g. from 10 to 11, from 11 to 12, or from 10 to 12), you'll have to dump and
 reload the data. Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
 
 1. Build the new-version database image.
-1. Disconnect all database sessions:
-   1. `docker container stop {name}` all containers connected to the database.
-   1. Also disconnect all other database users (PGAdmin?)
-1. Dump all the data:
-   1. `docker container exec appname-postgis dump.sh`
-1. Remove the "old" database files:
+1. Dump the database:
+   1. `docker container exec appname-postgis dump`
+1. Remove the "old" database volume:
    1. `docker container rm -f appname-postgis`
    1. `docker volume rm appname-postgis`
 1. Run the new app version, with the new-version database image.
+
+This same procedure can be followed to not actually upgrade, but just dump the
+database to a backup file that can later be used to restore the database to the
+state at the time the dump wat started. No need to use any new version or image
+in that case.
+
+The dump files will be created at `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}`.
+Once restored, the file names are suffixed with a date-time string, so that a
+new dump won't overwrite any existing.
