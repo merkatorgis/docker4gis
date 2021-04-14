@@ -34,25 +34,41 @@ Since each `conf/subdir/conf.sh` is run at container start, you could create reu
 
 To keep track of the schema version in the database, the utility creates a `__version()` function in each schema, that returns the current version number.
 
-## Upgrade / dump & restore
+## Dump & Restore
 
-To move an existing database from one major version of PostgreSQL to another (
-e.g. from 10 to 11, from 11 to 12, or from 10 to 12), you'll have to dump and
-reload the data. Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
+### Online backup
 
-1. Build the new-version database image.
-1. Dump the database:
-   1. `docker container exec appname-postgis dump`
+To dump a snapshot of a running database:
+
+`docker container exec appname-postgis dump`
+
+To restore a database to the state at the time of the start of a dump:
+
 1. Remove the "old" database volume:
    1. `docker container rm -f appname-postgis`
    1. `docker volume rm appname-postgis`
-1. Run the new app version, with the new-version database image.
+1. Run the app again - a new, empty database will created, and the latest dump
+   will be restored in it.
 
-This same procedure can be followed to not actually upgrade, but just dump the
-database to a backup file that can later be used to restore the database to the
-state at the time the dump wat started. No need to use any new version or image
-in that case.
+The dump files are created at `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}`.
+Once restored, or when a new dump is created, the (old) file names are suffixed
+with a date-time string.
 
-The dump files will be created at `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}`.
-Once restored, the file names are suffixed with a date-time string, so that a
-new dump won't overwrite any existing.
+### Upgrade
+
+To move an existing database from one major version of PostgreSQL to another (
+e.g. from 10 to 11, from 11 to 12, or from 10 to 12), you'll have to dump and
+restore the data. Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
+
+Using the `upgrade` command instead of `dump` renders the database read-only
+before starting the dump, to prevent the loss of any new data during the upgrade
+procedure:
+
+1. Build the new-version database image;
+1. Dump the database: `docker container exec appname-postgis upgrade` - the
+   database is now read-only;
+1. Remove the "old" database volume:
+   1. `docker container rm -f appname-postgis`
+   1. `docker volume rm appname-postgis`
+1. Run the new app version, with the new-version database image - the dump is
+   restored, and the database is writable again.
