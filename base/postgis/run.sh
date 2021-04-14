@@ -39,6 +39,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	--network "$DOCKER_USER" \
 	-d "$IMAGE"
 
+# wait until all DDL has run
 while
 	sql="select current_setting('app.ddl_done', true)"
 	result=$(docker container exec "$CONTAINER" pg.sh -Atc "$sql")
