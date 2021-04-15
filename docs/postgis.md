@@ -72,3 +72,8 @@ database are (gracefully) terminated.
    1. `docker volume rm appname-postgis`
 1. Run the new app version, with the new-version database image - the dump is
    restored, and the database is writable again.
+
+Though many things might continue to work on the read-only database, and most
+clients probably reconnect automatically, do plan to perform the restore asap.
+For instance, the authentication of PostgREST API queries are likely to fail,
+since they tend to write transaction parameters.
