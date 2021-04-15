@@ -29,6 +29,7 @@ dump() {
     settings="
         -- if we're upgrading, we're in default read-only mode
         start transaction read write;
+        
         drop function if exists __restore_settings;
         create function __restore_settings()
         returns void language plpgsql as \$body\$ begin
