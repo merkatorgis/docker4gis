@@ -1,10 +1,7 @@
 #!/bin/bash
 
 database=$POSTGRES_DB
-if [ "$1" = '-d' ]; then
-    database=$2
-    shift 2
-fi
+[ "$1" = '-d' ] && database=$2 && shift 2
 
 dir=/fileport/$DOCKER_USER
 mkdir -p "$dir"
@@ -21,77 +18,120 @@ tag() {
     done
 }
 
+sql() {
+    local dbname=$database
+    [ "$1" = "-d" ] && dbname=$2 && shift 2
+    run() {
+        # use --no-align and --tuples-only to return an proper, unformatted
+        # value that can be used in conditional statements
+        psql -U "$POSTGRES_USER" -d "$dbname" --no-align --tuples-only "$@"
+    }
+    local input=$1
+    if [ "$input" ]; then
+        if [ -f "$input" ]; then
+            # read from given file
+            run -f "$input"
+        else
+            # execute given sql command
+            run -c "$input"
+        fi
+    else
+        # read from stdin
+        run
+    fi
+}
+
 # create a new dump, while online
 dump() {
+
     # save app.jwt_secret and any other settings passed as an argument, to get
     # set again as part of the restore
-    settings="
+    local settings="
         -- if we're upgrading, we're in default read-only mode
         start transaction read write;
+
         drop function if exists __restore_settings;
         create function __restore_settings()
         returns void language plpgsql as \$body\$ begin
     "
+    local value
     for setting in app.jwt_secret "$@"; do
-        value=$(pg.sh -Atc "select current_setting('$setting', true)")
-        settings="$settings
-            alter database $database set $setting to '$value';
-        "
+        value=$(sql "select current_setting('$setting', true)")
+        settings+="alter database $database set $setting to '$value';"
     done
-    settings="$settings
+    settings+="
+        -- clean up after ourselves
         drop function __restore_settings;
         end \$body\$;
         commit;
     "
-    psql -U "$POSTGRES_USER" -c "$settings" "$database"
+    sql "$settings"
 
     # tag any existing dump files, so that we won't overwrite them
     tag
 
-    # save roles (which aren't included in pg_dump's backup file)
+    # save roles (they're not included in pg_dump's backup file)
     pg_dumpall -U "$POSTGRES_USER" --roles-only >"$roles"
 
     # backup database
     # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
     pg_dump -U "$POSTGRES_USER" -Fc -b -v -f "$backup" "$database"
+
+    # we don't need this in the database anymore; it just needed to be included
+    # in the dump
+    sql "
+        start transaction read write;
+        drop function if exists __restore_settings;
+        commit;
+    "
 }
 
-# possibly restore an existing dump in an unconfigured database, returning 0
+# possibly restore an existing dump in an unprovisioned database, returning 0
 # (true) if restored, or 1 (false) if not
 restore() {
-    restored=false
-    if ! psql -U "$POSTGRES_USER" -c "select current_setting('app.configured')" "$database" &&
-        [ -f "$roles" ] &&
-        [ -f "$backup" ]; then
+
+    local restored=false
+
+    do_restore() {
         restored=true
 
         # first restore the roles (which are not included in the backup file)
-        psql -U "$POSTGRES_USER" -f "$dump.roles" "$database"
+        sql "$roles"
 
         # prevent "schema already exists" errors
-        psql -U "$POSTGRES_USER" -c "drop schema if exists tiger_data cascade" "$database"
-        psql -U "$POSTGRES_USER" -c "drop schema if exists tiger cascade" "$database"
+        sql "drop schema if exists tiger_data cascade"
+        sql "drop schema if exists tiger cascade"
 
         # restore from the backup file
         # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
+        local postgis_restore_pl
         postgis_restore_pl=$(find / -name postgis_restore.pl 2>/dev/null)
-        perl "$postgis_restore_pl" "$dump.backup" |
-            psql -U "$POSTGRES_USER" "$database" 2>/restore.err
+        echo "Restoring using '$postgis_restore_pl'..."
+        echo "  Saving errors in '/restore.err'..."
+        perl "$postgis_restore_pl" "$backup" | sql 2>/restore.err
+        echo "> Listing '/restore.err':"
         cat /restore.err
+        echo "< Listing '/restore.err' finished"
 
-        psql -U "$POSTGRES_USER" -Atc "select __restore_settings()" "$database"
+        sql "select __restore_settings()"
 
         # "it is wise to run ANALYZE after restoring from a dump file"
         # https://www.postgresql.org/docs/13/app-pgdump.html
-        psql -U "$POSTGRES_USER" -c "analyze" "$database"
+        sql "analyze"
 
         # tag the current dump files as done
         tag
-    fi
-    # this setting is used in the test above (the value doesn't matter; it just
-    # needs to be set) - it's set in all cases, since if we weren't restoring a
-    # dump, we're expected to be configuring the database from DDL instead
-    psql -U "$POSTGRES_USER" -c "alter database $database set app.configured to true" "$database"
+    }
+
+    local provisioned
+    provisioned=$(sql "select current_setting('app.provisioned', true)")
+    [ "$provisioned" != "true" ] && [ -f "$roles" ] && [ -f "$backup" ] && do_restore
+
+    # this setting is used in the test above - it's set in all cases, since if
+    # we weren't restoring a dump, we're expected to be provisioning the
+    # database from DDL instead
+    sql "alter database $database set app.provisioned to true"
+
     # return true (0) or false (1)
     $restored
 }
@@ -99,7 +139,9 @@ restore() {
 # render the database read-only, before creating a new dump - restore the dump
 # in a new, empty database to get it writable again
 upgrade() {
-    psql -U "$POSTGRES_USER" -c "
+
+    # connect to NOT the database at hand
+    sql -d postgres "
         -- temporarily disallow new connections
         -- https://www.postgresql.org/docs/13/sql-alterdatabase.html
         alter database $database allow_connections false;
@@ -111,21 +153,19 @@ upgrade() {
         -- terminate any (presumably writable) connections
         -- https://www.postgresql.org/docs/13/functions-admin.html
         -- https://www.postgresql.org/docs/13/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW
-        select pg_terminate_backend(pid)
-        from pg_stat_activity
-        where datname = '$database'
-        ;
+        select pg_terminate_backend(pid) from pg_stat_activity where datname = '$database';
 
         -- reallow new (read-only) connections
         alter database $database allow_connections true;
-    " postgres # connect to NOT the database at hand
+    "
 
     dump "$@"
 
     echo >&2
-    echo "NOTICE: since an 'upgrade' dump was created, database $database is now read-only" >&2
+    echo "NOTICE: since an 'upgrade' dump was created, database $database is now read-only..." >&2
+    echo "  See https://github.com/merkatorgis/docker4gis/blob/master/docs/postgis.md#upgrade..." >&2
 }
 
-# dump or restore or upgrade
+# dump or restore or upgrade (see Dockerfile)
 action=$(basename "$0")
-"$action" "$@"
+$action "$@"

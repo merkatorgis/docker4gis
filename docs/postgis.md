@@ -40,7 +40,7 @@ To keep track of the schema version in the database, the utility creates a `__ve
 
 To dump a snapshot of a running database:
 
-`docker container exec appname-postgis dump`
+`time docker container exec appname-postgis dump`
 
 To restore a database to the state at the time of the start of a dump:
 
@@ -62,11 +62,11 @@ restore the data. Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
 
 Using the `upgrade` command instead of `dump` renders the database read-only
 before starting the dump, to prevent the loss of any new data during the upgrade
-procedure:
+procedure. In achieving the read-only state, all current connections to the
+database are (gracefully) terminated.
 
 1. Build the new-version database image;
-1. Dump the database: `docker container exec appname-postgis upgrade` - the
-   database is now read-only;
+1. Dump the database for upgrade: `time docker container exec appname-postgis upgrade` - the database is now read-only;
 1. Remove the "old" database volume:
    1. `docker container rm -f appname-postgis`
    1. `docker volume rm appname-postgis`
