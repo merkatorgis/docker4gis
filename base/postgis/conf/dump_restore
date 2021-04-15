@@ -29,13 +29,13 @@ dump() {
     settings="
         -- if we're upgrading, we're in default read-only mode
         start transaction read write;
-        
+
         drop function if exists __restore_settings;
         create function __restore_settings()
         returns void language plpgsql as \$body\$ begin
     "
     for setting in app.jwt_secret "$@"; do
-        value=$(pg.sh -Atc "select current_setting('$setting', true)")
+        value=$(psql -U "$POSTGRES_USER" -Atc "select current_setting('$setting', true)" "$database")
         settings+="alter database $database set $setting to '$value';"
     done
     settings+="
