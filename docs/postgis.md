@@ -44,14 +44,16 @@ To dump a snapshot of a running database:
 
 To restore a database to the state at the time of the start of a dump:
 
+1. Download/backup the dump files:
+   1. `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}/${dbname}.roles`
+   1. `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}/${dbname}.backup`
 1. Remove the "old" database volume:
    1. `docker container rm -f appname-postgis`
    1. `docker volume rm appname-postgis`
 1. Run the app again - a new, empty database will created, and the latest dump
    will be restored in it.
 
-The dump files are created at `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}`.
-Once restored, or when a new dump is created, the (old) file names are suffixed
+Once restored, or when a new dump is created, the (old) dump file names are suffixed
 with a date-time string.
 
 ### Upgrade
@@ -67,6 +69,7 @@ database are (gracefully) terminated.
 
 1. Build the new-version database image;
 1. Dump the database for upgrade: `time docker container exec appname-postgis upgrade` - the database is now read-only;
+1. Download/backup the dump files (see above);
 1. Remove the "old" database volume:
    1. `docker container rm -f appname-postgis`
    1. `docker volume rm appname-postgis`
