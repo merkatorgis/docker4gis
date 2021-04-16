@@ -22,7 +22,7 @@ sql() {
     local dbname=$database
     [ "$1" = "-d" ] && dbname=$2 && shift 2
     run() {
-        # use --no-align and --tuples-only to return an proper, unformatted
+        # use --no-align and --tuples-only to return a proper, unformatted
         # value that can be used in conditional statements
         psql -U "$POSTGRES_USER" -d "$dbname" --no-align --tuples-only "$@"
     }
