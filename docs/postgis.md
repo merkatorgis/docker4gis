@@ -70,9 +70,7 @@ database are (gracefully) terminated.
 1. Build the new-version database image;
 1. Dump the database for upgrade: `time docker container exec appname-postgis upgrade` - the database is now read-only;
 1. Download/backup the dump files (see above);
-1. Remove the "old" database volume:
-   1. `docker container rm -f appname-postgis`
-   1. `docker volume rm appname-postgis`
+1. Remove the "old" database volume (see above);
 1. Run the new app version, with the new-version database image - the dump is
    restored, and the database is writable again.
 
