@@ -145,6 +145,10 @@ RUN ACCEPT_EULA=Y apt-get install -y mssql-tools; \
 RUN apt-get install -y unixodbc-dev
 # optional: kerberos library for debian-slim distributions
 RUN apt-get install -y libgssapi-krb5-2
+# prevent TCP Provider: Error code 0x2746
+# https://stackoverflow.com/a/59503719
+# https://github.com/microsoft/msphpsql/issues/1021
+RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/g' /etc/ssl/openssl.cnf
 
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
