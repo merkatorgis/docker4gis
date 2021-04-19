@@ -3,6 +3,15 @@
 # run.sh waits until this is true
 pg.sh -c "alter database ${POSTGRES_DB} set app.ddl_done to false"
 
+extension() {
+    pg.sh -c "create extension if not exists $1"
+}
+
+# POSTGIS_MAJOR is eg. 2.5 or 3.1
+postgis_major_major=$(echo "$POSTGIS_MAJOR" | cut -d'.' -f1)
+# from PostGIS 3, postgis_raster is a separate extension
+[ "$postgis_major_major" -ge 3 ] && extension postgis_raster
+
 # see dump_restore
 time if ! restore; then
     # we didn't restore an existing dump in an unprovisioned database, so we're
@@ -12,15 +21,6 @@ time if ! restore; then
     # maybe this image contains an newer (minor, updatable without dump &
     # restore) version of PostGIS than the last image that served this database
     update-postgis.sh
-
-    extension() {
-        pg.sh -c "create extension if not exists $1"
-    }
-
-    # POSTGIS_MAJOR is eg. 2.5 or 3.1
-    postgis_major_major=$(echo "$POSTGIS_MAJOR" | cut -d'.' -f1)
-    # from PostGIS 3, postgis_raster is a separate extension
-    [ "$postgis_major_major" -ge 3 ] && extension postgis_raster
 
     extension ogr_fdw
     extension odbc_fdw
