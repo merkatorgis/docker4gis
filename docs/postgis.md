@@ -82,7 +82,8 @@ transaction parameters.
 Note that upgrades are up-only, e.g. restoring a dump of a PostGIS 3.1 database
 into a PostGIS 2.5 database will fail.
 
-*) Though the pg_upgrade utility features a more direct migration path, without
-the need for a dump, this won't work for a PostGIS database. See PostGIS's docs
-about "[hard upgrading](https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade)"
+*) Though the [pg_upgrade](https://www.postgresql.org/docs/current/pgupgrade.html)
+utility features a more direct migration path, without the need for a dump, this won't
+work for a PostGIS database. See PostGIS's docs about
+"[hard upgrading](https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade)"
 for more information.
