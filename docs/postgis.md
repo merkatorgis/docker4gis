@@ -78,3 +78,6 @@ Though many things might continue to work on the read-only database, and most
 clients probably reconnect automatically, do plan to perform the restore asap.
 For instance, PostgREST API queries are likely to fail, since they tend to write
 transaction parameters.
+
+Note that upgrades are up-only, e.g. restoring a dump of a PostGIS 3.1 database
+into a PostGIS 2.5 database will fail.
