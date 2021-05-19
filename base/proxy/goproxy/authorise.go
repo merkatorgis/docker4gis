@@ -11,23 +11,10 @@ import (
 	"strings"
 )
 
-// copy of https://golang.org/pkg/net/http/httputil/?m=all#drainBody
-func drainBody(b io.ReadCloser) (r1, r2 io.ReadCloser, err error) {
-	if b == nil || b == http.NoBody {
-		// No copying needed. Preserve the magic sentinel meaning of NoBody.
-		return http.NoBody, http.NoBody, nil
-	}
-	var buf bytes.Buffer
-	if _, err = buf.ReadFrom(b); err != nil {
-		return nil, b, err
-	}
-	if err = b.Close(); err != nil {
-		return nil, b, err
-	}
-	return ioutil.NopCloser(&buf), ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
-}
-
 func bodyString(body io.ReadCloser) (content string, err error) {
+	if body == nil || body == http.NoBody {
+		return "", nil
+	}
 	defer body.Close()
 	if bytes, err := ioutil.ReadAll(body); err != nil {
 		return "", err
@@ -44,11 +31,10 @@ type authPathBody struct {
 }
 
 func authorise(r *http.Request, path string, authPath string) (authorised bool, err error) {
-	if body, originalBody, errDrainBody := drainBody(r.Body); errDrainBody != nil {
-		return false, errDrainBody
-	} else if stringBody, errBodyString := bodyString(body); errBodyString != nil {
+	query := r.URL.Query()
+	if body, errBodyString := bodyString(r.Body); errBodyString != nil {
 		return false, errBodyString
-	} else if jsonBody, errMarshal := json.Marshal(authPathBody{r.Method, path, r.URL.Query(), stringBody}); errMarshal != nil {
+	} else if jsonBody, errMarshal := json.Marshal(authPathBody{r.Method, path, query, body}); errMarshal != nil {
 		return false, errMarshal
 	} else if req, errNewRequest := http.NewRequest("POST", authPath, bytes.NewReader(jsonBody)); errNewRequest != nil {
 		return false, errNewRequest
@@ -68,9 +54,38 @@ func authorise(r *http.Request, path string, authPath string) (authorised bool, 
 			return false, errAuthorization
 		} else {
 			// authorisation succeeded; pass through what they responded with
-			r.Header.Set("Authorization", strings.Trim(authorization, `"`))
-			// restore the original request body
-			r.Body = originalBody
+			authorization = strings.Trim(authorization, `"`)
+			r.Header.Set("Authorization", authorization)
+			// Substitute any authorization placeholders in the request, to
+			// cater for use cases where the Authorization header isn't usable.
+			// In the authPath endpoint, do check that the placeholder value is
+			// literally "${AUTHORIZATION}", since any other (tampered-with)
+			// value won't get replaced by the proper authorization value here.
+			// Assumption now is that the value is somehow within a GeoServer
+			// viewparams string, and that commas, semicolons, colons, and
+			// backslashes need to be backslash-escaped.
+			escaped := strings.ReplaceAll(authorization, "\\", "\\\\")
+			escaped = strings.ReplaceAll(escaped, ",", "\\,")
+			escaped = strings.ReplaceAll(escaped, ";", "\\;")
+			escaped = strings.ReplaceAll(escaped, ":", "\\:")
+			substitute := func(value string) string {
+				return strings.ReplaceAll(value, "${AUTHORIZATION}", escaped)
+			}
+			for _, values := range query {
+				for i, value := range values {
+					values[i] = substitute(value)
+				}
+			}
+			r.URL.RawQuery = query.Encode()
+			// Next assumption is that in a body, the value is within a JSON
+			// string, where backslashes and double quotes have to be escaped as
+			// well.
+			escaped = strings.ReplaceAll(escaped, "\\", "\\\\")
+			escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+			body = substitute(body)
+			// reconstruct an unread io.ReadCloser body
+			r.Body = ioutil.NopCloser(bytes.NewBufferString(body))
+			r.ContentLength = int64(len(body))
 			return true, nil
 		}
 	}
