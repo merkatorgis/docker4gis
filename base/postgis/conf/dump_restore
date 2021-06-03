@@ -1,21 +1,41 @@
 #!/bin/bash
+set -x
 
+EXCLUDE_SCHEMA=$EXCLUDE_SCHEMA
+cores=$(nproc --all)
+jobs=$cores
+
+schema=
 database=$POSTGRES_DB
-[ "$1" = '-d' ] && database=$2 && shift 2
 
-dir=/fileport/$DOCKER_USER
+for _ in '-n' '-d'; do
+    case "$1" in
+    -n)
+        schema=$2 && shift 2
+        ;;
+    -d)
+        database=$2 && shift 2
+        ;;
+    esac
+done
+
+dir=/fileport/$DOCKER_USER/dump/$database
+[ "$schema" ] && dir=$dir/$schema
 mkdir -p "$dir"
 
-dump=$dir/$database
-roles=$dump.roles
-backup=$dump.backup
+roles=$dir/roles
+backup=$dir/backup
 lst=$backup.lst
+err=$dir/err
 
 tag() {
+    local tag
+    tag=$(date -I'seconds')
     for f in "$roles" "$backup" "$lst"; do
-        [ -f "$f" ] &&
-            mv "$f" "$f.$(date -I'seconds')"
+        [ -e "$f" ] &&
+            mv "$f" "$f.$tag"
     done
+    err="$err.$tag"
 }
 
 sql() {
@@ -43,7 +63,6 @@ sql() {
 
 # create a new dump, while online
 dump() {
-
     # save app.jwt_secret and any other settings passed as an argument, to get
     # set again as part of the restore
     local settings="
@@ -65,25 +84,32 @@ dump() {
         end \$body\$;
         commit;
     "
-    sql "$settings"
+    sql "$settings" &&
 
-    # tag any existing dump files, so that we won't overwrite them
-    tag
+        # tag any existing dump files, so that we won't overwrite them
+        tag &&
 
-    # save roles (they're not included in pg_dump's backup file)
-    pg_dumpall -U "$POSTGRES_USER" --roles-only >"$roles"
+        # save roles (they're not included in pg_dump's backup file)
+        pg_dumpall -U "$POSTGRES_USER" --roles-only >"$roles" &&
 
-    # backup database
-    # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
-    pg_dump -U "$POSTGRES_USER" -Fc -b -v -f "$backup" "$database"
+        # backup database
+        # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
+        pg_dump \
+            --username="$POSTGRES_USER" \
+            --dbname="$database" \
+            --exclude-schema="$EXCLUDE_SCHEMA" \
+            --format=custom \
+            --blobs \
+            --verbose \
+            --file="$backup" &&
 
-    # we don't need this in the database anymore; it just needed to be included
-    # in the dump
-    sql "
-        start transaction read write;
-        drop function if exists __restore_settings;
-        commit;
-    "
+        # we don't need this in the database anymore; it just needed to be
+        # included in the dump
+        sql "
+            start transaction read write;
+            drop function if exists __restore_settings;
+            commit;
+        "
 }
 
 # possibly restore an existing dump in an unprovisioned database, returning 0
@@ -96,7 +122,7 @@ restore() {
         restored=true
 
         # first restore the roles (which are not included in the backup file)
-        sql "$roles"
+        sql "$roles" || return
 
         # prevent "schema already exists" errors
         sql "drop schema if exists tiger_data cascade"
@@ -107,20 +133,18 @@ restore() {
         local postgis_restore_pl
         postgis_restore_pl=$(find / -name postgis_restore.pl 2>/dev/null)
         echo "Restoring using '$postgis_restore_pl'..."
-        echo "  Saving errors in '/restore.err'..."
-        perl "$postgis_restore_pl" "$backup" | sql 2>/restore.err
-        echo "> Listing '/restore.err':"
-        cat /restore.err
-        echo "< Listing '/restore.err' finished"
+        echo "  Saving errors in '$err'..."
+        perl "$postgis_restore_pl" "$backup" | sql 2>"$err" &&
+            sql "select __restore_settings()" &&
+            # tag the current dump files as done
+            tag &&
+            # "it is wise to run ANALYZE after restoring from a dump file"
+            # https://www.postgresql.org/docs/13/app-pgdump.html
+            sql "analyze"
 
-        sql "select __restore_settings()"
-
-        # "it is wise to run ANALYZE after restoring from a dump file"
-        # https://www.postgresql.org/docs/13/app-pgdump.html
-        sql "analyze"
-
-        # tag the current dump files as done
-        tag
+        echo "> Listing '$err':"
+        cat "$err"
+        echo "< Listing '$err' finished"
     }
 
     local provisioned
@@ -134,6 +158,56 @@ restore() {
 
     # return true (0) or false (1)
     $restored
+}
+
+schema() {
+
+    if ! [ "$schema" ]; then
+        echo "Must specify schema, e.g. dump_schema -n <schema-name>"
+        exit 22
+    fi
+}
+
+dump_schema() {
+
+    # ensure a schema name is specified
+    schema
+
+    # tag any existing dump files, so that we won't overwrite them
+    tag &&
+        # only the directory format supports dumping with parallel jobs
+        pg_dump \
+            --username="$POSTGRES_USER" \
+            --dbname="$database" \
+            --data-only \
+            --schema="$schema" \
+            --format=directory \
+            --blobs \
+            --verbose \
+            --jobs="$jobs" \
+            --file="$backup" &&
+        chmod +r "$backup"
+}
+
+restore_schema() {
+
+    # ensure a schema name is specified
+    schema
+
+    # the $backup file (created with dump_schema), contains only data, only from
+    # that schema
+
+    pg_restore \
+        --username="$POSTGRES_USER" \
+        --dbname="$database" \
+        --verbose \
+        --jobs="$jobs" \
+        "$backup" &&
+        # tag the current dump files as done
+        tag &&
+        # "it is wise to run ANALYZE after restoring from a dump file"
+        # https://www.postgresql.org/docs/13/app-pgdump.html
+        sql "analyze"
 }
 
 # render the database read-only, before creating a new dump - restore the dump
@@ -157,15 +231,15 @@ upgrade() {
 
         -- reallow new (read-only) connections
         alter database $database allow_connections true;
-    "
-
-    dump "$@"
-
-    echo >&2
-    echo "NOTICE: since an 'upgrade' dump was created, database $database is now read-only..." >&2
-    echo "  See https://github.com/merkatorgis/docker4gis/blob/master/docs/postgis.md#upgrade..." >&2
+    " &&
+        dump "$@" &&
+        (
+            echo >&2
+            echo "NOTICE: since an 'upgrade' dump was created, database $database is now read-only..." >&2
+            echo "  See https://github.com/merkatorgis/docker4gis/blob/master/docs/postgis.md#upgrade..." >&2
+        )
 }
 
-# dump or restore or upgrade (see Dockerfile)
+# dump or restore or upgrade or dump_schema or restore_schema (see Dockerfile)
 action=$(basename "$0")
 $action "$@"
