@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 
 EXCLUDE_SCHEMA=$EXCLUDE_SCHEMA
 cores=$(nproc --all)
@@ -29,13 +29,12 @@ lst=$backup.lst
 err=$dir/err
 
 tag() {
-    local tag
     tag=$(date -I'seconds')
-    for f in "$roles" "$backup" "$lst"; do
+    for f in "$roles" "$backup" "$lst" "$err"; do
         [ -e "$f" ] &&
             mv "$f" "$f.$tag"
     done
-    err="$err.$tag"
+    return 0
 }
 
 sql() {
@@ -46,14 +45,14 @@ sql() {
         # value that can be used in conditional statements
         psql -U "$POSTGRES_USER" -d "$dbname" --no-align --tuples-only "$@"
     }
-    local input=$1
+    local input=$1 && shift 1
     if [ "$input" ]; then
         if [ -f "$input" ]; then
             # read from given file
-            run -f "$input"
+            run -f "$input" "$@"
         else
             # execute given sql command
-            run -c "$input"
+            run -c "$input" "$@"
         fi
     else
         # read from stdin
@@ -85,13 +84,10 @@ dump() {
         commit;
     "
     sql "$settings" &&
-
         # tag any existing dump files, so that we won't overwrite them
         tag &&
-
         # save roles (they're not included in pg_dump's backup file)
         pg_dumpall -U "$POSTGRES_USER" --roles-only >"$roles" &&
-
         # backup database
         # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
         pg_dump \
@@ -102,14 +98,22 @@ dump() {
             --blobs \
             --verbose \
             --file="$backup" &&
-
         # we don't need this in the database anymore; it just needed to be
         # included in the dump
         sql "
             start transaction read write;
             drop function if exists __restore_settings;
             commit;
-        "
+        " &&
+        echo "Dump created: '$backup'"
+}
+
+analyze() {
+    # "it is wise to run ANALYZE after restoring from a dump file"
+    # https://www.postgresql.org/docs/13/app-pgdump.html
+    echo "Waiting for ANALYZE to complete..."
+    sql "analyze"
+
 }
 
 # possibly restore an existing dump in an unprovisioned database, returning 0
@@ -138,18 +142,20 @@ restore() {
             sql "select __restore_settings()" &&
             # tag the current dump files as done
             tag &&
-            # "it is wise to run ANALYZE after restoring from a dump file"
-            # https://www.postgresql.org/docs/13/app-pgdump.html
-            sql "analyze"
+            echo "Restored: '$backup.$tag'" &&
+            analyze
 
-        echo "> Listing '$err':"
-        cat "$err"
-        echo "< Listing '$err' finished"
+        echo "> Listing '$err.$tag':"
+        cat "$err.$tag"
+        echo "< Listing '$err.$tag' completed"
     }
 
     local provisioned
     provisioned=$(sql "select current_setting('app.provisioned', true)")
-    [ "$provisioned" != "true" ] && [ -f "$roles" ] && [ -f "$backup" ] && do_restore
+    [ "$provisioned" != "true" ] &&
+        [ -f "$roles" ] &&
+        [ -f "$backup" ] &&
+        do_restore
 
     # this setting is used in the test above - it's set in all cases, since if
     # we weren't restoring a dump, we're expected to be provisioning the
@@ -162,52 +168,53 @@ restore() {
 
 schema() {
 
-    if ! [ "$schema" ]; then
-        echo "Must specify schema, e.g. dump_schema -n <schema-name>"
+    # ensure a schema name is specified
+    [ "$schema" ] && return
+    echo "Must specify schema, e.g. dump_schema -n <schema-name>" &&
         exit 22
-    fi
 }
 
 dump_schema() {
 
-    # ensure a schema name is specified
-    schema
-
-    # tag any existing dump files, so that we won't overwrite them
-    tag &&
+    schema &&
+        # tag any existing dump files, so that we won't overwrite them
+        tag &&
         # only the directory format supports dumping with parallel jobs
         pg_dump \
             --username="$POSTGRES_USER" \
             --dbname="$database" \
-            --data-only \
             --schema="$schema" \
             --format=directory \
             --blobs \
             --verbose \
             --jobs="$jobs" \
             --file="$backup" &&
-        chmod +r "$backup"
+        echo "Dump created: '$backup'" &&
+        chmod +rx "$backup" &&
+        version=$(sql "select $schema.__version()" -At 2>/dev/null) &&
+        echo "$version" >"$backup/__version"
 }
 
 restore_schema() {
 
-    # ensure a schema name is specified
-    schema
-
-    # the $backup file (created with dump_schema), contains only data, only from
-    # that schema
-
-    pg_restore \
-        --username="$POSTGRES_USER" \
-        --dbname="$database" \
-        --verbose \
-        --jobs="$jobs" \
-        "$backup" &&
+    schema &&
+        sql "create schema if not exists $schema" &&
+        pg_restore \
+            --username="$POSTGRES_USER" \
+            --dbname="$database" \
+            --create \
+            --schema="$schema" \
+            --verbose \
+            --jobs="$jobs" \
+            "$backup" &&
         # tag the current dump files as done
         tag &&
-        # "it is wise to run ANALYZE after restoring from a dump file"
-        # https://www.postgresql.org/docs/13/app-pgdump.html
-        sql "analyze"
+        echo "Restored: '$backup.$tag'" &&
+        sql "
+            grant usage on schema $schema to public;
+            grant select on all tables in schema $schema to public;
+        " &&
+        analyze
 }
 
 # render the database read-only, before creating a new dump - restore the dump
