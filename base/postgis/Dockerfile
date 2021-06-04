@@ -186,6 +186,8 @@ COPY conf/last.sh /usr/local/bin/
 COPY conf/dump_restore /usr/local/bin/dump
 COPY conf/dump_restore /usr/local/bin/restore
 COPY conf/dump_restore /usr/local/bin/upgrade
+COPY conf/dump_restore /usr/local/bin/dump_schema
+COPY conf/dump_restore /usr/local/bin/restore_schema
 
 # include a "client" image's conf scripts where onstart.sh will find them
 ONBUILD COPY conf /tmp/conf
