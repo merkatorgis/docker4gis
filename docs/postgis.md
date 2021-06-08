@@ -60,7 +60,7 @@ with a date-time string.
 
 To move an existing database from one major version of PostgreSQL to another (
 e.g. from 10 to 11, from 11 to 12, or from 10 to 12), you'll have to dump and
-restore the data*). Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
+restore the data\*). Same goes for a major PostGIS upgrade (e.g. from 2 to 3).
 
 Using the `upgrade` command instead of `dump` renders the database read-only
 before starting the dump, to prevent the loss of any new data during the upgrade
@@ -82,8 +82,25 @@ transaction parameters.
 Note that upgrades are up-only, e.g. restoring a dump of a PostGIS 3.1 database
 into a PostGIS 2.5 database will fail.
 
-*) Though the [pg_upgrade](https://www.postgresql.org/docs/current/pgupgrade.html)
+\*) Though the [pg_upgrade](https://www.postgresql.org/docs/current/pgupgrade.html)
 utility features a more direct migration path, without the need for a dump, this won't
 work for a PostGIS database. See PostGIS's docs about
 "[hard upgrading](https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade)"
 for more information.
+
+### EXCLUDE_SCHEMA
+
+The `EXCLUDE_SCHEMA` environment variable defines any schemas that should not be
+included in a database dump for backup or upgrade.
+
+#### Backup excluded schema
+
+```
+dump_schema -n ${schemaname}
+```
+
+#### Restore excluded schema
+
+```
+restore_schema -n ${schemaname}
+```
