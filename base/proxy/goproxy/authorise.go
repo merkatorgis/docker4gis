@@ -53,23 +53,23 @@ func authorise(r *http.Request, path string, authPath string) (authorised bool, 
 		} else if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
 			return false, errAuthorization
 		} else {
-			// authorisation succeeded; pass through what they responded with
-			authorization = strings.Trim(authorization, `"`)
+			// authorisation succeeded; we'll pass through what they responded
+			// with
+			if strings.HasPrefix(authorization, `"`) && strings.HasSuffix(authorization, `"`) {
+				// it was a JSON encoded string; unescape `\` and `"`
+				authorization = strings.Trim(authorization, `"`)
+				authorization = strings.ReplaceAll(authorization, "\\\\", "\\")
+				authorization = strings.ReplaceAll(authorization, "\\\"", "\"")
+			}
 			r.Header.Set("Authorization", authorization)
-			// Substitute any authorization placeholders in the request, to
-			// cater for use cases where the Authorization header isn't usable.
-			// In the authPath endpoint, do check that the placeholder value is
-			// literally "${AUTHORIZATION}", since any other (tampered-with)
-			// value won't get replaced by the proper authorization value here.
-			// Assumption now is that the value is somehow within a GeoServer
-			// viewparams string, and that commas, semicolons, colons, and
-			// backslashes need to be backslash-escaped.
-			escaped := strings.ReplaceAll(authorization, "\\", "\\\\")
-			escaped = strings.ReplaceAll(escaped, ",", "\\,")
-			escaped = strings.ReplaceAll(escaped, ";", "\\;")
-			escaped = strings.ReplaceAll(escaped, ":", "\\:")
+			// Also, substitute any authorization placeholders in the request,
+			// to cater for use cases where the Authorization header isn't
+			// usable. In the authPath endpoint, do check that the placeholder
+			// value is literally "${AUTHORIZATION}", since any other
+			// (tampered-with) value won't get replaced by the proper
+			// authorization value here.
 			substitute := func(value string) string {
-				return strings.ReplaceAll(value, "${AUTHORIZATION}", escaped)
+				return strings.ReplaceAll(value, "${AUTHORIZATION}", authorization)
 			}
 			for _, values := range query {
 				for i, value := range values {
@@ -77,11 +77,6 @@ func authorise(r *http.Request, path string, authPath string) (authorised bool, 
 				}
 			}
 			r.URL.RawQuery = query.Encode()
-			// Next assumption is that in a body, the value is within a JSON
-			// string, where backslashes and double quotes have to be escaped as
-			// well.
-			escaped = strings.ReplaceAll(escaped, "\\", "\\\\")
-			escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
 			body = substitute(body)
 			// reconstruct an unread io.ReadCloser body
 			r.Body = ioutil.NopCloser(bytes.NewBufferString(body))
