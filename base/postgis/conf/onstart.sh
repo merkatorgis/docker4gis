@@ -28,6 +28,7 @@ time if ! restore; then
     extension pgcrypto
     extension pgjwt
     extension mongo_fdw
+    [ "$DOCKER_ENV" = DEVELOPMENT ] || [ "$DOCKER_ENV" = DEV ] && extension pldbgapi
 
     # clear the "last" file (see last.sh)
     echo '' >/last
@@ -42,11 +43,6 @@ time if ! restore; then
     # shellcheck disable=SC1091
     source /last
 fi
-
-# enable the safeupdate extension
-# https://github.com/eradman/pg-safeupdate
-# http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
-pg.sh -c "alter database ${POSTGRES_DB} set session_preload_libraries = 'safeupdate'"
 
 # run.sh waits until this is true
 pg.sh -c "alter database ${POSTGRES_DB} set app.ddl_done to true"
