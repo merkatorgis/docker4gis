@@ -10,6 +10,9 @@ ENV POSTGRESQL_VERSION=${POSTGRESQL_VERSION}
 
 # copy custom postgres configuration files
 COPY conf/postgres /etc/postgresql
+ENV CONFIG_FILE=/etc/postgresql/postgresql.conf
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # update the list of installable packages
 RUN apt update
@@ -26,7 +29,8 @@ RUN apt install -y \
 # install packaged postgresql extensions
 RUN apt install -y \
 	postgresql-${POSTGRESQL_VERSION}-ogr-fdw \
-	postgresql-${POSTGRESQL_VERSION}-plsh
+	postgresql-${POSTGRESQL_VERSION}-plsh \
+	postgresql-${POSTGRESQL_VERSION}-pldebugger
 
 ARG MYSQL_VERSION=0.8.16-1
 # install mysql repository to
@@ -35,7 +39,7 @@ ENV MYSQL_VERSION=${MYSQL_VERSION}
 # https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb
 COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
 RUN apt install -y lsb-release wget; \
-	DEBIAN_FRONTEND=noninteractive dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
+	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
 	apt update; \
 	apt install -y mysql-connector-odbc
 # install proper paths to the odbc drivers
@@ -179,7 +183,8 @@ COPY conf/mail /tmp/mail
 COPY conf/web /tmp/web
 
 # install database server administrative scripts
-COPY ["conf/entrypoint", "conf/init.sh", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
+COPY ["conf/entrypoint", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
+COPY conf/init.sh /docker-entrypoint-initdb.d/init.sh
 
 # install tools
 COPY conf/last.sh /usr/local/bin/

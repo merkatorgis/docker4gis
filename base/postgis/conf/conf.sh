@@ -49,9 +49,3 @@ fi
 
 chown -R postgres:postgres /etc/postgresql/ /secrets/*
 chmod og-rwx /etc/postgresql/*.key /secrets/root.key /secrets/server.*
-
-if [ ${DOCKER_ENV} = DEVELOPMENT ]; then
-	cp /init.sh /docker-entrypoint-initdb.d
-elif [ -f /docker-entrypoint-initdb.d/init.sh ]; then
-	rm -f /docker-entrypoint-initdb.d/init.sh
-fi
