@@ -14,6 +14,10 @@ export DOCKER_ENV
     RESTART=always
 export RESTART
 
+# create before running any container, to have this owned by the user running
+# the run script (instead of a container's root user)
+mkdir -p "$DOCKER_BINDS_DIR"/fileport/"$DOCKER_USER"
+
 IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 export IMAGE
 [ "$repo" = proxy ] &&
