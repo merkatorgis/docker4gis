@@ -96,11 +96,11 @@ included in a database dump for backup or upgrade.
 #### Backup excluded schema
 
 ```
-dump_schema -n ${schemaname}
+time docker container exec appname-postgis dump_schema -n ${schemaname}
 ```
 
 #### Restore excluded schema
 
 ```
-restore_schema -n ${schemaname}
+time docker container exec appname-postgis restore_schema -n ${schemaname}
 ```
