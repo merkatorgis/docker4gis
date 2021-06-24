@@ -40,7 +40,7 @@ To keep track of the schema version in the database, the utility creates a `__ve
 
 To dump a snapshot of a running database:
 
-`time docker container exec appname-postgis dump`
+`docker container exec ${appname}-postgis dump`
 
 To restore a database to the state at the time of the start of a dump:
 
@@ -48,8 +48,8 @@ To restore a database to the state at the time of the start of a dump:
    1. `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}/${dbname}.roles`;
    1. `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}/${dbname}.backup`;
 1. Remove the "old" database files:
-   1. Remove the current container: `docker container rm -f appname-postgis`;
-   1. Remove the database volume: `docker volume rm appname-postgis`;
+   1. Remove the current container: `docker container rm -f ${appname}-postgis`;
+   1. Remove the database volume: `docker volume rm ${appname}-postgis`;
 1. Run the app again - a new, empty database will be created, and the dump
    will be restored in it.
 
@@ -68,7 +68,7 @@ procedure. In achieving the read-only state, all current connections to the
 database are (gracefully) terminated.
 
 1. Build the new-version database image;
-1. Dump the database for upgrade: `time docker container exec appname-postgis upgrade` - the database is now read-only;
+1. Dump the database for upgrade: `docker container exec ${appname}-postgis upgrade` - the database is now read-only;
 1. Just in case, download/backup the latest dump files (see above);
 1. Remove the "old" database files (see above);
 1. Run the new app version, with the new-version database image - the dump is
@@ -96,11 +96,11 @@ included in a database dump for backup or upgrade.
 #### Backup excluded schema
 
 ```
-time docker container exec appname-postgis dump_schema -n ${schemaname}
+docker container exec ${appname}-postgis dump_schema -n ${schemaname}
 ```
 
 #### Restore excluded schema
 
 ```
-time docker container exec appname-postgis restore_schema -n ${schemaname}
+docker container exec ${appname}-postgis restore_schema -n ${schemaname}
 ```
