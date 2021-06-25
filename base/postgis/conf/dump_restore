@@ -113,8 +113,10 @@ dump() {
 analyze() {
     # "it is wise to run ANALYZE after restoring from a dump file"
     # https://www.postgresql.org/docs/13/app-pgdump.html
-    echo "Waiting for ANALYZE to complete..."
-    time sql "analyze"
+    time {
+        echo "Waiting for ANALYZE to complete..."
+        sql "analyze"
+    }
 }
 
 restore() {
@@ -192,7 +194,7 @@ dump_schema() {
 restore_schema() {
     time {
         schema &&
-            sql "create schema if not exists $schema" &&
+            sql "create schema $schema" &&
             pg_restore \
                 --username="$POSTGRES_USER" \
                 --dbname="$database" \

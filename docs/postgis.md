@@ -104,3 +104,15 @@ docker container exec ${appname}-postgis dump_schema -n ${schemaname}
 ```
 docker container exec ${appname}-postgis restore_schema -n ${schemaname}
 ```
+
+Note that, as this is to restore the schema to its dumped state, the schema is
+expected to _not_ exist (anymore) in the database. An existing schema has to be
+dropped before it can be restored; `restore_schema` will exit when it cannot
+create the schema.
+
+This also requires that any "excluded schema" is _independent_, i.e. no objects
+in other schemas depend on it. You would drop the schema with `drop schema ${schemaname} cascade`; any dependent objects in other schemas would be dropped
+as well, and these do _not_ exist this schema's dump.
+
+In practice, in any other schema, you _can_ have functions, but _not_ views that
+query objects in the schema to be restored.
