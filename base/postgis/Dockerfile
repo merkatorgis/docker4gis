@@ -184,7 +184,6 @@ COPY conf/web /tmp/web
 
 # install database server administrative scripts
 COPY ["conf/entrypoint", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
-COPY conf/init.sh /docker-entrypoint-initdb.d/init.sh
 
 # install tools
 COPY conf/last.sh /usr/local/bin/
