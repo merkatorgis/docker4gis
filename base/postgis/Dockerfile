@@ -11,6 +11,7 @@ ENV POSTGRESQL_VERSION=${POSTGRESQL_VERSION}
 # copy custom postgres configuration files
 COPY conf/postgres /etc/postgresql
 ENV CONFIG_FILE=/etc/postgresql/postgresql.conf
+RUN mv "${CONFIG_FILE}" "${CONFIG_FILE}.template"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
