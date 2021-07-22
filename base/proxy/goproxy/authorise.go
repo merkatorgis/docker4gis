@@ -30,14 +30,14 @@ type authPathBody struct {
 	Body   string
 }
 
-func authorise(r *http.Request, path string, authPath string) (authorised bool, err error) {
+func authorise(r *http.Request, path string, authPath string) (statusCode int, err error) {
 	query := r.URL.Query()
 	if body, errBodyString := bodyString(r.Body); errBodyString != nil {
-		return false, errBodyString
+		return http.StatusInternalServerError, errBodyString
 	} else if jsonBody, errMarshal := json.Marshal(authPathBody{r.Method, path, query, body}); errMarshal != nil {
-		return false, errMarshal
+		return http.StatusInternalServerError, errMarshal
 	} else if req, errNewRequest := http.NewRequest("POST", authPath, bytes.NewReader(jsonBody)); errNewRequest != nil {
-		return false, errNewRequest
+		return http.StatusInternalServerError, errNewRequest
 	} else {
 		req.Header = r.Header.Clone()
 		req.Header.Del("accept-encoding")
@@ -45,13 +45,11 @@ func authorise(r *http.Request, path string, authPath string) (authorised bool, 
 		req.Header.Set("accept", "application/json, application/*, text/*")
 		filterCookies(req)
 		if res, errDo := http.DefaultClient.Do(req); errDo != nil {
-			return false, errDo
-		} else if res.StatusCode == http.StatusUnauthorized {
-			return false, nil
-		} else if res.StatusCode/100 != 2 {
-			return false, fmt.Errorf("the authPath response has status: %d", res.StatusCode)
+			return http.StatusInternalServerError, errDo
 		} else if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
-			return false, errAuthorization
+			return http.StatusInternalServerError, errAuthorization
+		} else if res.StatusCode/100 != 2 {
+			return res.StatusCode, fmt.Errorf(authorization)
 		} else {
 			// authorisation succeeded; we'll pass through what they responded
 			// with
@@ -81,7 +79,7 @@ func authorise(r *http.Request, path string, authPath string) (authorised bool, 
 			// reconstruct an unread io.ReadCloser body
 			r.Body = ioutil.NopCloser(bytes.NewBufferString(body))
 			r.ContentLength = int64(len(body))
-			return true, nil
+			return res.StatusCode, nil
 		}
 	}
 }

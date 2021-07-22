@@ -27,13 +27,9 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 			return
 		}
 		if proxy.authorise {
-			if authorised, err := authorise(r, path, config.authPath); err != nil {
-				log.Printf("authorise -> error: %v", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			} else if !authorised {
-				log.Printf("authorise -> unauthorized  %s", path)
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			if statusCode, err := authorise(r, path, config.authPath); err != nil {
+				log.Printf("authorise -> %s", http.StatusText(statusCode))
+				http.Error(w, err.Error(), statusCode)
 				return
 			}
 		}
@@ -105,9 +101,9 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		transport = transportInsecure
 	}
 	return &httputil.ReverseProxy{
-		Director: director,
+		Director:       director,
 		ModifyResponse: modifyResponse,
-		Transport: transport,
+		Transport:      transport,
 	}
 }
 
