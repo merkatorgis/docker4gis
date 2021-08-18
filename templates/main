@@ -13,6 +13,8 @@ export DOCKER_REGISTRY=
 # or a registry location (including the trailing slash), eg:
 # export DOCKER_REGISTRY=docker.merkator.com/
 
+export DEBUG=false
+
 export PROXY_HOST=
 export PROXY_PORT=
 export PROXY_PORT_HTTP=

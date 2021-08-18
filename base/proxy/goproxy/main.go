@@ -38,6 +38,7 @@ var (
 	useAutocert      = os.Getenv("AUTOCERT")
 	dockerEnv        = os.Getenv("DOCKER_ENV")
 	dockerUser       = os.Getenv("DOCKER_USER")
+	debug            = os.Getenv("DEBUG") == "true"
 	passThroughProxy *httputil.ReverseProxy
 	jar              *cookiejar.Jar
 )
