@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -48,7 +49,7 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 			return http.StatusInternalServerError, errDo
 		} else if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
 			return http.StatusInternalServerError, errAuthorization
-		} else if res.StatusCode/100 != 2 {
+		} else if res.StatusCode != 200 {
 			return res.StatusCode, fmt.Errorf(authorization)
 		} else {
 			// authorisation succeeded; we'll pass through what they responded
@@ -79,6 +80,24 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 			// reconstruct an unread io.ReadCloser body
 			r.Body = ioutil.NopCloser(bytes.NewBufferString(body))
 			r.ContentLength = int64(len(body))
+			if debug {
+				curl := fmt.Sprintf("curl '%s' \\\n", authPath)
+				curl += "  --request POST \\\n"
+				curl += fmt.Sprintf("  --data '%s' \\\n", string(jsonBody))
+				for header, values := range req.Header {
+					curl += fmt.Sprintf("  --header '%s: ", header)
+					for i, value := range values {
+						if i > 0 {
+							curl += "; "
+						}
+						curl += value
+					}
+					curl += "' \\\n"
+				}
+				curl += "  --insecure \\\n"
+				curl += "  --include"
+				log.Printf("authorise -> authorization: %s\n%s", authorization, curl)
+			}
 			return res.StatusCode, nil
 		}
 	}
