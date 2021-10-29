@@ -70,14 +70,15 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	}
 	hasApp := strings.HasPrefix(r.URL.Path, "/"+app)
-	modifyResponse := func(r *http.Response) error {
-		if err := modifyResponse(r); err != nil {
+	modifyResponse := func(resp *http.Response) error {
+		if err := modifyResponse(resp); err != nil {
 			return err
 		}
+		cors(w, r)
 		// collect the response's cookies, with  Domain and Path rewritten
 		// for the proxy client's perspective
 		var cookies []*http.Cookie
-		for _, cookie := range r.Cookies() {
+		for _, cookie := range resp.Cookies() {
 			cookie.Domain = ""
 			if (key == "/app/" || key == "/api/") && (cookie.Path == "" || cookie.Path == "/") {
 				cookie.Path = "/"
@@ -92,7 +93,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		// replace all cookies with the rewritten ones
 		r.Header.Del("Set-Cookie")
 		for _, cookie := range cookies {
-			r.Header.Add("Set-Cookie", cookie.String())
+			resp.Header.Add("Set-Cookie", cookie.String())
 		}
 		return nil
 	}

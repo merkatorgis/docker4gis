@@ -144,12 +144,18 @@ func main() {
 
 }
 
+func cors(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Vary", "Origin")
+	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, HEAD")
+	w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.RequestURI)
-	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
+	if r.Method == "OPTIONS" || r.Method == "HEAD" {
+		cors(w, r)
 	} else if r.URL.Path == "/" && r.URL.Query().Get("url") != "" {
 		if target, err := url.Parse(r.FormValue("url")); err != nil {
 			log.Printf("%+v", err)
@@ -256,11 +262,5 @@ func filterCookies(r *http.Request) {
 func modifyResponse(r *http.Response) error {
 	// save this destination's cookies in the jar
 	jar.SetCookies(r.Request.URL, r.Cookies())
-	// CORS
-	r.Header.Set("Access-Control-Allow-Origin", "*")
-	// Deze twee hieronder zouden eigenlijk niet nodig moeten zijn, maar het
-	// blijkt er wel beter van te worden..
-	r.Header.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
-	r.Header.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
 	return nil
 }
