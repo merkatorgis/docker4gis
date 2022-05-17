@@ -7,6 +7,12 @@ RUN mv /tmp/conf/print-apps "$CATALINA_HOME"/webapps/ROOT/print-apps/; \
     mv /tmp/conf/mapfish-spring-custom-fonts.xml \
     "$CATALINA_HOME"/webapps/ROOT/WEB-INF/classes/mapfish-spring-custom-fonts.xml
 
+# remove CORS filter to prevent it from interfering with the proxy headers
+# -z makes (gnu) sed search multiline
+RUN file=/usr/local/tomcat/webapps/ROOT/WEB-INF/web.xml; \
+    search="<filter>.*<filter-name>CORS</filter-name>.*</filter-mapping>"; \
+    sed -zi "s|$search||" "$file"
+
 ENV CATALINA_OPTS=-DprintTimeout=1799
 
 RUN mv /tmp/conf/certificates /certificates/; \
