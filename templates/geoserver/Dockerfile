@@ -1,1 +1,1 @@
-FROM docker4gis/geoserver:252
+FROM docker4gis/geoserver:343
