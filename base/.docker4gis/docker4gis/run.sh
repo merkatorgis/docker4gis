@@ -33,7 +33,8 @@ if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$CONTAIN
             exit 0 || # Existing container from same image is started, and we're done.
             echo "The existing container failed to start; we'll remove it, and create a new one..."
     fi
-    docker container rm -f "$CONTAINER" >/dev/null || exit $?
+    docker container stop "$CONTAINER" >/dev/null || exit $?
+    docker container rm "$CONTAINER" >/dev/null || exit $?
 fi
 
 temp=$(mktemp -d)

@@ -68,7 +68,8 @@ echo "Building $IMAGE"
     container=$DOCKER_USER-$repo
 # Remove any existing container, so that it gets replaced by a new one,
 # started from the new image we're going to build now.
-docker container rm -f "$container" >/dev/null 2>&1
+docker container stop "$container" >/dev/null 2>&1
+docker container rm "$container" >/dev/null 2>&1
 
 # Execute the actual build script,
 # which may or may not execute "$BASE"/build.sh,

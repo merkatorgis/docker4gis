@@ -48,7 +48,8 @@ To restore a database to the state at the time of the start of a dump:
    1. `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}/${dbname}.roles`;
    1. `${DOCKER_BINDS_DIR}/fileport/${DOCKER_USER}/${dbname}.backup`;
 1. Remove the "old" database files:
-   1. Remove the current container: `docker container rm -f ${appname}-postgis`;
+   1. Stop the current container: `docker container stop ${appname}-postgis`;
+   1. Remove the current container: `docker container rm ${appname}-postgis`;
    1. Remove the database volume: `docker volume rm ${appname}-postgis`;
 1. Run the app again - a new, empty database will be created, and the dump
    will be restored in it.
