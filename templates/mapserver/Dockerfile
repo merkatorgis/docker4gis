@@ -1,3 +1,3 @@
-FROM docker4gis/mapserver:249
+FROM docker4gis/mapserver:344
 
 ENV MS_MAPFILE=/srv/data/example.map
