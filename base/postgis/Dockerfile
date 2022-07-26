@@ -1,7 +1,13 @@
-ARG POSTGRESQL_VERSION=13
-ARG POSTGIS_VERSION=3.1
+ARG POSTGRESQL_VERSION
+ARG POSTGIS_VERSION
 
-# <- postgres:10 <- debian:stretch-slim
+# postgis/postgis:10-2.5 <- debian:stretch = 9
+# postgis/postgis:10-3.2 <- debian:bullseye = 11
+# postgis/postgis:11-2.5 <- debian:stretch = 9
+# postgis/postgis:11-3.2 <- debian:bullseye = 11
+# postgis/postgis:12-3.2 <- debian:bullseye = 11
+# postgis/postgis:13-3.2 <- debian:bullseye = 11
+# postgis/postgis:14-3.2 <- debian:bullseye = 11
 FROM postgis/postgis:${POSTGRESQL_VERSION}-${POSTGIS_VERSION}
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
@@ -18,7 +24,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # update the list of installable packages
 RUN apt update
 
-ARG PYTHON=python3
+ARG PYTHON
 ENV PYTHON=${PYTHON}
 
 # install packages we want throughout
@@ -33,16 +39,25 @@ RUN apt install -y \
 	postgresql-${POSTGRESQL_VERSION}-plsh \
 	postgresql-${POSTGRESQL_VERSION}-pldebugger
 
-ARG MYSQL_VERSION=0.8.16-1
+ARG MYSQL_VERSION
 # install mysql repository to
 # install package mysql-connector-odbc
 ENV MYSQL_VERSION=${MYSQL_VERSION}
 # https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb
 COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
-RUN apt install -y lsb-release wget; \
-	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
-	apt update; \
-	apt install -y mysql-connector-odbc
+# hard downloaded archived debian9 version (postgis 10-2.5), since apt support
+# for debian9 is dropped
+ADD conf/src/mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit.tar.gz /
+RUN . /etc/os-release; \
+	if [ "$VERSION_ID" = 9 ]; then \
+		cp mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/bin/* /usr/bin; \
+		cp mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/lib/* /usr/lib/x86_64-linux-gnu/odbc; \
+	else \
+		apt install -y lsb-release wget; \
+		dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
+		apt update; \
+		apt install -y mysql-connector-odbc; \
+	fi
 # install proper paths to the odbc drivers
 RUN template=$(mktemp); \
 	add() { echo "$1" >> "$template"; }; \
@@ -57,7 +72,7 @@ ENV BUILD_TOOLS="build-essential"
 ENV BUILD_TOOLS="${BUILD_TOOLS} postgresql-server-dev-${POSTGRESQL_VERSION}"
 RUN apt install -y ${BUILD_TOOLS}
 
-ARG ODBC_FDW_VERSION=0.5.1
+ARG ODBC_FDW_VERSION
 # compile & install odbc_fdw
 ENV ODBC_FDW_VERSION=${ODBC_FDW_VERSION}
 ENV BUILD_TOOLS="${BUILD_TOOLS} unixodbc-dev"
@@ -68,15 +83,17 @@ RUN cd /odbc_fdw-${ODBC_FDW_VERSION}; \
 	make; \
 	make install
 
-ARG MONGO_FDW_VERSION=5_2_8
+ARG MONGO_FDW_VERSION
 # compile & install mongo_fdw
 ENV MONGO_FDW_VERSION=${MONGO_FDW_VERSION}
+ENV BUILD_TOOLS="${BUILD_TOOLS} cmake"
 ENV BUILD_TOOLS="${BUILD_TOOLS} pkg-config"
 ENV BUILD_TOOLS="${BUILD_TOOLS} libssl-dev"
 ENV BUILD_TOOLS="${BUILD_TOOLS} libsnappy-dev"
 ENV BUILD_TOOLS="${BUILD_TOOLS} zlib1g-dev"
 ENV BUILD_TOOLS="${BUILD_TOOLS} libzstd-dev"
 RUN apt install -y ${BUILD_TOOLS} \
+	wget \
 	openssl \
 	libsnappy1v5 \
 	zlib1g \
@@ -85,10 +102,11 @@ RUN apt install -y ${BUILD_TOOLS} \
 ADD conf/src/mongo_fdw-REL-${MONGO_FDW_VERSION}.tar.gz /
 RUN cd /mongo_fdw-REL-${MONGO_FDW_VERSION}; \
 	./autogen.sh --with-master; \
+	export PKG_CONFIG_PATH="$PKG_CONFIG_PATH":/lib/pkgconfig/; \
 	make; \
 	make install
 
-ARG PGJWT_VERSION=0f1aa16
+ARG PGJWT_VERSION
 # compile & install pgjwt
 ENV PGJWT_VERSION=${PGJWT_VERSION}
 # https://github.com/michelp/pgjwt/tarball/master
@@ -96,36 +114,30 @@ ADD conf/src/michelp-pgjwt-${PGJWT_VERSION}.tar.gz /
 RUN cd /michelp-pgjwt-${PGJWT_VERSION}; \
 	make install
 
-ARG PGXN_VERSION=1.3.1
+ARG PGXN_VERSION
 # compile & install PostgreSQL Extension Network client
 ENV PGXN_VERSION=${PGXN_VERSION}
-# install package python-setuptools,
+# install package python-pip, and python-setuptools,
 # which is also needed when running the pgxn client
-RUN apt install -y ${PYTHON}-setuptools
+RUN apt install -y ${PYTHON}-setuptools ${PYTHON}-pip
+RUN pip3 install pytest-runner || true
 # https://github.com/pgxn/pgxnclient/archive/v${PGXN_VERSION}.tar.gz
 ADD conf/src/pgxnclient-${PGXN_VERSION}.tar.gz /
-# next line currently (2021-03-25) fails with:
-#24 2.278   File "/tmp/easy_install-c300t4st/pytest-runner-5.3.0/temp/easy_install-0hocwk0l/setuptools_scm-6.0.1/src/setuptools_scm/__init__.py", line 15, in <module>
-#24 2.278   File "/tmp/easy_install-c300t4st/pytest-runner-5.3.0/temp/easy_install-0hocwk0l/setuptools_scm-6.0.1/src/setuptools_scm/version.py", line 42
-#24 2.278     trace(f"tag '{tag}' parsed to {result}")
-#24 2.278                                           ^
-#24 2.278 SyntaxError: invalid syntax
-# RUN cd /pgxnclient-${PGXN_VERSION}; \
-# 	${PYTHON} setup.py install
+RUN cd /pgxnclient-${PGXN_VERSION}; \
+	${PYTHON} setup.py install
 
 # install extension safeupdate from pgxn
 # https://github.com/eradman/pg-safeupdate
 # http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
-# cannot install from pgxn due to failing pgxnclient install (see above)
-# RUN pgxn install safeupdate
-ARG PGSAFEUPDATE_VERSION=1.3
-# compile & install install extension safeupdate
-ENV PGSAFEUPDATE_VERSION=${PGSAFEUPDATE_VERSION}
-# https://github.com/eradman/pg-safeupdate/archive/refs/tags/${PGSAFEUPDATE_VERSION}.tar.gz
-ADD conf/src/pg-safeupdate-${PGSAFEUPDATE_VERSION}.tar.gz /
-RUN cd /pg-safeupdate-${PGSAFEUPDATE_VERSION} && \
-	make && \
-	make install
+RUN pgxn install safeupdate
+# # compile & install install extension safeupdate (when pgxn doesn't work)
+# ARG PGSAFEUPDATE_VERSION
+# ENV PGSAFEUPDATE_VERSION=${PGSAFEUPDATE_VERSION}
+# # https://github.com/eradman/pg-safeupdate/archive/refs/tags/${PGSAFEUPDATE_VERSION}.tar.gz
+# ADD conf/src/pg-safeupdate-${PGSAFEUPDATE_VERSION}.tar.gz /
+# RUN cd /pg-safeupdate-${PGSAFEUPDATE_VERSION} && \
+# 	make && \
+# 	make install
 
 # install the Microsoft ODBC driver for SQL Server
 # https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15

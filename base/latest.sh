@@ -11,7 +11,8 @@ for file in "$(dirname "${main_script}")"/*; do
         container=${DOCKER_USER}-${repo}
         image=${DOCKER_REGISTRY}${DOCKER_USER}/${repo}:latest
 
-        docker container rm -f "${container}" 2>/dev/null
+        docker container stop "${container}" 2>/dev/null
+        docker container rm "${container}" 2>/dev/null
         docker image pull "${image}"
     fi
 done
