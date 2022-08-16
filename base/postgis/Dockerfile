@@ -50,8 +50,8 @@ COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
 ADD conf/src/mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit.tar.gz /
 RUN . /etc/os-release; \
 	if [ "$VERSION_ID" = 9 ]; then \
-		cp mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/bin/* /usr/bin; \
-		cp mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/lib/* /usr/lib/x86_64-linux-gnu/odbc; \
+		cp /mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/bin/* /usr/bin; \
+		cp /mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/lib/* /usr/lib/x86_64-linux-gnu/odbc; \
 	else \
 		apt install -y lsb-release wget; \
 		dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
@@ -62,9 +62,9 @@ RUN . /etc/os-release; \
 RUN template=$(mktemp); \
 	add() { echo "$1" >> "$template"; }; \
 	add '[MySQL ODBC 8.0 Unicode Driver]'; \
-	add 'Driver=/usr/lib/x86_64-linux-gnu/odbc/libmyodbc8w.so'; \
+	add "Driver=$(ls /usr/lib/x86_64-linux-gnu/odbc/libmyodbc*w.so)"; \
 	add '[MySQL ODBC 8.0 ANSI Driver]'; \
-	add 'Driver=/usr/lib/x86_64-linux-gnu/odbc/libmyodbc8a.so'; \
+	add "Driver=$(ls /usr/lib/x86_64-linux-gnu/odbc/libmyodbc*a.so)"; \
 	odbcinst -i -d -f "$template"
 
 # install packages needed for building several components
