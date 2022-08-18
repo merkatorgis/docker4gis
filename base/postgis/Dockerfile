@@ -47,11 +47,11 @@ ENV MYSQL_VERSION=${MYSQL_VERSION}
 COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
 # hard downloaded archived debian9 version (postgis 10-2.5), since apt support
 # for debian9 is dropped
-ADD conf/src/mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit.tar.gz /
+COPY conf/src/mysql-connector-odbc-debian-9 /mysql-connector-odbc
 RUN . /etc/os-release; \
 	if [ "$VERSION_ID" = 9 ]; then \
-		cp /mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/bin/* /usr/bin; \
-		cp /mysql-connector-odbc-5.3.14-linux-debian9-x86-64bit/lib/* /usr/lib/x86_64-linux-gnu/odbc; \
+		cp /mysql-connector-odbc/bin/* /usr/bin; \
+		cp /mysql-connector-odbc/lib/* /usr/lib/x86_64-linux-gnu/odbc; \
 	else \
 		apt install -y lsb-release wget; \
 		dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
