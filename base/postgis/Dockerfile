@@ -14,11 +14,6 @@ FROM postgis/postgis:${POSTGRESQL_VERSION}-${POSTGIS_VERSION}
 ARG POSTGRESQL_VERSION
 ENV POSTGRESQL_VERSION=${POSTGRESQL_VERSION}
 
-# copy custom postgres configuration files
-COPY conf/postgres /etc/postgresql
-ENV CONFIG_FILE=/etc/postgresql/postgresql.conf
-RUN mv "${CONFIG_FILE}" "${CONFIG_FILE}.template"
-
 ENV DEBIAN_FRONTEND=noninteractive
 
 # update the list of installable packages
@@ -114,31 +109,6 @@ ADD conf/src/michelp-pgjwt-${PGJWT_VERSION}.tar.gz /
 RUN cd /michelp-pgjwt-${PGJWT_VERSION}; \
 	make install
 
-ARG PGXN_VERSION
-# compile & install PostgreSQL Extension Network client
-ENV PGXN_VERSION=${PGXN_VERSION}
-# install package python-pip, and python-setuptools,
-# which is also needed when running the pgxn client
-RUN apt install -y ${PYTHON}-setuptools ${PYTHON}-pip
-RUN pip3 install pytest-runner || true
-# https://github.com/pgxn/pgxnclient/archive/v${PGXN_VERSION}.tar.gz
-ADD conf/src/pgxnclient-${PGXN_VERSION}.tar.gz /
-RUN cd /pgxnclient-${PGXN_VERSION}; \
-	${PYTHON} setup.py install
-
-# install extension safeupdate from pgxn
-# https://github.com/eradman/pg-safeupdate
-# http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
-RUN pgxn install safeupdate
-# # compile & install install extension safeupdate (when pgxn doesn't work)
-# ARG PGSAFEUPDATE_VERSION
-# ENV PGSAFEUPDATE_VERSION=${PGSAFEUPDATE_VERSION}
-# # https://github.com/eradman/pg-safeupdate/archive/refs/tags/${PGSAFEUPDATE_VERSION}.tar.gz
-# ADD conf/src/pg-safeupdate-${PGSAFEUPDATE_VERSION}.tar.gz /
-# RUN cd /pg-safeupdate-${PGSAFEUPDATE_VERSION} && \
-# 	make && \
-# 	make install
-
 # install the Microsoft ODBC driver for SQL Server
 # https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15
 ENV BUILD_TOOLS="${BUILD_TOOLS} curl"
@@ -166,6 +136,37 @@ RUN apt-get install -y libgssapi-krb5-2
 # https://stackoverflow.com/a/59503719
 # https://github.com/microsoft/msphpsql/issues/1021
 RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/g' /etc/ssl/openssl.cnf
+
+ARG PGXN_VERSION
+# compile & install PostgreSQL Extension Network client
+ENV PGXN_VERSION=${PGXN_VERSION}
+# install package python-pip, and python-setuptools,
+# which is also needed when running the pgxn client
+RUN apt install -y ${PYTHON}-setuptools ${PYTHON}-pip
+RUN pip3 install pytest-runner || true
+# https://github.com/pgxn/pgxnclient/archive/v${PGXN_VERSION}.tar.gz
+ADD conf/src/pgxnclient-${PGXN_VERSION}.tar.gz /
+RUN cd /pgxnclient-${PGXN_VERSION}; \
+	${PYTHON} setup.py install
+
+# install extension safeupdate from pgxn
+# https://github.com/eradman/pg-safeupdate
+# http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
+RUN pgxn install safeupdate
+# # compile & install install extension safeupdate (when pgxn doesn't work)
+# ARG PGSAFEUPDATE_VERSION
+# ENV PGSAFEUPDATE_VERSION=${PGSAFEUPDATE_VERSION}
+# # https://github.com/eradman/pg-safeupdate/archive/refs/tags/${PGSAFEUPDATE_VERSION}.tar.gz
+# ADD conf/src/pg-safeupdate-${PGSAFEUPDATE_VERSION}.tar.gz /
+# RUN cd /pg-safeupdate-${PGSAFEUPDATE_VERSION} && \
+# 	make && \
+# 	make install
+
+# install extension range_agg from pgxn https://pgxn.org/dist/range_agg/
+# Compilation is known to fail on debian bullseye, postgres 14, and succeed on
+# debian stretch, postgres 10; see
+# https://github.com/pjungwir/range_agg/issues/4
+RUN pgxn install range_agg || true
 
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
@@ -205,6 +206,11 @@ COPY conf/dump_restore /usr/local/bin/restore
 COPY conf/dump_restore /usr/local/bin/upgrade
 COPY conf/dump_restore /usr/local/bin/dump_schema
 COPY conf/dump_restore /usr/local/bin/restore_schema
+
+# copy custom postgres configuration files
+COPY conf/postgres /etc/postgresql
+ENV CONFIG_FILE=/etc/postgresql/postgresql.conf
+RUN mv "${CONFIG_FILE}" "${CONFIG_FILE}.template"
 
 # include a "client" image's conf scripts where onstart.sh will find them
 ONBUILD COPY conf /tmp/conf
