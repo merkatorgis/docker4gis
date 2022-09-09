@@ -29,6 +29,8 @@ time {
     extension pgcrypto
     extension pgjwt
     extension mongo_fdw
+    # if `pgxn install range_agg` succeeded; see Dockerfile
+    extension range_agg || true
     [ "$DOCKER_ENV" = DEVELOPMENT ] || [ "$DOCKER_ENV" = DEV ] && extension pldbgapi
 
     # clear the "last" file (see last.sh)
