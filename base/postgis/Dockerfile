@@ -164,7 +164,7 @@ RUN pgxn install safeupdate
 
 # for postgresql < 14, install range_agg as an extension from pgxn
 # https://pgxn.org/dist/range_agg/
-RUN [ "$POSTGRESQL_VERSION" -lt 14 ] && pgxn install range_agg
+RUN [ "$POSTGRESQL_VERSION" -lt 14 ] && pgxn install range_agg || true
 
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
