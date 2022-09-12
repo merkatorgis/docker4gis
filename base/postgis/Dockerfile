@@ -162,11 +162,9 @@ RUN pgxn install safeupdate
 # 	make && \
 # 	make install
 
-# install extension range_agg from pgxn https://pgxn.org/dist/range_agg/
-# Compilation is known to fail on debian bullseye, postgres 14, and succeed on
-# debian stretch, postgres 10; see
-# https://github.com/pjungwir/range_agg/issues/4
-RUN pgxn install range_agg || true
+# for postgresql < 14, install range_agg as an extension from pgxn
+# https://pgxn.org/dist/range_agg/
+RUN [ "$POSTGRESQL_VERSION" -lt 14 ] && pgxn install range_agg
 
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
