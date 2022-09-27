@@ -1,0 +1,18 @@
+{
+  "name": "docker4gis",
+  "version": "0.0.1",
+  "description": "Extensible linked Docker images for common GIS components. Created by https://www.merkator.com",
+  "bin": {
+    "docker4gis": "docker4gis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/merkatorgis/docker4gis.git"
+  },
+  "author": "",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/merkatorgis/docker4gis/issues"
+  },
+  "homepage": "https://github.com/merkatorgis/docker4gis#readme"
+}

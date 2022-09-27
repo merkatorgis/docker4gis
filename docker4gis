@@ -1,0 +1,57 @@
+#!/bin/bash
+
+here=$(dirname "$0")
+if [ "$(basename "$here")" = '.bin' ]; then
+    HOME=$(dirname "$0")/../$(basename "$0")
+else
+    HOME=$here
+fi
+
+action=$1
+shift 1
+
+if [ "$action" = 'base' ]; then
+    echo "$HOME"/base
+fi
+
+if [ "$action" = 'template' ]; then
+    template="$HOME"/templates/"$1"
+    dest=${2:-.}
+    cp -r "$template"/* "$dest"
+fi
+
+if [ "$action" = 'init' ]; then
+    DOCKER_REGISTRY=$1
+    DOCKER_USER=$2
+    SHORT_NAME=$3
+
+    [ "$DOCKER_REGISTRY" ] || read -rp "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " DOCKER_REGISTRY
+    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
+    [ "$DOCKER_REGISTRY" ] && DOCKER_REGISTRY="$DOCKER_REGISTRY"/
+
+    [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry) : " DOCKER_USER
+    [ "$DOCKER_USER" ] || exit 1
+
+    [ "$SHORT_NAME" ] || read -rp "Optionally enter a short command name (default is the application's name) : " SHORT_NAME
+    SHORT_NAME=${SHORT_NAME:-$DOCKER_USER}
+
+    echo "DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER
+DEBUG=false
+PROXY_HOST=
+PROXY_PORT=
+PROXY_PORT_HTTP=
+SECRET=
+API=
+AUTH_PATH=
+APP=
+HOMEDEST=
+POSTGRES_LOG_STATEMENT=
+# POSTGRES_LOG_STATEMENT=ddl
+# POSTGRES_LOG_STATEMENT=all
+POSTFIX_DESTINATION=
+POSTFIX_DOMAIN=
+MSYS_NO_PATHCONV=1" >.env
+
+    cp "$HOME"/templates/main "$SHORT_NAME"
+fi

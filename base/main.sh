@@ -28,7 +28,7 @@ mainscript=$1
 action=$2
 shift 2
 
-DOCKER_APP_DIR=$(realpath "$(dirname "$mainscript")")
+DOCKER_APP_DIR=$(realpath "$(dirname "$mainscript")"/..)
 export DOCKER_APP_DIR
 
 this() {
