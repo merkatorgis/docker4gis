@@ -32,8 +32,7 @@ component)
     [ "$tag" ] || tag=latest
 
     image=docker4gis/$component:$tag
-    # TODO: uncomment this to actually support "latest"
-    # docker image pull "$image"
+    docker image pull "$image"
     container=$(docker container create "$image")
     [ "$container" ] || {
         echo "Image not found: $image"
