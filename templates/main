@@ -53,7 +53,7 @@ geoserver)
 	;;
 esac
 
-DOCKER_BASE=$(npx --yes docker4gis base)
+DOCKER_BASE=$(npx --yes docker4gis@"$DOCKER4GIS_VERSION" base)
 export DOCKER_BASE
 
 "$DOCKER_BASE/main.sh" "$0" "$@"

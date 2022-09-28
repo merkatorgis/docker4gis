@@ -1,40 +1,69 @@
 #!/bin/bash
 
-here=$(dirname "$0")
-if [ "$(basename "$here")" = '.bin' ]; then
-    HOME=$(dirname "$0")/../$(basename "$0")
-else
-    HOME=$here
-fi
-
 action=$1
 shift 1
 
-if [ "$action" = 'base' ]; then
-    echo "$HOME"/base
+here=$(dirname "$0")
+if [ "$(basename "$here")" = '.bin' ]; then
+    DOCKER4GIS_HOME=$(dirname "$0")/../$(basename "$0")
+else
+    DOCKER4GIS_HOME=$here
 fi
+DOCKER4GIS_HOME=$(realpath "$DOCKER4GIS_HOME")
 
-if [ "$action" = 'component' ]; then
+case "$action" in
+
+base)
+    echo "$DOCKER4GIS_HOME"/base
+    ;;
+
+component)
     component=$1
-    tag=${2:-latest}
+    tag=$2
     template=$3
+
+    [ "$component" ] || interactive=true
+    [ "$component" ] || read -rp "Enter the docker4gis base image name, e.g. proxy, or postgis : " component
+    [ "$component" ] || exit 1
+
+    [ "$interactive" ] && {
+        [ "$tag" ] || read -rp "Enter the base image's tag to use (default is latest) : " tag
+    }
+    [ "$tag" ] || tag=latest
+
     image=docker4gis/$component:$tag
     # TODO: uncomment this to actually support "latest"
     # docker image pull "$image"
     container=$(docker container create "$image")
+    [ "$container" ] || {
+        echo "Image not found: $image"
+        exit 2
+    }
+
     docker container cp "$container":/template .
-    docker container rm "$container"
+    docker container rm "$container" >/dev/null
     if ! [ "$template" ]; then
         default=./template/.default
         if [ -f "$default" ]; then
-            template=$(cat "$default")
+            default=$(cat "$default")
+            template=$default
+            [ "$interactive" ] && {
+                choices=$(ls ./template)
+                choices=$(echo "$choices" | xargs)
+                read -rp "Enter the template name (one of: $choices - default is $default) : " template
+                [ "$template" ] || template=$default
+                ls ./template/"$template" >/dev/null 2>&1 || {
+                    echo "Template not found: $template"
+                    exit 3
+                }
+            }
         fi
     fi
     cp -r ./template/"$template"/* .
     rm -rf ./template
-fi
+    ;;
 
-if [ "$action" = 'init' ]; then
+init)
     DOCKER_REGISTRY=$1
     DOCKER_USER=$2
     SHORT_NAME=$3
@@ -50,8 +79,11 @@ if [ "$action" = 'init' ]; then
     [ "$SHORT_NAME" ] || read -rp "Optionally enter a short command name (default is the application's name) : " SHORT_NAME
     SHORT_NAME=${SHORT_NAME:-$DOCKER_USER}
 
+    DOCKER4GIS_VERSION=$(node -pe "require('$DOCKER4GIS_HOME/package.json').version")
+
     echo "DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DEBUG=false
 PROXY_HOST=
 PROXY_PORT=
@@ -68,5 +100,10 @@ POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=
 MSYS_NO_PATHCONV=1" >.env
 
-    cp "$HOME"/templates/main "$SHORT_NAME"
-fi
+    cp "$DOCKER4GIS_HOME"/templates/main "$SHORT_NAME"
+    ;;
+
+*)
+    echo "Usage: $(basename "$0") init|component|base"
+    ;;
+esac
