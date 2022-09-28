@@ -34,6 +34,10 @@ add_repo() {
     # run after the containers are started.
     [ "$repo" = test ] && return
 
+    # Skip base as this is not a repo, but the folder containing the files to
+    # manage the docker4gis app.
+    [ "$repo" = base ] && return
+
     echo "Fetching $repo..." >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
