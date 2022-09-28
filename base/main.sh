@@ -37,7 +37,7 @@ this() {
 
 case "$action" in
 build)
-	repo=$1
+	repo=${1:-$(basename "$(realpath .)")}
 	[ "$repo" ] || echo "Please pass the name of the component to build."
 	[ "$repo" ] && this test "$repo" &&
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$repo"
