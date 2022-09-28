@@ -14,10 +14,24 @@ if [ "$action" = 'base' ]; then
     echo "$HOME"/base
 fi
 
-if [ "$action" = 'template' ]; then
-    template="$HOME"/templates/"$1"
-    dest=${2:-.}
-    cp -r "$template"/* "$dest"
+if [ "$action" = 'component' ]; then
+    component=$1
+    tag=${2:-latest}
+    template=$3
+    image=docker4gis/$component:$tag
+    # TODO: uncomment this to actually support "latest"
+    # docker image pull "$image"
+    container=$(docker container create "$image")
+    docker container cp "$container":/template .
+    docker container rm "$container"
+    if ! [ "$template" ]; then
+        default=./template/.default
+        if [ -f "$default" ]; then
+            template=$(cat "$default")
+        fi
+    fi
+    cp -r ./template/"$template"/* .
+    rm -rf ./template
 fi
 
 if [ "$action" = 'init' ]; then
