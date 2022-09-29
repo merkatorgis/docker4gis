@@ -37,9 +37,9 @@ this() {
 }
 
 dir() {
-	if ! [ "$DOCKER_REPO" ]; then
-		repo=$1
-		shift 1
+	repo=$1
+	shift 1
+	if [ "$repo" ] && ! [ "$repo" = "$DOCKER_REPO" ]; then
 		dir=$(find .. -maxdepth 1 -name "$repo" 2>/dev/null)
 		[ "$dir" ] || dir=$(find .. -maxdepth 1 -name "$repo.*" 2>/dev/null)
 		[ "$dir" ] || {
