@@ -37,26 +37,28 @@ this() {
 }
 
 dir() {
-	if [ "$DOCKER_REPO" ]; then
-		realpath .
-	else
+	if ! [ "$DOCKER_REPO" ]; then
 		repo=$1
-		dir=$(ls "../$repo" 2>/dev/null)
-		[ "$dir" ] || dir=$(ls "../$repo.*" 2>/dev/null)
+		shift 1
+		dir=$(find .. -maxdepth 1 -name "$repo" 2>/dev/null)
+		[ "$dir" ] || dir=$(find .. -maxdepth 1 -name "$repo.*" 2>/dev/null)
 		[ "$dir" ] || {
 			echo "Cannot find component directory $repo"
 			exit 1
 		}
-		echo "$dir"
+		pushd "$dir" >/dev/null || exit 1
+		"$DOCKER_BASE"/../docker4gis "$action" "$@"
+		popd >/dev/null || exit 1
+		exit 0
 	fi
 }
 
 case "$action" in
 build)
-	dir=$(dir "$1")
-	[ "$dir" ] || echo "Please pass the name of the component to build."
-	[ "$dir" ] && this test "$dir" &&
-		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$dir"
+	dir "$@"
+	# TODO
+	# this test &&
+	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh"
 	;;
 run)
 	tag=$1
