@@ -3,12 +3,13 @@
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+DOCKER_REPO=$DOCKER_REPO
 DOCKER_APP_DIR=$DOCKER_APP_DIR
 
-repo=$1
+dir=$1
 shift 1
 
-dir=$DOCKER_APP_DIR/$repo
+repo=$DOCKER_REPO
 
 if [ "$repo" = .package ] && ! [ -d "$dir" ]; then
     # Install the .package template.

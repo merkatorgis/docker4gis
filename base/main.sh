@@ -8,6 +8,7 @@ export DOCKER_BINDS_DIR
 
 export DOCKER_REGISTRY=$DOCKER_REGISTRY
 export DOCKER_USER=$DOCKER_USER
+export DOCKER_REPO=$DOCKER_REPO
 
 export DOCKER_ENV=DEVELOPMENT
 
@@ -24,23 +25,38 @@ export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
 export MSYS_NO_PATHCONV=1
 
-mainscript=$1
+dir=$1
 action=$2
 shift 2
 
-DOCKER_APP_DIR=$(realpath "$(dirname "$mainscript")"/..)
+DOCKER_APP_DIR=$(realpath "$dir"/..)
 export DOCKER_APP_DIR
 
 this() {
-	"$0" "$mainscript" "$@"
+	"$0" "$dir" "$@"
+}
+
+dir() {
+	if [ "$DOCKER_REPO" ]; then
+		realpath .
+	else
+		repo=$1
+		dir=$(ls "../$repo" 2>/dev/null)
+		[ "$dir" ] || dir=$(ls "../$repo.*" 2>/dev/null)
+		[ "$dir" ] || {
+			echo "Cannot find component directory $repo"
+			exit 1
+		}
+		echo "$dir"
+	fi
 }
 
 case "$action" in
 build)
-	repo=${1:-$(basename "$(realpath .)")}
-	[ "$repo" ] || echo "Please pass the name of the component to build."
-	[ "$repo" ] && this test "$repo" &&
-		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$repo"
+	dir=$(dir "$1")
+	[ "$dir" ] || echo "Please pass the name of the component to build."
+	[ "$dir" ] && this test "$dir" &&
+		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$dir"
 	;;
 run)
 	tag=$1
