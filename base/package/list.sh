@@ -67,17 +67,11 @@ version=
 
 add_repo() {
 
-    # Skip test as this is not a repo, but the folder containing the tests to
-    # run after the containers are started.
-    [ "$repo" = test ] && return
-
-    # Skip base as this is not a repo, but the folder containing the files to
-    # manage the docker4gis app.
-    [ "$repo" = base ] && return
-
     echo "Fetching $repo..." >&2
+
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
+
     if [ "$directive" = dirty ] && local_image_exists "$image:latest"; then
         # use latest image _if_ it exists locally
         tag=latest
@@ -97,6 +91,7 @@ add_repo() {
             docker image pull "$image:$tag" >/dev/null ||
             error "image '$image:$tag' not found"
     fi
+
     if [ "$tag" ]; then
         echo "$BASE/docker4gis/run.sh $repo $tag" >>"$temp"
         echo "$image:$tag" >&2
