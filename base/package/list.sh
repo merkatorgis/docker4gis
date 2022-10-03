@@ -1,19 +1,21 @@
 #!/bin/bash
 
+# compiles a list of commands to run all repos' containers
+
 directive=$1
 
 BASE=$BASE
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_APP_DIR=${DOCKER_APP_DIR:-.}
 
-# compile a list of commands to run all repos' containers
-
+temp_components=$(mktemp -d)
+base_dir_container=$(mktemp)
 temp=$(mktemp)
-repo=
 
 finish() {
+    rm -rf "$temp_components"
+    rm -f "$base_dir_container"
     rm -f "$temp"
     exit "${1:-0}"
 }
@@ -23,17 +25,45 @@ error() {
     finish 1
 }
 
-pick_repo() {
-    local item
-    for item in "$@"; do
-        [ "$item" = "$repo" ] && return 0
-    done
-    return 1
-}
+# In the dev env, component repos should be found as sibblings of the base repo.
+for file in ../*/build.sh; do
+    dir=$(dirname "$file")
+    if [ -f "$dir"/.env ]; then
+        version=latest
+        version_file="$dir"/version
+        if [ -f "$version_file" ]; then
+            version=$(cat "$version_file")
+        fi
+        (
+            # shellcheck source=/dev/null
+            . "$dir"/.env
+            if [ "$DOCKER_REPO" = base ]; then
+                echo "$dir" >"$base_dir_container"
+            else
+                echo "$version" >"$temp_components"/"$DOCKER_REPO"
+            fi
+        )
+    fi
+done
+components=./components
+# Replace the current components list with the new list. In the pipeline, no
+# component sibblings are found, and the current list of components remains.
+if ls "$temp_components"/* >/dev/null 2>&1; then
+    base_dir=$(cat "$base_dir_container")
+    [ -d "$base_dir" ] || error "base directory not found"
+    components="$base_dir"/components
+    mkdir -p "$components"
+    rm -f "$components"/*
+    cp "$temp_components"/* "$components"
+fi
+mkdir -p "$components"
 
 local_image_exists() {
     docker image tag "$1" "$1" >/dev/null 2>&1
 }
+
+repo=
+version=
 
 add_repo() {
 
@@ -52,9 +82,8 @@ add_repo() {
         # use latest image _if_ it exists locally
         tag=latest
     else
-        version_file=$repo_path/version
-        if [ -f "$version_file" ]; then
-            tag=$(cat "$version_file")
+        if ! [ "$version" = latest ]; then
+            tag=$version
         else
             if [ "$directive" = dirty ]; then
                 error "no image for '$repo'; was it built already?"
@@ -76,6 +105,16 @@ add_repo() {
     fi
 }
 
+pick_repo() {
+    repo=$(basename "$repo_file")
+    version=$(cat "$repo_file")
+    local item
+    for item in "$@"; do
+        [ "$item" = "$repo" ] && return 0
+    done
+    return 1
+}
+
 first_repo() {
     pick_repo postgis mysql
 }
@@ -84,18 +123,15 @@ last_repo() {
     pick_repo proxy
 }
 
-for repo_path in "$DOCKER_APP_DIR"/*/; do
-    repo=$("$DOCKER_BASE"/repo.sh "$repo_path")
+for repo_file in "$components"/*; do
     first_repo && add_repo
 done
 
-for repo_path in "$DOCKER_APP_DIR"/*/; do
-    repo=$("$DOCKER_BASE"/repo.sh "$repo_path")
+for repo_file in "$components"/*; do
     first_repo || last_repo || add_repo
 done
 
-for repo_path in "$DOCKER_APP_DIR"/*/; do
-    repo=$("$DOCKER_BASE"/repo.sh "$repo_path")
+for repo_file in "$components"/*; do
     last_repo && add_repo
 done
 

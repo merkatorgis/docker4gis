@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DOCKER_BASE=$(realpath "$(dirname "$0")")
-DOCKER_APP_DIR=$DOCKER_APP_DIR
+DOCKER_APP_DIR=$(realpath ..)
 
 dir=$DOCKER_APP_DIR/${1:-test}
 

@@ -4,15 +4,8 @@ DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO
-DOCKER_APP_DIR=$DOCKER_APP_DIR
 
 repo=$DOCKER_REPO
-
-if [ "$repo" = .package ] && ! [ -d "$dir" ]; then
-    # Install the .package template.
-    cp -r "$DOCKER_BASE"/../templates/.package "$DOCKER_APP_DIR" &&
-        echo "> Package component installed; remember to commit changes."
-fi
 
 temp=$(mktemp -d)
 finish() {
