@@ -151,7 +151,8 @@ DOCKER_USER=$DOCKER_USER" >.env
     if [ "$component" ]; then
         component "$@"
     else
-        echo "DEBUG=false
+        echo "DOCKER_REPO=base
+DEBUG=false
 PROXY_HOST=
 PROXY_PORT=
 PROXY_PORT_HTTP=
@@ -165,6 +166,7 @@ POSTGRES_LOG_STATEMENT=
 # POSTGRES_LOG_STATEMENT=all
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
+        cp -r "$DOCKER4GIS_HOME"/templates/.package .
         bash -i "$0" alias TEST
     fi
     ;;
