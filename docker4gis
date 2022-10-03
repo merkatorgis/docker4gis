@@ -13,6 +13,7 @@ if [ "$(basename "$DOCKER4GIS_HOME")" = '.bin' ]; then
     DOCKER4GIS_HOME="$DOCKER4GIS_HOME"/../$docker4gis
 fi
 DOCKER4GIS_HOME=$(realpath "$DOCKER4GIS_HOME")
+DOCKER_BASE="$DOCKER4GIS_HOME"/base
 
 component() {
     [ "$1" ] || interactive=true
@@ -21,9 +22,7 @@ component() {
     tag=$3
     template=$4
 
-    suggestion=$(basename "$(pwd)")
-    # up until first . character, if any
-    suggestion=${suggestion%%.*}
+    suggestion=$("$DOCKER_BASE"/repo.sh)
     [ "$repo" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
     [ "$repo" ] || repo=$suggestion
 
@@ -81,7 +80,7 @@ alias)
     [ "$interactive" ] || {
         # rerun this action with bash in interactive mode, so that aliases are
         # loaded
-        bash -i "$0" alias
+        bash -i "$0" alias "$@"
         exit 0
     }
 
@@ -90,14 +89,16 @@ alias)
     test=$1
     [ "$test" = 'TEST' ] && {
         shift 1
-        [ "$(dg docker4gis 2>/dev/null)" = 'docker4gis' ] || {
+        if [ "$(dg docker4gis 2>/dev/null)" = 'docker4gis' ]; then
+            exit 0
+        else
             answer=
             read -rp "Create an alias for \`$command\`? [Yn] " answer
             [ "$answer" ] || answer=y
             if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
                 exit 0
             fi
-        }
+        fi
     }
 
     name=$1
@@ -120,7 +121,7 @@ alias)
     ;;
 
 base)
-    echo "$DOCKER4GIS_HOME"/base
+    echo "$DOCKER_BASE"
     ;;
 
 init)
@@ -147,7 +148,10 @@ init)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER" >.env
 
-    [ "$component" ] || echo "DEBUG=false
+    if [ "$component" ]; then
+        component "$@"
+    else
+        echo "DEBUG=false
 PROXY_HOST=
 PROXY_PORT=
 PROXY_PORT_HTTP=
@@ -161,10 +165,6 @@ POSTGRES_LOG_STATEMENT=
 # POSTGRES_LOG_STATEMENT=all
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
-
-    if [ "$component" ]; then
-        component "$@"
-    else
         bash -i "$0" alias TEST
     fi
     ;;
@@ -179,13 +179,8 @@ build | run | br | push | test | stop | geoserver)
     . .env
     set +a
 
-    if [ "$INSTALLED" ]; then
-        DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
-    else
-        # this is just to support testing changes locally before publishing
-        DOCKER_BASE=$(realpath "$(dirname "$0")")/base
-    fi
-    export DOCKER_BASE
+    # use the docker4gis version that the component scripts are expecting
+    [ "$INSTALLED" ] && DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
 
     "$DOCKER_BASE/main.sh" . "$action" "$@"
     ;;

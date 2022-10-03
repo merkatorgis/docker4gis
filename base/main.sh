@@ -74,17 +74,12 @@ br)
 	this build "$1" && echo &&
 		this run
 	;;
-latest)
-	eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh latest)" && echo &&
-		docker container ls
-	;;
 push)
-	repo=$1
-	tag=$2
-	"$DOCKER_BASE/push.sh" "$repo" "$tag" || exit 1
-	[ "$tag" ] || exit 0 &&
-		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" .package &&
-		"$DOCKER_BASE/push.sh" .package "$tag"
+	"$DOCKER_BASE/push.sh" "$@"
+	#  || exit 1
+	# [ "$tag" ] || exit 0 &&
+	# 	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" .package &&
+	# 	"$DOCKER_BASE/push.sh" .package "$tag"
 	;;
 test)
 	"$DOCKER_BASE/test.sh" "$1"
