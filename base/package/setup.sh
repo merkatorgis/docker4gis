@@ -9,7 +9,9 @@ export DOCKER_ENV=$DOCKER_ENV
 export PROXY_HOST=$PROXY_HOST
 export AUTOCERT=$AUTOCERT
 
-export DEBUG=false
+export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
+
+export DEBUG=$DEBUG
 
 export SECRET=$SECRET
 export APP=$APP
