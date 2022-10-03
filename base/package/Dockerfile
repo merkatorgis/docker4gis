@@ -5,6 +5,7 @@ RUN apk update; apk add --no-cache \
 
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh
+COPY list.sh /.docker4gis/list.sh
 
 COPY setup.sh /setup.sh
 COPY run.sh /run.sh

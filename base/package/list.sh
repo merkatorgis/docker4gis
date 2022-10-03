@@ -52,13 +52,14 @@ add_repo() {
         # use latest image _if_ it exists locally
         tag=latest
     else
-        if [ -f "$repo_path"/tag ]; then
-            tag=$(cat "$repo_path"/tag)
+        version_file=$repo_path/version
+        if [ -f "$version_file" ]; then
+            tag=$(cat "$version_file")
         else
             if [ "$directive" = dirty ]; then
                 error "no image for '$repo'; was it built already?"
             else
-                error "no tag file for '$repo'; was it pushed already?"
+                error "no version file for '$repo'; was it pushed already?"
             fi
         fi
         # use local image _if_ it exists

@@ -20,10 +20,11 @@ mkdir -p "$DOCKER_BINDS_DIR"/fileport/"$DOCKER_USER"
 
 IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 export IMAGE
-[ "$repo" = proxy ] &&
-    CONTAINER=docker4gis-proxy ||
-    CONTAINER=$DOCKER_USER-$repo
+
+CONTAINER=$DOCKER_USER-$repo
+[ "$repo" = proxy ] && CONTAINER=docker4gis-proxy
 export CONTAINER
+
 echo
 echo "Starting $CONTAINER from $IMAGE..."
 
@@ -39,8 +40,9 @@ fi
 
 temp=$(mktemp -d)
 finish() {
+    err_code=${1:-$?}
     rm -rf "$temp"
-    exit "${1:-$?}"
+    exit "$err_code"
 }
 
 if

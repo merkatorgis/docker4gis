@@ -20,6 +20,9 @@ if [ "$extension" ]; then
     # shellcheck disable=SC2016
     (
         cd ..
+        # set BASE to the .docker4gis directory that was copied out of the base
+        # docker4gis/package image, containing both build.sh and list.sh, put
+        # there by the Dockerfile
         BASE='"$(dirname "$0")"' "$here"/list.sh
     ) >>conf/run.sh || exit 1
 fi
