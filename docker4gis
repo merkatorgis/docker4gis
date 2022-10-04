@@ -166,7 +166,7 @@ POSTGRES_LOG_STATEMENT=
 # POSTGRES_LOG_STATEMENT=all
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
-        cp -r "$DOCKER4GIS_HOME"/templates/.package .
+        cp -r "$DOCKER4GIS_HOME"/package/template .
         mkdir -p components
         bash -i "$0" alias TEST
     fi
