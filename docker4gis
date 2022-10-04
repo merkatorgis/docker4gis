@@ -22,7 +22,10 @@ component() {
     tag=$3
     template=$4
 
-    suggestion=$("$DOCKER_BASE"/repo.sh)
+    suggestion=$(basename "$(realpath "$PWD")")
+    # up until first . character, if any (to support forked repos named
+    # component.name.surname)
+    suggestion=${suggestion%%.*}
     [ "$repo" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
     [ "$repo" ] || repo=$suggestion
 
