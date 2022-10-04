@@ -5,11 +5,19 @@ echo -n '#!/bin/bash
 
 tag=$1
 
+# change to DEVELOPMENT, TEST, or PRODUCTION
 export DOCKER_ENV=$DOCKER_ENV
+# change to your fully qualified domain name, e.g. www.example.com
 export PROXY_HOST=$PROXY_HOST
-export AUTOCERT=$AUTOCERT
+# set to true to get a certificate through LetsEncrypt
+export AUTOCERT=false
 
-export DEBUG=false
+# rest is fully optional
+
+# default is ~/docker-binds
+export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
+
+export DEBUG=$DEBUG
 
 export SECRET=$SECRET
 export APP=$APP

@@ -3,18 +3,9 @@
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_APP_DIR=$DOCKER_APP_DIR
+DOCKER_REPO=$DOCKER_REPO
 
-repo=$1
-shift 1
-
-dir=$DOCKER_APP_DIR/$repo
-
-if [ "$repo" = .package ] && ! [ -d "$dir" ]; then
-    # Install the .package template.
-    cp -r "$DOCKER_BASE"/../templates/.package "$DOCKER_APP_DIR" &&
-        echo "> Package component installed; remember to commit changes."
-fi
+repo=$DOCKER_REPO
 
 temp=$(mktemp -d)
 finish() {
@@ -29,14 +20,14 @@ x() {
     [ -x "$1" ] || finish 1 "Executable not found: '$1'."
 }
 
-buildscript=$dir/build.sh
+buildscript=./build.sh
 # Ensure we have something to run.
 x "$buildscript"
 
 # Find any Dockerfile to read the FROM clause from.
-dockerfile="$dir"/Dockerfile
+dockerfile=Dockerfile
 [ -f "$dockerfile" ] ||
-    dockerfile="$dir"/dockerfile
+    dockerfile=dockerfile
 
 # Parse the Dockerfile's FROM clause.
 # sed:
@@ -74,9 +65,7 @@ docker container rm "$container" >/dev/null 2>&1
 # Execute the actual build script,
 # which may or may not execute "$BASE"/build.sh,
 # which may or may not be set.
-pushd "$dir" >/dev/null || finish 1
 "$buildscript" "$@"
 result=$?
-popd >/dev/null || finish 1
 
 finish "$result"

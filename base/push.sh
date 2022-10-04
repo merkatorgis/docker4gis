@@ -3,50 +3,75 @@ set -e
 
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_APP_DIR=$DOCKER_APP_DIR
+DOCKER_REPO=$DOCKER_REPO
 
-repo=$1
-tag=$2
-
-[ "$repo" ] || echo "Please pass the name of the component to push."
-[ "$repo" ] || exit 1
-
-[ "$tag" = latest ] && tag=
-
-dir=$DOCKER_APP_DIR/$repo
-ls -d "$dir"/ >/dev/null || exit 1
-
-integer() {
-    [ "$1" -gt 0 ] 2>/dev/null
+error() {
+    echo "Error: $1"
+    exit 1
 }
 
-# Refuse an integer tag that is not higher than any integer package tag,
-# so that we can use the given repo's tag as the tag for the updated package
-# as well.
-[ "$tag" ] && [ "$repo" != .package ] && if ! integer "$tag"; then
-    echo "> WARNING: given tag ($tag) is not a positive integer number."
-    read -rn 1 -p 'Continue anyway? [yN] ' answer && echo
-    [ "$answer" = y ] || exit 1
-else
-    [ -f "$DOCKER_APP_DIR"/.package/tag ] &&
-        package_tag=$(cat "$DOCKER_APP_DIR"/.package/tag) &&
-        integer "$package_tag" &&
-        if [ "$tag" -le "$package_tag" ]; then
-            echo "> WARNING: given tag ($tag) is not higher than current package's tag ($package_tag)."
-            read -rn 1 -p 'Continue anyway? [yN] ' answer && echo
-            [ "$answer" = y ] || exit 1
-        fi
+if ! [ "$DOCKER_REPO" ]; then
+    error "DOCKER_REPO variable not set"
 fi
 
-[ "$repo" = .package ] && repo=package
-image=$DOCKER_REGISTRY$DOCKER_USER/$repo
+check_git_clear() {
+    git fetch
+    if git status --short --branch | grep behind; then
+        error "git branch is behind; please sync"
+    fi
+    if [ "$(git status --short)" ]; then
+        error "git repo has pending changes"
+    fi
+}
+check_git_clear
 
-docker image push "$image":latest
-[ "$tag" ] || exit
+version=1
+if [ -f version ]; then
+    # read current version from file
+    version=$(cat version)
+    if ! [ "$version" -gt 0 ] 2>/dev/null; then
+        error "version must contain a positive integer number"
+    fi
+    # increment
+    ((version++))
+fi
 
-docker image tag "$image":latest "$image":"$tag"
-docker image push "$image":"$tag"
+log() {
+    echo "• $1..."
+}
+
+image=$DOCKER_REGISTRY$DOCKER_USER/$DOCKER_REPO
+log "Tagging image"
+docker image tag "$image":latest "$image":"$version"
+log "Pushing image"
+docker image push "$image":"$version"
+log "Removing local 'latest' image"
 docker image rm -f "$image":latest
 
-echo "$tag" >"$dir"/tag
-echo "> Tag written to '$dir/tag'; remember to commit changes."
+push() {
+    if ! git push origin "$@"; then
+        if [ "$?" = 128 ]; then
+            # support a non-remote context (e.g. pipeline)
+            echo "INFO: remote not found: origin"
+            return 0
+        else
+            exit "$?"
+        fi
+    fi
+}
+
+# stop if git repo received new changes
+check_git_clear
+
+echo "$version" >version
+git add version
+message="version $version"
+log "Committing updated version file"
+git commit version -m "$message"
+log "Pushing updated version file"
+push
+
+tag="v-$version"
+git tag -a "$tag" -f -m "$message"
+log "Pushing updated version tag"
+push "$tag" -f
