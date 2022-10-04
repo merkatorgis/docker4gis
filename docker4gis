@@ -151,7 +151,7 @@ DOCKER_USER=$DOCKER_USER" >.env
     if [ "$component" ]; then
         component "$@"
     else
-        echo "DOCKER_REPO=base
+        echo "DOCKER_REPO=package
 DEBUG=false
 PROXY_HOST=
 PROXY_PORT=

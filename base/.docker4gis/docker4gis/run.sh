@@ -28,6 +28,11 @@ export CONTAINER
 echo
 echo "Starting $CONTAINER from $IMAGE..."
 
+# Pull the image from the registry if we don't have it locally, so that we
+# have it ready to run a new container right after we stop the running one.
+container=$(docker container create "$IMAGE") || exit 1
+docker container rm "$container" >/dev/null
+
 if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$CONTAINER" 2>/dev/null); then
     if [ "$old_image" = "$IMAGE" ]; then
         docker container start "$CONTAINER" &&

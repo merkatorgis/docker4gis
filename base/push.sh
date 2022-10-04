@@ -6,7 +6,7 @@ DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO
 
 error() {
-    echo "$1"
+    echo "Error: $1"
     exit 1
 }
 
@@ -15,6 +15,10 @@ if ! [ "$DOCKER_REPO" ]; then
 fi
 
 check_git_clear() {
+    git fetch
+    if git status --short --branch | grep behind; then
+        error "git branch is behind; please sync"
+    fi
     if [ "$(git status --short)" ]; then
         error "git repo has pending changes"
     fi
