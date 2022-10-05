@@ -40,6 +40,7 @@ dir() {
 	shift 1
 	if [ "$repo" ] && ! [ "$repo" = "$DOCKER_REPO" ]; then
 		for env_file in ../*/.env; do
+			[ -f "$env_file" ] || break
 			(
 				# shellcheck source=/dev/null
 				. "$env_file"
