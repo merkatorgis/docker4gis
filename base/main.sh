@@ -85,10 +85,6 @@ br)
 	;;
 push)
 	"$DOCKER_BASE/push.sh" "$@"
-	#  || exit 1
-	# [ "$tag" ] || exit 0 &&
-	# 	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" .package &&
-	# 	"$DOCKER_BASE/push.sh" .package "$tag"
 	;;
 test)
 	"$DOCKER_BASE/test.sh" "$1"
