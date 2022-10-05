@@ -3,8 +3,8 @@
 # compiles a list of commands to run all repos' containers
 
 # Either empty (we're creating the package image's run.sh script from the
-# build.sh), or 'dirty' (we're running withaout a package image, from the
-# comnent repos in the dev env).
+# build.sh), or 'dirty' (we're running without a package image, from a component
+# or package repo in the dev env).
 directive=$1
 
 BASE=$BASE
