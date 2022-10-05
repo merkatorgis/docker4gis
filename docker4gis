@@ -176,14 +176,15 @@ POSTFIX_DOMAIN=" >>.env
     ;;
 
 build | run | br | push | test | stop | geoserver)
-    [ -f .env ] || {
-        echo "First run $docker4gis init"
-        exit 1
-    }
     set -a
     # shellcheck source=/dev/null
     . .env
     set +a
+
+    [ "$DOCKER4GIS_VERSION" ] || {
+        echo "Current directory not recognised as a docker4gis package or component."
+        exit 1
+    }
 
     # use the docker4gis version that the component scripts are expecting
     [ "$INSTALLED" ] && DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
