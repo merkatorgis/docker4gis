@@ -69,8 +69,7 @@ if ls "$temp_components"/* >/dev/null 2>&1; then
 fi
 mkdir -p "$components"
 
-# Stop here if there aren't any components to run.
-ls "$components"/* >/dev/null 2>&1 || finish
+ls "$components"/* >/dev/null 2>&1 || error "nothing to run"
 
 local_image_exists() {
     docker image tag "$1" "$1" >/dev/null 2>&1
