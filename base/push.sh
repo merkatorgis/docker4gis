@@ -65,7 +65,7 @@ check_git_clear
 
 echo "$version" >version
 git add version
-message="version $version"
+message="version $version [skip ci]"
 log "Committing updated version file"
 git commit version -m "$message"
 log "Pushing updated version file"

@@ -1,5 +1,163 @@
 # docker4gis documentation
 
+How the "new" things work:
+
+New as in:
+
+- docker4gis as an npm package (automatic installation through
+  [npx](https://www.npmjs.com/package/npx));
+- components as seperate git repos;
+  - supporting pipelines in the git hosting environment.
+
+## Setup new project
+
+### Package
+
+Create a repo named `package`. (Fork and) clone the package repo, cd into its
+root, and run `npx --yes docker4gis@latest init`. It will ask you which docker
+registry to use, how the application is called, and whether you want to create
+an "alias" (if you don't have it aready) for the docker4gis command (e.g. `dg`
+instead of `npx --yes docker4gis@latest init`).
+
+The package repo is to manage the application's package image, which is used to
+run a specific version of the application, with all the specific versions of the
+application's different components.
+
+### Components
+
+The application's "components" are the different containers that comprise the
+running application: proxy, app, api, database, geoserver, etc.
+
+To add a component: create a repo for it, (fork and) clone the component repo
+_as a sibling of the package directory_ (this is important), cd into its root,
+and run `dg component` (assuming you had the docker4gis alias created with its
+default name). It will ask you how to call the component, which base docker4gis
+component it should extend, and which version of the base component to use
+(default is `latest`). If the base component has multiple "flavours", the
+flavours are listed, and you're asked to choose one.
+
+The docker4gis base components all reside in their proper repo under
+[https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis/docker4gis-{name}),
+e.g. [proxy](https://github.com/merkatorgis/docker4gis-proxy).
+
+## Build and run
+
+From a component directory, you can build its image by issuing `dg build`. When
+all components are built, you can run the application with `dg run`.
+
+When you make a change to a component, and want to see its effect, you can build
+the component's image and run the application with the new image in one go,
+using `dg br` (for build & run).
+
+## Push
+
+When you're happy with the changes you made to a component, and you've seen it
+running successfully, you should _push_ it by running `dg push` from the
+component directory.
+
+This will push the new image to the Docker registry (presuming you have logged
+in using `docker login`), write a version file to the repo, containing an
+incremented integer version number (starting by 1), tag the git repo with
+`v-{version_number}`, commit the changes, and push them to `origin`.
+
+## Build the package
+
+Each time you `dg run` the application, the package directory is updated with
+the current component version numbers, which are read from the version files
+that `dg push` generates. For components that haven't been pushed yet, a version
+`latest` is listed in the package directory.
+
+Once all components are pushed, you can issue `dg build` from the package
+directory to create a new package image. The package image includes the list of
+component versions, so that running a certain version of the package results in
+component containers of those specific versions.
+
+When the package image is built, it can be pushed as well using `dg push`. Just
+like with a component, this will result in a new version of the package in the
+registry, and a corresponding tag in the git repo. You can try it out locally
+with `dg run {version_number}`.
+
+## Run the package
+
+On a server, use the package image to set up an environment to run the
+application. This mechanism hasn't changed; see [On the server](#on-the-server)
+for how it works.
+
+## Pipeline
+
+Your Git hosting environment (like GitHub, Azure DevOps, BitBucket, or GitLab)
+probably provides a mechanism to automate things when changes are merged. You
+could then create a "pipeline" (this is what it's called in Azure DevOps) that
+is triggered by a merge in the `main` branch, and performs a _build_ and, when
+successful, a _push_. The definition of such a pilepine differs per Git hosting
+environment. As an example, this works for Azure DevOps:
+
+```yaml
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    persistCredentials: "true"
+    clean: "true"
+
+  - script: npx --yes docker4gis@latest build
+    displayName: "docker4gis build"
+
+  - script: docker login -u="$(DOCKER_USERNAME)" -p="$(DOCKER_PASSWORD)" docker.merkator.com
+    displayName: "docker login"
+
+  - script: |
+      git config --global user.email "$(GIT_USER_EMAIL)"
+      git config --global user.name "$(GIT_USER_NAME)"
+    displayName: "git config"
+
+  - script: |
+      git checkout -b main
+      git push --set-upstream origin main
+    displayName: "git undo detached state"
+
+  - script: npx --yes docker4gis@latest push
+    displayName: "docker4gis push"
+```
+
+Note that it can apparently be tricky to get git actions to work from the
+pipeline (which is needed for the version commit and tag as part of the `push`
+command). In the Azure DevOps case, the parameters listed above in the
+`checkout` step, combined with the `git undo detached state` script did the
+trick.
+
+A companion feature of Azure DevOps is [build
+validation](https://learn.microsoft.com/en-us/azure/devops/repos/git/branch-policies?view=azure-devops&tabs=browser#build-validation).
+To enable this for the a branch, you provide another pipeline definition. Then,
+every change to that branch has to come from a pull request; no one can directly
+commit to the designated branch anymore. On creation of the pull request (and
+any subsequent commit to it), the given pipeline is run, and the pull request
+can only be completed (merged) when the pipeline ran successfully.
+
+You could use the following pipeline definition to set up build validation for
+the `main` branch:
+
+```yaml
+trigger:
+  - none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - script: npx --yes docker4gis@latest build
+    displayName: "docker4gis build"
+```
+
+This way, the `main` branch is effectively protected from ever ending up in a
+"non-buildable" state.
+
+Everything below this line is "old", and in the process of being rewritten.
+
 ## Table of contents
 
 - [The general idea](#the-general-idea)
@@ -32,13 +190,14 @@ defined in a Docker _image_, that is stored in a Docker _registry_. Whether the
 container runs on your development laptop, on your staging server, or on your
 production server, if it's started from the same image, it'll run in the same
 context. This way, apps gain a great level of baked-in robustness and
-predictability, which are great enablers for  extension and improvement.
+predictability, which are great enablers for extension and improvement.
 
 ### docker4gis
 
 A docker4gis app/website consists of several Docker images, from which
 interconnected containers are run behind a reverse proxy HTTPS gateway
 container, eg
+
 ```
                   | - app
                   |
@@ -48,10 +207,10 @@ browser - proxy - |    |
                   |    |
                   | - geoserver
 ```
+
 The docker4gis repo provides base images, the scripts to build and run them, as
 well as extend them, and a common interface to all this, called the [_main
 script_](#building-things)
-
 
 ## Getting started
 
@@ -76,7 +235,7 @@ before cloning the repo should do the trick.
 
 ### Fork
 
-Create a fork*) of [the main docker4gis
+Create a fork\*) of [the main docker4gis
 repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with
 GitHub Desktop.
 
@@ -117,8 +276,7 @@ base image facilitates setting up a private registry.
 
 When working on a project with several colleagues, all will have their focus on
 different components. You don't need to constantly build all the images; instead
-you can update all at once to the most recently pushed version through `./app
-latest`. That will remove all existing containers, update all images, and then
+you can update all at once to the most recently pushed version through `./app latest`. That will remove all existing containers, update all images, and then
 run everything. To store a newly built, but not yet versioned image of a
 specific component, use `./app push {component}` (without any tag).
 
@@ -129,18 +287,23 @@ On a server, the images are never built, only run. So the only thing you need
 there, is the little run script that runs the package.
 
 On the server, run:
+
 ```
 docker container run --rm {DOCKER_REGISTRY}{DOCKER_USER}/package:{tag} > {DOCKER_USER}
 ```
+
 e.g.
+
 ```
 docker container run --rm docker.example.com/theapp/package:237 > theapp
 ```
+
 Then, make it executable: `chmod +x theapp` and edit the needed environment
 values.
 
 When you run it, pass a specific tag, and it will pull the images from the
 registry, and run the containers. So the example is run like:
+
 ```
 ./theapp 237
 ```
@@ -169,8 +332,7 @@ component directories, and look in the (optional) `test` directory instead.
 
 ### Build and run
 
-Any unit tests are run automatically before building a component with `./app
-build {component}` - _if any test fails, the build is canceled_.
+Any unit tests are run automatically before building a component with `./app build {component}` - _if any test fails, the build is canceled_.
 
 And since in practise, you'll repeatedly want to see a successfully built image
 running your recent changes, and check if everything is ok, there is this
@@ -187,10 +349,12 @@ you through [NPM](https://www.npmjs.com/package/bats), if available.
 
 You'll want to include the common [helper file](../base/test_helper/load.bash)
 like this:
+
 ```bash
 #!/usr/bin/env bats
 load "$DOCKER_BASE"/test_helper/load.bash
 ```
+
 This will load the [bats-assert](https://github.com/bats-core/bats-assert) and
 [bats-file](https://github.com/bats-core/bats-file) modules.
 
@@ -203,6 +367,7 @@ file, except for the extra .bats suffix.
 In any bash commands under test, you'll want to include the [bats plugin
 file](../base/.plugins/bats/.bats.bash) like this (the test runner installs it
 in your home directory):
+
 ```bash
 #!/bin/bash
 # shellcheck source=/dev/null
@@ -213,6 +378,7 @@ source ~/.bats.bash
 
 This plugin provides the `@sub` function as a means to break up shell scripts in
 small testable subroutines, eg:
+
 ```bash
 #!/bin/bash
 ID=$1
@@ -250,6 +416,7 @@ The error code of the actual subcommand is available in `$status`.
 
 In case the main script needs to survive a failing subroutine, use `@subvive`
 instead of `@sub`, eg:
+
 ```bash
 ...
 if @subvive 1 daytime; then
@@ -259,11 +426,11 @@ fi
 ...
 ```
 
-
 ##### Validations
 
 In the subroutine scripts, include the plugin as well, and make generously use
 of its myriad of assertion functions to validate input parameters, eg:
+
 ```bash
 #!/bin/bash
 ...
@@ -278,9 +445,11 @@ assert_integer_min_max_length MAX_TIME_M "$MAX_TIME_M" 00 59 2
 assert_integer_min_max_length cur_time "$cur_time" 0000 2359 4
 ...
 ```
+
 Any violated assertion will make the script fail with error 22 EINVAL, using the
 given name and value in the error message. So from a `.bats` test script, use
 `assert_failure 22` to test for proper input invalidation, eg:
+
 ```bash
 #!/usr/bin/env bats
 load "$DOCKER_BASE"/test_helper/load.bash
@@ -297,9 +466,10 @@ load "$DOCKER_BASE"/test_helper/load.bash
 }
 ...
 ```
+
 (Note that these tests use the [helper](#helper) `$cmd` variable.)
 
-## Base images 
+## Base images
 
 - cron
 - elm
@@ -326,7 +496,8 @@ load "$DOCKER_BASE"/test_helper/load.bash
 - certificates
 - [Cloud development environment](clouddevenv.md)
 
-*) fork & merkatorgis:
+\*) fork & merkatorgis:
+
 - If you fix, extend, or otherwise improve things, please create a pull request,
   so that it can be merged into the originating merkatorgis/docker4gis
   repository.

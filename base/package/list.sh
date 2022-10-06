@@ -3,8 +3,8 @@
 # compiles a list of commands to run all repos' containers
 
 # Either empty (we're creating the package image's run.sh script from the
-# build.sh), or 'dirty' (we're running withaout a package image, from the
-# comnent repos in the dev env).
+# build.sh), or 'dirty' (we're running without a package image, from a component
+# or package repo in the dev env).
 directive=$1
 
 BASE=$BASE
@@ -30,22 +30,29 @@ error() {
 
 # In the dev env, component repos should be found as sibblings of the current directory.
 for file in ../*/build.sh; do
+    [ -f "$file" ] || break
     dir=$(dirname "$file")
     if [ -f "$dir"/.env ]; then
-        # We have a build.sh and a .env; we assume this is a component repo.
-        version=latest
-        version_file="$dir"/version
-        if [ -f "$version_file" ]; then
-            version=$(cat "$version_file")
-        fi
         (
+            DOCKER_REPO=
             # shellcheck source=/dev/null
             . "$dir"/.env
-            if [ "$DOCKER_REPO" = package ]; then
-                echo "$dir" >"$package_dir_container"
-            else
-                echo "$version" >"$temp_components"/"$DOCKER_REPO"
-            fi
+            # If there's a build.sh and a .env th a DOCKER_REPO, then it must be
+            # a docker4gis repo directory.
+            [ "$DOCKER_REPO" ] && {
+                version=latest
+                version_file="$dir"/version
+                if [ -f "$version_file" ]; then
+                    version=$(cat "$version_file")
+                fi
+                if [ "$DOCKER_REPO" = package ]; then
+                    # Remember that this was the package directory.
+                    echo "$dir" >"$package_dir_container"
+                else
+                    # Add this repo's version to the list of components.
+                    echo "$version" >"$temp_components"/"$DOCKER_REPO"
+                fi
+            }
         )
     fi
 done
@@ -61,6 +68,8 @@ if ls "$temp_components"/* >/dev/null 2>&1; then
     cp "$temp_components"/* "$components"
 fi
 mkdir -p "$components"
+
+ls "$components"/* >/dev/null 2>&1 || error "nothing to run"
 
 local_image_exists() {
     docker image tag "$1" "$1" >/dev/null 2>&1

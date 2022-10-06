@@ -34,19 +34,28 @@ this() {
 }
 
 dir() {
+	# Perform the current action in the given component/package directory, with
+	# the given parameters.
 	repo=$1
 	shift 1
 	if [ "$repo" ] && ! [ "$repo" = "$DOCKER_REPO" ]; then
-		dir=$(find .. -maxdepth 1 -name "$repo" 2>/dev/null)
-		[ "$dir" ] || dir=$(find .. -maxdepth 1 -name "$repo.*" 2>/dev/null)
-		[ "$dir" ] || {
-			echo "Cannot find component directory $repo"
-			exit 1
-		}
-		pushd "$dir" >/dev/null || exit 1
-		"$DOCKER_BASE"/../docker4gis "$action" "$@"
-		popd >/dev/null || exit 1
-		exit 0
+		for env_file in ../*/.env; do
+			[ -f "$env_file" ] || break
+			(
+				# shellcheck source=/dev/null
+				. "$env_file"
+				if [ "$repo" = "$DOCKER_REPO" ]; then
+					dir=$(dirname "$env_file")
+					# echo " ! switching to $dir"
+					pushd "$dir" >/dev/null || exit 1
+					"$DOCKER_BASE"/../docker4gis "$action" "$@"
+					popd >/dev/null || exit 1
+					exit 0
+				fi
+			)
+		done
+		echo "Cannot find directory for $repo."
+		exit 1
 	fi
 }
 
@@ -58,6 +67,7 @@ build)
 	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh"
 	;;
 run)
+	dir package "$@"
 	tag=$1
 	if [ "$tag" ]; then
 		eval "$(docker container run --rm "$DOCKER_REGISTRY""$DOCKER_USER"/package:"$tag")"
@@ -76,10 +86,6 @@ br)
 	;;
 push)
 	"$DOCKER_BASE/push.sh" "$@"
-	#  || exit 1
-	# [ "$tag" ] || exit 0 &&
-	# 	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" .package &&
-	# 	"$DOCKER_BASE/push.sh" .package "$tag"
 	;;
 test)
 	"$DOCKER_BASE/test.sh" "$1"
