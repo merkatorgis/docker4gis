@@ -49,6 +49,9 @@ When you make a change to a component, and want to see its effect, you can build
 the component's image and run the application with the new image in one go,
 using `dg br` (for build & run).
 
+Note that you can pass the component name (or `package`) to build the image from
+a sibling repo, e.g. `dg build app`, or `dg br proxy`.
+
 ## Push
 
 When you're happy with the changes you made to a component, and you've seen it
@@ -127,8 +130,11 @@ steps:
 Note that it can apparently be tricky to get git actions to work from the
 pipeline (which is needed for the version commit and tag as part of the `push`
 command). In the Azure DevOps case, the parameters listed above in the
-`checkout` step, combined with the `git undo detached state` script did the
-trick.
+`checkout` step, combined with the `git config` and `git undo detached state`
+scripts did the trick.
+
+Now that the `push` happens automatically, you should refrain from issuing it
+"manually" from your development environment.
 
 A companion feature of Azure DevOps is [build
 validation](https://learn.microsoft.com/en-us/azure/devops/repos/git/branch-policies?view=azure-devops&tabs=browser#build-validation).
