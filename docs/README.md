@@ -50,7 +50,7 @@ the component's image and run the application with the new image in one go,
 using `dg br` (for build & run).
 
 Note that you can pass the component name (or `package`) to build the image from
-a sibling repo, e.g. `dg build app`, or `dg br proxy`.
+a sibling directory, e.g. `dg build app`, or `dg br proxy`.
 
 ## Push
 
@@ -144,8 +144,8 @@ commit to the designated branch anymore. On creation of the pull request (and
 any subsequent commit to it), the given pipeline is run, and the pull request
 can only be completed (merged) when the pipeline ran successfully.
 
-You could use the following pipeline definition to set up build validation for
-the `main` branch:
+In Azure DevOps, you could use the following pipeline definition to set up build
+validation for the `main` branch:
 
 ```yaml
 trigger:
