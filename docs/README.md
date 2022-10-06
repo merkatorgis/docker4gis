@@ -4,8 +4,10 @@ How the "new" things work:
 
 New as in:
 
-- docker4gis as an npm package;
-- components as seperate git repos.
+- docker4gis as an npm package (automatic installation through
+  [npx](https://www.npmjs.com/package/npx));
+- components as seperate git repos;
+  - supporting pipelines in the git hosting environment.
 
 ## Setup new project
 
@@ -44,14 +46,115 @@ From a component directory, you can build its image by issuing `dg build`. When
 all components are built, you can run the application with `dg run`.
 
 When you make a change to a component, and want to see its effect, you can build
-the component's image and run the application withhe new image in one go, using
-`dg br` (for build & run).
+the component's image and run the application with the new image in one go,
+using `dg br` (for build & run).
 
 ## Push
 
 When you're happy with the changes you made to a component, and you've seen it
 running successfully, you should _push_ it by running `dg push` from the
 component directory.
+
+This will push the new image to the Docker registry (presuming you have logged
+in using `docker login`), write a version file to the repo, containing an
+incremented integer version number (starting by 1), tag the git repo with
+`v-{version_number}`, commit the changes, and push them to `origin`.
+
+## Build the package
+
+Each time you `dg run` the application, the package directory is updated with
+the current component version numbers, which are read from the version files
+that `dg push` generates. For components that haven't been pushed yet, a version
+`latest` is listed in the package directory.
+
+Once all components are pushed, you can issue `dg build` from the package
+directory to create a new package image. The package image includes the list of
+component versions, so that running a certain version of the package results in
+component containers of those specific versions.
+
+When the package image is built, it can be pushed as well using `dg push`. Just
+like with a component, this will result in a new version of the package in the
+registry, and a corresponding tag in the git repo. You can try it out locally
+with `dg run {version_number}`.
+
+## Run the package
+
+On a server, use the package image to set up an environment to run the
+application. This mechanism hasn't changed; see [On the server](#on-the-server)
+for how it works.
+
+## Pipeline
+
+Your Git hosting environment (like GitHub, Azure DevOps, BitBucket, or GitLab)
+probably provides a mechanism to automate things when changes are merged. You
+could then create a "pipeline" (this is what it's called in Azure DevOps) that
+is triggered by a merge in the `main` branch, and performs a _build_ and, when
+successful, a _push_. The definition of such a pilepine differs per Git hosting
+environment. As an example, this works for Azure DevOps:
+
+```yaml
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    persistCredentials: "true"
+    clean: "true"
+
+  - script: npx --yes docker4gis@latest build
+    displayName: "docker4gis build"
+
+  - script: docker login -u="$(DOCKER_USERNAME)" -p="$(DOCKER_PASSWORD)" docker.merkator.com
+    displayName: "docker login"
+
+  - script: |
+      git config --global user.email "$(GIT_USER_EMAIL)"
+      git config --global user.name "$(GIT_USER_NAME)"
+    displayName: "git config"
+
+  - script: |
+      git checkout -b main
+      git push --set-upstream origin main
+    displayName: "git undo detached state"
+
+  - script: npx --yes docker4gis@latest push
+    displayName: "docker4gis push"
+```
+
+Note that it can apparently be tricky to get git actions to work from the
+pipeline (which is needed for the version commit and tag as part of the `push`
+command). In the Azure DevOps case, the parameters listed above in the
+`checkout` step, combined with the `git undo detached state` script did the
+trick.
+
+A companion feature of Azure DevOps is [build
+validation](https://learn.microsoft.com/en-us/azure/devops/repos/git/branch-policies?view=azure-devops&tabs=browser#build-validation).
+To enable this for the a branch, you provide another pipeline definition. Then,
+every change to that branch has to come from a pull request; no one can directly
+commit to the designated branch anymore. On creation of the pull request (and
+any subsequent commit to it), the given pipeline is run, and the pull request
+can only be completed (merged) when the pipeline ran successfully.
+
+You could use the following pipeline definition to set up build validation for
+the `main` branch:
+
+```yaml
+trigger:
+  - none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - script: npx --yes docker4gis@latest build
+    displayName: "docker4gis build"
+```
+
+This way, the `main` branch is effectively protected from ever ending up in a
+"non-buildable" state.
 
 Everything below this line is "old", and in the process of being rewritten.
 
