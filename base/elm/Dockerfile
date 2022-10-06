@@ -7,6 +7,6 @@ RUN npm install create-elm-app@5.22.0 -g
 WORKDIR /elm
 ONBUILD COPY . .
 ONBUILD RUN npm update caniuse-lite browserslist
-ONBUILD RUN [ -d elm-stuff ] && rm -rf elm-stuff
+ONBUILD RUN rm -rf elm-stuff || true
 ONBUILD RUN npm install
 ONBUILD RUN elm-app build
