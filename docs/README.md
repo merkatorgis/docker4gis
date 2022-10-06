@@ -38,7 +38,7 @@ The docker4gis base components all reside in their proper repo under
 [https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis/docker4gis-{name}),
 e.g. [proxy](https://github.com/merkatorgis/docker4gis-proxy).
 
-### Build and run
+## Build and run
 
 From a component directory, you can build its image by issuing `dg build`. When
 all components are built, you can run the application with `dg run`.
@@ -47,7 +47,7 @@ When you make a change to a component, and want to see its effect, you can build
 the component's image and run the application withhe new image in one go, using
 `dg br` (for build & run).
 
-### Push
+## Push
 
 When you're happy with the changes you made to a component, and you've seen it
 running successfully, you should _push_ it by running `dg push` from the
