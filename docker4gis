@@ -82,7 +82,8 @@ init)
     [ "$DOCKER_REGISTRY" ] && DOCKER_REGISTRY="$DOCKER_REGISTRY"/
 
     [ "$DOCKER_USER" ] && shift 1
-    [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry) : " DOCKER_USER
+    suggestion=$(basename "$(realpath ..)")
+    [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
     [ "$DOCKER_USER" ] || exit 1
 
     DOCKER4GIS_VERSION=$(node -pe "require('$DOCKER4GIS_HOME/package.json').version")
