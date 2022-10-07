@@ -67,10 +67,9 @@ dir() {
 
 case "$action" in
 build)
-	dir "$@"
-	# TODO
-	# this test &&
-	"$DOCKER_BASE/.docker4gis/docker4gis/build.sh"
+	dir "$1"
+	this test &&
+		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh"
 	;;
 run)
 	dir package "$@"
@@ -91,10 +90,12 @@ br)
 		this run
 	;;
 push)
-	"$DOCKER_BASE/push.sh" "$@"
+	dir "$1"
+	"$DOCKER_BASE/push.sh"
 	;;
 test)
-	"$DOCKER_BASE/test.sh" "$1"
+	dir "$1"
+	"$DOCKER_BASE/test.sh"
 	;;
 stop)
 	"$DOCKER_BASE/stop.sh"
