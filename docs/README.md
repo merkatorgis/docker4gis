@@ -13,11 +13,11 @@ New as in:
 
 ### Package
 
-Create a repo named `package`. (Fork and) clone the package repo, cd into its
-root, and run `npx --yes docker4gis@latest init`. It will ask you which docker
-registry to use, how the application is called, and whether you want to create
-an "alias" (if you don't have it aready) for the docker4gis command (e.g. `dg`
-instead of `npx --yes docker4gis@latest init`).
+Create a repo named `package`. Clone the package repo, cd into its root, and run
+`npx --yes docker4gis@latest init`. It will ask you which docker registry to
+use, how the application is called, and whether you want to create an "alias"
+(if you don't have it aready) for the docker4gis command (e.g. `dg` instead of
+`npx --yes docker4gis@latest init`).
 
 The package repo is to manage the application's package image, which is used to
 run a specific version of the application, with all the specific versions of the
@@ -28,10 +28,9 @@ application's different components.
 The application's "components" are the different containers that comprise the
 running application: proxy, app, api, database, geoserver, etc.
 
-To add a component: create a repo for it, (fork and) clone the component repo
-_as a sibling of the package directory_ (this is important), cd into its root,
-and run `dg component` (assuming you had the docker4gis alias created with its
-default name). It will ask you how to call the component, which base docker4gis
+To add a component: create a repo for it, clone the component repo _as a sibling
+of the package directory_ (this is important), cd into its root, and run `dg component` (assuming you had the docker4gis alias created with its default
+name). It will ask you how to call the component, which base docker4gis
 component it should extend, and which version of the base component to use
 (default is `latest`). If the base component has multiple "flavours", the
 flavours are listed, and you're asked to choose one.
@@ -93,48 +92,19 @@ probably provides a mechanism to automate things when changes are merged. You
 could then create a "pipeline" (this is what it's called in Azure DevOps) that
 is triggered by a merge in the `main` branch, and performs a _build_ and, when
 successful, a _push_. The definition of such a pilepine differs per Git hosting
-environment. As an example, this works for Azure DevOps:
+environment. For Azure DevOps, a basic pipeline is generated on `dg init` and
+`dg component`.
 
-```yaml
-trigger:
-  - main
+Note that the pipeline needs access to the Docker registry; there's a variable
+`DOCKER_PASSWORD` that you should provision. Also, Git permissions are required
+for the pipeline to commit new version files and tags. In Azure DevOps, this is
+configured in Project Settings | Repsitories | All Repositories | Security; the
+user "{project name} Build Service ({organsation name})" should get "Allow" for
+the items "Bypass policies when pushing", "Contribute", "Create tag", and
+"Read".
 
-pool:
-  vmImage: ubuntu-latest
-
-steps:
-  - checkout: self
-    persistCredentials: "true"
-    clean: "true"
-
-  - script: npx --yes docker4gis@latest build
-    displayName: "docker4gis build"
-
-  - script: docker login -u="$(DOCKER_USERNAME)" -p="$(DOCKER_PASSWORD)" docker.merkator.com
-    displayName: "docker login"
-
-  - script: |
-      git config --global user.email "$(GIT_USER_EMAIL)"
-      git config --global user.name "$(GIT_USER_NAME)"
-    displayName: "git config"
-
-  - script: |
-      git checkout -b main
-      git push --set-upstream origin main
-    displayName: "git undo detached state"
-
-  - script: npx --yes docker4gis@latest push
-    displayName: "docker4gis push"
-```
-
-Note that it can apparently be tricky to get git actions to work from the
-pipeline (which is needed for the version commit and tag as part of the `push`
-command). In the Azure DevOps case, the parameters listed above in the
-`checkout` step, combined with the `git config` and `git undo detached state`
-scripts did the trick.
-
-Now that the `push` happens automatically, you should refrain from issuing it
-"manually" from your development environment.
+Remember that now the `push` action happens automatically, you should refrain
+from issuing it "manually" from your development environment.
 
 A companion feature of Azure DevOps is [build
 validation](https://learn.microsoft.com/en-us/azure/devops/repos/git/branch-policies?view=azure-devops&tabs=browser#build-validation).
@@ -144,23 +114,9 @@ commit to the designated branch anymore. On creation of the pull request (and
 any subsequent commit to it), the given pipeline is run, and the pull request
 can only be completed (merged) when the pipeline ran successfully.
 
-In Azure DevOps, you could use the following pipeline definition to set up build
-validation for the `main` branch:
-
-```yaml
-trigger:
-  - none
-
-pool:
-  vmImage: ubuntu-latest
-
-steps:
-  - script: npx --yes docker4gis@latest build
-    displayName: "docker4gis build"
-```
-
-This way, the `main` branch is effectively protected from ever ending up in a
-"non-buildable" state.
+A basic build validation pipeline, that runs the _build_ action, is generated by
+`dg init` and `dg component` as well. This way, the `main` branch is effectively
+protected from ever ending up in a "non-buildable" state.
 
 Everything below this line is "old", and in the process of being rewritten.
 
