@@ -15,6 +15,58 @@ fi
 DOCKER4GIS_HOME=$(realpath "$DOCKER4GIS_HOME")
 DOCKER_BASE="$DOCKER4GIS_HOME"/base
 
+pipeline() {
+    main=$1
+
+    write() {
+        echo "$2" >>"$1"
+    }
+
+    init() {
+        echo -n "" >"$1"
+        write "$1" "trigger:
+- $2
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:"
+    }
+
+    build() {
+        write "$1" "- script: docker login -u=$DOCKER_USER -p='\$(DOCKER_PASSWORD)' $DOCKER_REGISTRY
+  displayName: 'docker login'
+
+- script: npx --yes docker4gis@latest build
+  displayName: 'docker4gis build'"
+    }
+
+    build_validation=azure-pipeline-build-validation.yml
+    init "$build_validation" none
+    build "$build_validation"
+
+    continuous_integration=azure-pipeline-continuous-integration.yml
+    init "$continuous_integration" "$main"
+    write "$continuous_integration" "- checkout: self
+  persistCredentials: 'true'
+  clean: 'true'
+"
+    build "$continuous_integration"
+    write "$continuous_integration" "
+- script: |
+    git config --global user.email 'pipeline@azure.com'
+    git config --global user.name 'Azure Pipeline'
+  displayName: 'git config'
+
+- script: |
+    git checkout -b $main
+    git push --set-upstream origin $main
+  displayName: 'git undo detached state'
+  
+- script: npx --yes docker4gis@latest push
+  displayName: 'docker4gis push'"
+}
+
 case "$action" in
 
 docker4gis)
@@ -84,7 +136,7 @@ init)
     [ "$DOCKER_USER" ] && shift 1
     suggestion=$(basename "$(realpath ..)")
     [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
-    [ "$DOCKER_USER" ] || exit 1
+    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 
     DOCKER4GIS_VERSION=$(node -pe "require('$DOCKER4GIS_HOME/package.json').version")
 
@@ -109,6 +161,7 @@ POSTFIX_DOMAIN=" >>.env
 
     cp -r "$DOCKER4GIS_HOME"/base/package/template .
     mkdir -p components
+    pipeline main
     bash -i "$0" alias TEST
     ;;
 
@@ -185,6 +238,8 @@ component)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$repo" >>.env
+
+    pipeline main
     ;;
 
 build | run | br | push | test | stop | geoserver)
