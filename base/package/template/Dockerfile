@@ -1,1 +1,1 @@
-FROM docker4gis/package:stale
+FROM docker4gis/package:npx-356
