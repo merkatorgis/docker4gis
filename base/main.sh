@@ -39,6 +39,8 @@ dir() {
 	repo=$1
 	shift 1
 	if [ "$repo" ] && ! [ "$repo" = "$DOCKER_REPO" ]; then
+		dir_found=$(mktemp)
+		rm "$dir_found"
 		for env_file in ../*/.env; do
 			[ -f "$env_file" ] || break
 			(
@@ -46,16 +48,20 @@ dir() {
 				. "$env_file"
 				if [ "$repo" = "$DOCKER_REPO" ]; then
 					dir=$(dirname "$env_file")
-					# echo " ! switching to $dir"
-					pushd "$dir" >/dev/null || exit 1
+					touch "$dir_found"
+					# echo " ! cd to $dir"
+					cd "$dir" || exit 1
 					"$DOCKER_BASE"/../docker4gis "$action" "$@"
-					popd >/dev/null || exit 1
-					exit 0
 				fi
 			)
 		done
-		echo "Cannot find directory for $repo."
-		exit 1
+		if [ -f "$dir_found" ]; then
+			rm "$dir_found"
+			exit 0
+		else
+			echo "Cannot find directory for $repo."
+			exit 1
+		fi
 	fi
 }
 
