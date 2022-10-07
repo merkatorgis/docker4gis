@@ -8,20 +8,26 @@ DOCKER_USER=$DOCKER_USER
 
 mkdir -p conf
 
+finish() {
+    rm -rf conf
+    exit "${1:-0}"
+}
+
 if [ "$extension" ]; then
     # We're building a concrete application's package image; compile a list of
     # commands to run its containers (otherwise, we're building the base
     # docker4gis/package image).
-    echo '#!/bin/bash' >conf/run.sh
-    # echo 'set -x' >>conf/run.sh
-    # echo 'find .' >>conf/run.sh
-    chmod +x conf/run.sh
+    runscript=conf/run.sh
+    echo '#!/bin/bash' >"$runscript"
+    # echo 'set -x' >>"$runscript"
+    # echo 'find .' >>"$runscript"
+    chmod +x "$runscript"
     here=$(realpath "$(dirname "$0")")
     # shellcheck disable=SC2016
     # Set BASE to the .docker4gis directory that was copied out of the base
     # docker4gis/package image, containing both build.sh ($0) and list.sh,
     # put there by the Dockerfile.
-    BASE='"$(dirname "$0")"' "$here"/list.sh >>conf/run.sh || exit 1
+    BASE='"$(dirname "$0")"' "$here"/list.sh >>"$runscript" || finish 1
 fi
 
 cp -r "$DOCKER_BASE"/.docker4gis conf
@@ -30,4 +36,4 @@ docker image build \
     --build-arg DOCKER_REGISTRY="$DOCKER_REGISTRY" \
     -t "$IMAGE" .
 
-rm -rf conf
+finish
