@@ -37,8 +37,8 @@ for file in ../*/build.sh; do
             DOCKER_REPO=
             # shellcheck source=/dev/null
             . "$dir"/.env
-            # If there's a build.sh and a .env th a DOCKER_REPO, then it must be
-            # a docker4gis repo directory.
+            # If there's a build.sh, a .env and a DOCKER_REPO, then it must
+            # be a docker4gis repo directory.
             [ "$DOCKER_REPO" ] && {
                 version=latest
                 version_file="$dir"/version
@@ -46,9 +46,22 @@ for file in ../*/build.sh; do
                     version=$(cat "$version_file")
                 fi
                 if [ "$DOCKER_REPO" = package ]; then
-                    # Remember that this was the package directory.
+                    # Just remember that this was the package directory.
                     echo "$dir" >"$package_dir_container"
                 else
+                    [ "$version" = latest ] || {
+                        # If the version was updated (to something other than
+                        # "latest"), then apparently the image was pushed. Since
+                        # that could have been done by the pipeline (out of our
+                        # sight), we might locally have a now unwanted leftover
+                        # "latest" image.
+                        current_version_file=./components/"$DOCKER_REPO"
+                        [ -f "$current_version_file" ] && current_version=$(cat "$current_version_file")
+                        if ! [ "$current_version" = "$version" ]; then
+                            image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
+                            docker image rm -f "$image":latest >/dev/null 2>&1
+                        fi
+                    }
                     # Add this repo's version to the list of components.
                     echo "$version" >"$temp_components"/"$DOCKER_REPO"
                 fi
