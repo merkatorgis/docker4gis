@@ -18,7 +18,7 @@ export RESTART
 # the run script (instead of a container's root user)
 mkdir -p "$DOCKER_BINDS_DIR"/fileport/"$DOCKER_USER"
 
-IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
+IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:$tag
 export IMAGE
 
 CONTAINER=$DOCKER_USER-$repo

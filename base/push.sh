@@ -40,11 +40,14 @@ log() {
     echo "• $1..."
 }
 
-image=$DOCKER_REGISTRY$DOCKER_USER/$DOCKER_REPO
+image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
+
 log "Tagging image"
 docker image tag "$image":latest "$image":"$version"
+
 log "Pushing image"
 docker image push "$image":"$version"
+
 log "Removing local 'latest' image"
 docker image rm -f "$image":latest
 
@@ -63,15 +66,21 @@ push() {
 # stop if git repo received new changes
 check_git_clear
 
+log "Writing version file"
 echo "$version" >version
 git add version
+
 message="version $version [skip ci]"
-log "Committing updated version file"
+
+log "Committing version file"
 git commit version -m "$message"
-log "Pushing updated version file"
+
+log "Pushing the commit"
 push
 
+log "Tagging the repo"
 tag="v-$version"
 git tag -a "$tag" -f -m "$message"
-log "Pushing updated version tag"
+
+log "Pushing the tag"
 push "$tag" -f

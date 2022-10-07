@@ -49,7 +49,7 @@ if [ "$docker4gis_base_image" ]; then
 fi
 
 [ "$repo" = .package ] && repo=package
-IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:latest
+IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
 export IMAGE
 echo
 echo "Building $IMAGE"

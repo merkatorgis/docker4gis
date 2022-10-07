@@ -70,7 +70,7 @@ run)
 	dir package "$@"
 	tag=$1
 	if [ "$tag" ]; then
-		eval "$(docker container run --rm "$DOCKER_REGISTRY""$DOCKER_USER"/package:"$tag")"
+		eval "$(docker container run --rm "$DOCKER_REGISTRY"/"$DOCKER_USER"/package:"$tag")"
 	else
 		if runscript=$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh dirty); then
 			eval "$runscript" && echo &&
