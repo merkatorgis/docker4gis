@@ -130,8 +130,7 @@ init)
     [ "$DOCKER_REGISTRY" ] && shift 1
     [ "$DOCKER_REGISTRY" ] || read -rp "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " DOCKER_REGISTRY
     [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
-    [ "$DOCKER_REGISTRY" = 'h' ] && DOCKER_REGISTRY=
-    [ "$DOCKER_REGISTRY" ] && DOCKER_REGISTRY="$DOCKER_REGISTRY"/
+    [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
     [ "$DOCKER_USER" ] && shift 1
     suggestion=$(basename "$(realpath ..)")

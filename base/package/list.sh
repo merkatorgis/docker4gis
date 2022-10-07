@@ -82,7 +82,7 @@ add_repo() {
 
     echo "Fetching $repo..." >&2
 
-    local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
+    local image=$DOCKER_REGISTRY/$DOCKER_USER/$repo
     local tag
 
     if [ "$directive" = dirty ] && local_image_exists "$image:latest"; then

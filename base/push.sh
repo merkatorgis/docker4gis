@@ -40,7 +40,7 @@ log() {
     echo "• $1..."
 }
 
-image=$DOCKER_REGISTRY$DOCKER_USER/$DOCKER_REPO
+image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 log "Tagging image"
 docker image tag "$image":latest "$image":"$version"
 log "Pushing image"
