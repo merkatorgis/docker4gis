@@ -9,11 +9,11 @@ current=0
 update() {
 	mysql.sh "$schema_name" -e "
 		DROP FUNCTION IF EXISTS __version;
-		DELIMITER $$
+		DELIMITER \$\$
 		CREATE FUNCTION __version() RETURNS int DETERMINISTIC
 		BEGIN
 			RETURN $current;
-		END$$
+		END\$\$
 	" >/dev/null
 }
 
