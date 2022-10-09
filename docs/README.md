@@ -135,7 +135,7 @@ So, in short, what you typically do is:
    registry, using `dg push`.
 1. Once all components are pushed, `dg build` and `dg push` the package as well.
 1. On the server:
-   1. Run the package image to echo the script that runs the application:
+   1. Run the package image (once) to echo the script that runs the application:
       `docker container run --rm {DOCKER_REGISTRY}/{DOCKER_USER}/package:{tag} > {file_name}`, e.g. `docker container run --rm docker.example.com/theapp/package:237 > theapp`.
    1. Edit the variables in the file to match the environment.
    1. Make the file executable: `chmod +x theapp`.
