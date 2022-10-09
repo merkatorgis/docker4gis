@@ -140,7 +140,7 @@ So, in short, what you typically do is:
    1. Edit the variables in the file to match the environment.
    1. Make the file executable: `chmod +x theapp`.
    1. Execute it: `./theapp 237`.
-1. Optionally, configure the repos in the Git hosting environment to use the
+1. Optionally, configure the repos in your Git hosting environment to use the
    _pipelines_:
    1. Use the _continuous integration_ pipeline to (build and) push
       automatically on each commit to the `main` branch.
