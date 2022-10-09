@@ -1,19 +1,6 @@
 #!/bin/bash
 
-DOCKER_BASE=$(realpath "$(dirname "$0")")
-DOCKER_APP_DIR=$(realpath ..)
-
-dir=$DOCKER_APP_DIR/${1:-test}
-
-if ! [ -d "$dir" ]; then
-    if [ "$dir" = "$DOCKER_APP_DIR/test" ]; then
-        echo "> WARNING - no integration tests found; consider adding some."
-        exit 0
-    else
-        echo "> ERROR - cannot find directory '$dir'."
-        exit 22
-    fi
-fi
+dir=$(realpath .)
 
 sh_tests=$(find "$dir" -name "test.sh")
 bats_tests=$(find "$dir" -name "*.bats")
@@ -21,6 +8,9 @@ bats_tests=$(find "$dir" -name "*.bats")
 if [ "$sh_tests" ] || [ "$bats_tests" ]; then
     echo "Running tests in $dir..."
 else
+    test_type='unit'
+    [ "$DOCKER_REPO" = package ] && test_type='integration'
+    echo "> WARNING - no $test_type tests found; consider adding some."
     exit 0
 fi
 
@@ -29,11 +19,17 @@ if [ "$sh_tests" ]; then
 fi
 
 if [ "$bats_tests" ]; then
-    "$DOCKER_BASE"/.plugins/bats/install.sh
-    if ! command -v bats >/dev/null 2>&1; then
+    if command -v bats >/dev/null 2>&1; then
+        bats='bats'
+    else
+        bats='npx bats'
+    fi
+    if "$bats" -v >/dev/null 2>&1; then
+        cp "$(dirname "$0")"/.plugins/bats/.bats.bash ~
+    else
         bats_url=https://github.com/bats-core/bats-core
         echo "> WARNING - cannot test without [bats]($bats_url); continuing without running any tests now."
-        exit
+        exit 1
     fi
-    time bats -r "$dir"
+    time "$bats" -r "$dir"
 fi
