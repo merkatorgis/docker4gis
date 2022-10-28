@@ -209,6 +209,9 @@ COPY conf/dump_restore /usr/local/bin/restore_schema
 COPY conf/postgres /etc/postgresql
 ENV CONFIG_FILE=/etc/postgresql/postgresql.conf
 RUN mv "${CONFIG_FILE}" "${CONFIG_FILE}.template"
+RUN [ "$POSTGRESQL_VERSION" -le 11 ] \
+	&& echo 'hostssl all             all             all                     md5       clientcert=1' >> /etc/postgresql/pg_hba.conf \
+	|| echo 'hostssl all             all             all                     cert' >> /etc/postgresql/pg_hba.conf
 
 # include a "client" image's conf scripts where onstart.sh will find them
 ONBUILD COPY conf /tmp/conf
