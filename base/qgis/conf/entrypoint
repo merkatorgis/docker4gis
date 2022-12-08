@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+pgservice() {
+	echo "$1=$2" >>"$PGSERVICEFILE"
+}
+
+if [ "$1" = 'qgis' ]; then
+	pgservice host "$DOCKER_USER"-postgis
+	pgservice user "$PGUSER"
+	pgservice password "$PGPASSWORD"
+	pgservice dbname "$PGDATABASE"
+
+	exec /usr/local/bin/start-server
+fi
+
+exec "$@"
