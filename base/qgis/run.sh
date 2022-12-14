@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
