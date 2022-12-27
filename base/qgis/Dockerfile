@@ -3,7 +3,7 @@ FROM camptocamp/qgis-server:3.22
 # Install php.
 RUN apt update
 RUN apt install -y php libapache2-mod-php
-COPY conf/info.php /var/www/html/
+COPY conf/upload /var/www/html/upload
 
 # Run the qgis-mapserv-wrapper script for urls starting with /qgis/, instead of
 # for _all_ urls, so that we can run php scripts as well.
