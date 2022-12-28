@@ -9,6 +9,10 @@ COPY conf/upload /var/www/html/upload
 # for _all_ urls, so that we can run php scripts as well.
 RUN sed -i 's~"\^/\.\*"~"^/qgis/.*"~g' /etc/apache2/conf-enabled/qgis.conf
 
+COPY conf/entrypoint /usr/local/bin
+ENTRYPOINT [ "entrypoint" ]
+CMD [ "qgis" ]
+
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh
 COPY run.sh /.docker4gis/run.sh
