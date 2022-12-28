@@ -3,6 +3,12 @@ FROM camptocamp/qgis-server:3.22
 # Install php.
 RUN apt update
 RUN apt install -y php libapache2-mod-php
+
+# Higher file upload limit.
+RUN echo upload_max_filesize = 100M >>/etc/php/7.4/apache2/php.ini
+RUN echo post_max_size = 110M >>/etc/php/7.4/apache2/php.ini
+
+# Our php app.
 COPY conf/upload /var/www/html/upload
 
 # Run the qgis-mapserv-wrapper script for urls starting with /qgis/, instead of

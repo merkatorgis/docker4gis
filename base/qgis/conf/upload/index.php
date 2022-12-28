@@ -41,8 +41,8 @@
       <form enctype="multipart/form-data" action="upload.php" method="post">
         <p>
           <label>
-            Select File<br />
-            <input type="file" name="file" id="file" required />
+            Select file *<br />
+            <input type="file" name="file[]" id="file" required multiple />
           </label>
         </p>
 
