@@ -31,6 +31,8 @@
   </style>
 </head>
 
+<?php $project = isset($_REQUEST['project']) ? $_REQUEST['project'] : ''; ?>
+
 <body>
 
   <h1>Upload file to QGIS Server</h1>
@@ -49,7 +51,7 @@
         <p>
           <label>
             Project (if not .qgs)<br />
-            <input type="text" name="project" id="project" value="<?php echo $_REQUEST['project']; ?>" />
+            <input type="text" name="project" id="project" value="<?= $project ?>" />
           </label>
         </p>
 
@@ -66,7 +68,7 @@
     </div>
 
     <nav>
-      <iframe id="iframe" width="100%" height="100%" src="../files/qgis/<?php echo $_REQUEST['project']; ?>">
+      <iframe id="iframe" width="100%" height="100%" src="../files/qgis/<?= $project ?>">
       </iframe>
     </nav>
 

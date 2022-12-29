@@ -7,6 +7,13 @@ function error($code = 500, $message = '')
     exit();
 }
 
+function command($command)
+{
+    if (exec($command) === false) {
+        error(500, "Command failed: <pre>$command</pre>");
+    }
+}
+
 // $_FILES['file']
 // Array
 // (
@@ -37,9 +44,35 @@ function error($code = 500, $message = '')
 //         )
 // )
 $file = $_FILES['file'];
-$project = $_REQUEST['project'];
+$project = null;
 
 // exit(phpinfo());
+
+for ($i = 0; $i < count($file['name']); $i++) {
+
+    $name = $file['name'][$i];
+
+    $path_parts = pathinfo($name);
+
+    $qgz = strcasecmp($path_parts['extension'], 'qgz') === 0;
+    $isProject = $qgz || strcasecmp($path_parts['extension'], 'qgs') === 0;
+
+    if ($isProject) {
+        $project = $path_parts['filename'];
+    }
+}
+
+$request_project = isset($_REQUEST['project']) ? $_REQUEST['project'] : null;
+if (isset($project)) {
+    if (isset($request_project) && $project !== $request_project) {
+        error(400, "Project file name $project doesn't match project request parameter $request_project.");
+    }
+} else {
+    $project = $request_project;
+}
+if (!isset($project)) {
+    error(400, "Project not set.");
+}
 
 for ($i = 0; $i < count($file['name']); $i++) {
 
@@ -50,14 +83,6 @@ for ($i = 0; $i < count($file['name']); $i++) {
 
     $qgz = strcasecmp($path_parts['extension'], 'qgz') === 0;
     $isProject = $qgz || strcasecmp($path_parts['extension'], 'qgs') === 0;
-
-    if ($isProject) {
-        $project = $path_parts['filename'];
-    }
-
-    if (!isset($project)) {
-        error(400, "Project not set.");
-    }
 
     $base = '/fileport';
     $dir = "/files/qgis/$project/";
@@ -79,8 +104,19 @@ for ($i = 0; $i < count($file['name']); $i++) {
         || error(500, "Uploading file $path failed.");
 
     if ($qgz) {
-        exec("unzip '$full_path' -d '$full_dir'")
-            || error(500, "Unzipping file $path failed.");
+        // Unzip .qgz file to .qgs file.
+        // -o  overwrite files WITHOUT prompting
+        // -d  extract files into exdir
+        command("unzip -o '$full_path' -d '$full_dir'");
+        $path = $dir . $project . '.qgs';
+        $full_path = $base . $path;
+    }
+
+    if ($isProject) {
+        // Replace layer source URLs with local paths.
+        // https://localhost:7443, https://www.geoloket.nl, etc.
+        $origin = $_SERVER['HTTP_ORIGIN'];
+        command("sed -i 's~$origin.*$dir~file://$full_dir~g' '$full_path'");
     }
 }
 
