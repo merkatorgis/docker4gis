@@ -1,17 +1,26 @@
 <?php
 
-function error($code = 500, $message = '')
+function error(int $code = 500, string $message = ''): void
 {
     echo $message;
     http_response_code($code);
     exit();
 }
 
-function command($command)
+function command(string $command, array &$output = null, int &$result_code = null): string
 {
-    if (exec($command) === false) {
-        error(500, "Command failed: <pre>$command</pre>");
+    $result = exec($command, $output, $result_code);
+    if ($result === false) {
+        error(500, "Command failed: <pre>$command</pre> Output: <pre>$output</pre> Result code: <pre>$result_code</pre>");
     }
+    return $result;
+}
+
+function pre($value): void
+{
+    echo '<pre>';
+    print_r($value);
+    echo '</pre>';
 }
 
 // $_FILES['file']
@@ -122,10 +131,34 @@ for ($i = 0; $i < count($file['name']); $i++) {
         command("cp '$full_path' '$server_path'");
         $full_path = $server_path;
 
-        // Replace layer source remote URLs with local file URLs.
+        /*
+        Replace layer source remote URLs with local file URLs.
+        */
+
         // https://localhost:7443, https://www.geoloket.nl, etc.
         $origin = $_SERVER['HTTP_ORIGIN'];
-        command("sed -i 's~$origin.*$dir~file://$full_dir~g' '$full_path'");
+
+        // Find all URLs that need manipulation.
+        $pattern = "$origin.*$dir" . '[^"<]\+';
+        // --only-matching to just get the matched text, instead of the whole line.
+        $grep = "grep --only-matching '$pattern' '$full_path'";
+        // https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img
+        $urls = null;
+        command($grep, $urls);
+
+        // '1_04%20ZZW%20S5-2_IMG%20raster%201x1.img'
+        $paths = preg_replace("|.*$dir(.*)|", '$1', $urls);
+        // '1_04 ZZW S5-2_IMG raster 1x1.img' - It's only because we need to do
+        // this, that we cannot just do one global sed for all URLs.
+        $paths = array_map('urldecode', $paths);
+
+        for ($j = 0; $j < count($urls); $j++) {
+            // 'https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img'
+            $search = $urls[$j];
+            // '/fileport/files/qgis/65521-1/1_04 ZZW S5-2_IMG raster 1x1.img'
+            $replace = $full_dir . $paths[$j];
+            command("sed -i 's~$search~$replace~g' '$full_path'");
+        }
     }
 }
 
