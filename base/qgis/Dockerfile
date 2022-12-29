@@ -15,6 +15,10 @@ COPY conf/upload /var/www/html/upload
 # for _all_ urls, so that we can run php scripts as well.
 RUN sed -i 's~"\^/\.\*"~"^/qgis/.*"~g' /etc/apache2/conf-enabled/qgis.conf
 
+# Add custom configuration to qgis.conf's <LocationMatch> directive.
+COPY conf/include.conf /tmp/include.conf
+RUN sed -i 's~\(</LocationMatch>\)~    Include /tmp/include.conf\n\1~g' /etc/apache2/conf-enabled/qgis.conf
+
 COPY conf/entrypoint /usr/local/bin
 ENTRYPOINT [ "entrypoint" ]
 CMD [ "qgis" ]

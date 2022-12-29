@@ -113,7 +113,12 @@ for ($i = 0; $i < count($file['name']); $i++) {
     }
 
     if ($isProject) {
-        // Replace layer source URLs with local paths.
+        // Copy the project file to use for the server.
+        $server_path = "$full_path.server";
+        command("cp '$full_path' '$server_path'");
+        $full_path = $server_path;
+
+        // Replace layer source remote URLs with local file URLs.
         // https://localhost:7443, https://www.geoloket.nl, etc.
         $origin = $_SERVER['HTTP_ORIGIN'];
         command("sed -i 's~$origin.*$dir~file://$full_dir~g' '$full_path'");
