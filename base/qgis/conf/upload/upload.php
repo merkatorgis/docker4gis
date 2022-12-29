@@ -48,6 +48,7 @@ $project = null;
 
 // exit(phpinfo());
 
+// Test if one of the files is a QGIS project file.
 for ($i = 0; $i < count($file['name']); $i++) {
 
     $name = $file['name'][$i];
@@ -62,6 +63,7 @@ for ($i = 0; $i < count($file['name']); $i++) {
     }
 }
 
+// Ensure the project parameter is set.
 $request_project = isset($_REQUEST['project']) ? $_REQUEST['project'] : null;
 if (isset($project)) {
     if (isset($request_project) && $project !== $request_project) {
@@ -74,6 +76,7 @@ if (!isset($project)) {
     error(400, "Project not set.");
 }
 
+// Process each file.
 for ($i = 0; $i < count($file['name']); $i++) {
 
     $name = $file['name'][$i];
@@ -100,6 +103,7 @@ for ($i = 0; $i < count($file['name']); $i++) {
     // echo file_exists($tmp_name) ? 'exists' : "doesn't exist!";
     // echo '<br/>';
 
+    // Save the file.
     move_uploaded_file($tmp_name, $full_path)
         || error(500, "Uploading file $path failed.");
 
