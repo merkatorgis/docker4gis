@@ -10,37 +10,43 @@ services:
     restful: true
 
 layers:
+  # sets up which layers you want to make available using the services above. You can add many, but let's stick to osm data here.
   - name: osm
     title: Open Streetmap Tiles
-    sources: [osm_cache]
-
+    sources: [osm_cache] #this layer should use the osm_cache (defined below) as it's source.
+    
 caches:
+  # setup the cache for the open streetmap tiles. This cache is used by the layer above.
   osm_cache:
-    sources: [osm_tiles]
-    grids: [GLOBAL_MERCATOR]
+    sources: [osm_tiles] # here you set what source data (defined below) you want to cache
     format: image/png
-    cache:
-      type: geopackage
-      filename: /srv/mapproxy/cache_data/osm.gpkg
-      table_name: osm_tiles
-
+    # WARNING - mapproxy.config - cache osm_cache does not have any grids. default will change from [GLOBAL_MERCATOR] to [GLOBAL_WEBMERCATOR] with MapProxy 2.0
+    grids: [GLOBAL_MERCATOR]
+  
 sources:
    osm_tiles:
+     # the osm_tiles source refers to the openstreetmap.org tiles. These will be downloaded upon request (if not already cached) and served by MapProxy
      type: tile
-     url: http://c.tile.openstreetmap.org/%(tms_path)s.%(format)s
-     grid: osm_grid 
+     url: http://tile.openstreetmap.org/%(tms_path)s.%(format)s
+     grid: osm_grid # the grid to use for the osm tiles. This is really important. It is specified below.
 
 grids:
   osm_grid:
+    # this srs and origin specify a grid that can be used elsewhere in the configuration. In this example it is used for the osm_tiles source. These settings are correct for openstreetmap.org tiles.
+    # The google mercator srs is used (also called EPSG:900913), and the origin of the tiles is north-west). If you get this wrong, you might very well get an all-blue world.
     srs: EPSG:900913
     origin: nw
 
 globals:
+  # next are some global configuration options for MapProxy. They mostly explain themselves, or can be looked-up in the MapProxy docs.
   cache:
+    # where to store the cached images
     base_dir: '/srv/mapproxy/cache_data'
+    # where to store lockfiles
     lock_dir: '/srv/mapproxy/cache_data/locks'
-    tile_lock_dir: '/srv/mapproxy/cache_data/tile_locks'
 
+
+  # image/transformation options
   image:
       resampling_method: bilinear
       jpeg_quality: 90
