@@ -43,7 +43,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		r.Header.Set("X-Forwarded-For", forwardedFor)
 		forwardedHost := r.Host
 		r.Header.Set("X-Forwarded-Host", forwardedHost)
-		forwardedProto := r.URL.Scheme
+		forwardedProto := "https" // r.URL.Scheme == ""
 		r.Header.Set("X-Forwarded-Proto", forwardedProto)
 		forwardedPath := "/" + app + key
 		r.Header.Set("X-Forwarded-Path", forwardedPath)
