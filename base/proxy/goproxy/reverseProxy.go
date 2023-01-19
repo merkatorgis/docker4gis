@@ -74,7 +74,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		if err := modifyResponse(resp); err != nil {
 			return err
 		}
-		cors(w, r)
+		cors(resp.Header, r)
 		// collect the response's cookies, with  Domain and Path rewritten
 		// for the proxy client's perspective
 		var cookies []*http.Cookie
@@ -91,7 +91,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 			cookies = append(cookies, cookie)
 		}
 		// replace all cookies with the rewritten ones
-		r.Header.Del("Set-Cookie")
+		resp.Header.Del("Set-Cookie")
 		for _, cookie := range cookies {
 			resp.Header.Add("Set-Cookie", cookie.String())
 		}
