@@ -1,4 +1,4 @@
-FROM wscherphof/mapproxy:1.13
+FROM wscherphof/mapproxy:latest
 
 COPY conf /srv/mapproxy/config
 
