@@ -10,6 +10,9 @@ ONBUILD COPY conf /srv/mapproxy/config
 # prevent this. See globals.cache.lock_dir and globals.cache.tile_lock_dir.
 RUN mkdir -p /srv/mapproxy/locks
 RUN chmod a+rwx /srv/mapproxy/locks
+#
+RUN mkdir -p /srv/mapproxy/tile_locks
+RUN chmod a+rwx /srv/mapproxy/tile_locks
 
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh
