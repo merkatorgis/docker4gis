@@ -1,4 +1,4 @@
-FROM wscherphof/mapproxy:latest
+FROM wscherphof/mapproxy:bullseye
 
 COPY conf /srv/mapproxy/config
 
