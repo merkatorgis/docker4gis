@@ -6,41 +6,67 @@
 services:
   demo:
   wmts:
-    kvp: true
-    restful: true
 
 layers:
+  # sets up which layers you want to make available using the services above. You can add many, but let's stick to osm data here.
   - name: osm
     title: Open Streetmap Tiles
-    sources: [osm_cache]
+    # this layer should use the osm_cache (defined below) as it's source.
+    # tile_sources are not merged like sources, instead all the caches are added as additional tile (matrix) sets.
+    tile_sources: [osm_cache, osm_cache_28992, osm_cache_25831, osm_cache_23030]
 
 caches:
+  # setup the cache for the open streetmap tiles. This cache is used by the layer above.
   osm_cache:
-    sources: [osm_tiles]
-    grids: [GLOBAL_MERCATOR]
-    format: image/png
-    cache:
-      type: geopackage
-      filename: /srv/mapproxy/cache_data/osm.gpkg
-      table_name: osm_tiles
-
-sources:
-   osm_tiles:
-     type: tile
-     url: http://c.tile.openstreetmap.org/%(tms_path)s.%(format)s
-     grid: osm_grid 
+    sources: [osm_source] # here you set what source data (defined below) you want to cache
+    grids: [GLOBAL_WEBMERCATOR]
+  osm_cache_28992:
+    sources: [osm_cache] # https://mapproxy.org/docs/1.13.0/configuration_examples.html#reprojecting-tiles
+    grids: [osm_grid_28992]
+  osm_cache_25831:
+    sources: [osm_cache]
+    grids: [osm_grid_25831]
+  osm_cache_23030:
+    sources: [osm_cache]
+    grids: [osm_grid_23030]
 
 grids:
-  osm_grid:
-    srs: EPSG:900913
-    origin: nw
+  osm_grid_28992:
+    num_levels: 15
+    srs: EPSG:28992
+    # west, south, east, north
+    bbox: [-285401.92, 22598.08, 595401.92, 903401.92]
+    # WMTS defines the tile origin in the upper left corner.
+    origin: ul
+  osm_grid_25831:
+    num_levels: 18
+    srs: EPSG:25831
+    bbox: [-1300111.74, 4070492.73, 3638614.37, 9528699.59]
+    origin: ul
+  osm_grid_23030:
+    num_levels: 17
+    srs: EPSG:23030
+    bbox: [-99844.71, 3721117.79, 3860322.09, 8251832.08]
+    origin: ul
+  
+sources:
+  osm_source:
+    # the osm_tiles source refers to the openstreetmap.org tiles. These will be downloaded upon request (if not already cached) and served by MapProxy
+    type: tile
+    url: http://tile.openstreetmap.org/%(tms_path)s.%(format)s
+    grid: GLOBAL_WEBMERCATOR
 
 globals:
+  # next are some global configuration options for MapProxy. They mostly explain themselves, or can be looked-up in the MapProxy docs.
   cache:
+    # Store cached images in the volume.
     base_dir: '/srv/mapproxy/cache_data'
-    lock_dir: '/srv/mapproxy/cache_data/locks'
-    tile_lock_dir: '/srv/mapproxy/cache_data/tile_locks'
+    # Store lockfiles in the local filesystem.
+    lock_dir: '/srv/mapproxy/locks'
+    tile_lock_dir: '/srv/mapproxy/tile_locks'
 
+  # image/transformation options
   image:
       resampling_method: bilinear
       jpeg_quality: 90
+

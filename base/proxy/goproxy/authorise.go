@@ -47,8 +47,8 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 		filterCookies(req)
 		if res, errDo := http.DefaultClient.Do(req); errDo != nil {
 			return http.StatusInternalServerError, errDo
-		} else if authorization, errAuthorization := bodyString(res.Body); errAuthorization != nil {
-			return http.StatusInternalServerError, errAuthorization
+		} else if authorization, errBody := bodyString(res.Body); errBody != nil {
+			return http.StatusInternalServerError, errBody
 		} else if res.StatusCode != 200 {
 			return res.StatusCode, fmt.Errorf(authorization)
 		} else {
