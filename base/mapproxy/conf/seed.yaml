@@ -1,5 +1,13 @@
 cleanups:
-  all:
-    caches: [osm_cache, osm_cache_28992, osm_cache_25831]
+  osm_cache:
+    caches: [osm_cache]
+    remove_before:
+      weeks: 4
+  osm_cache_28992:
+    caches: [osm_cache_28992]
+    remove_before:
+      weeks: 4
+  osm_cache_25831:
+    caches: [osm_cache_25831]
     remove_before:
       weeks: 4
