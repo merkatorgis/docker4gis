@@ -1,6 +1,12 @@
 FROM wscherphof/mapproxy:bullseye
 
+# Install gettext-base for envsubst in mapproxy-seed-args.
+RUN apt update
+RUN apt install -y gettext-base
+
 COPY conf /srv/mapproxy/config
+RUN mv /srv/mapproxy/config/entrypoint /usr/local/bin/
+RUN mv /srv/mapproxy/config/mapproxy-seed-args /usr/local/bin/
 
 ONBUILD COPY conf /srv/mapproxy/config
 
@@ -13,6 +19,9 @@ RUN chmod a+rwx /srv/mapproxy/locks
 #
 RUN mkdir -p /srv/mapproxy/tile_locks
 RUN chmod a+rwx /srv/mapproxy/tile_locks
+
+ENTRYPOINT [ "entrypoint" ]
+CMD [ "mapproxy" ]
 
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh

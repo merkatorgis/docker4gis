@@ -1,0 +1,9 @@
+##
+# List any arguments to pass to the mapproxy-seed utility.
+# The container will run the mapproxy-seed task continuously in the background.
+# Environment variables are respected.
+# Lines _starting with_ # are ignored.
+##
+--proxy-conf=/srv/mapproxy/config/mapproxy.yaml
+--seed-conf=/srv/mapproxy/config/seed.yaml
+# Without further args, all tasks in the seed-conf are run, until everything is done.

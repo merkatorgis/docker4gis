@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = 'mapproxy' ]; then
+	export PGUSER=${POSTGRES_USER}
+
+	# seed in the background
+	{
+		while true; do
+			# Run COMMAND with an adjusted niceness, which affects process scheduling.
+			nice mapproxy-seed-args >/srv/mapproxy/config/seed.log 2>&1
+			sleep 60
+		done
+	} &
+
+	# run the mapproxy server
+	exec gunicorn -k gthread --user=1337 --group=1337 --chdir /srv/mapproxy/config \
+		--threads=16 --workers=1 -b :80 config:application --no-sendfile \
+		--access-logfile '-' --error-logfile '-'
+fi
+
+exec "$@"
