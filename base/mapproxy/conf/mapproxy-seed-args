@@ -1,0 +1,11 @@
+#!/bin/bash
+arg() {
+	local cmd=$1
+	local argsfile=$2
+	# Execute the $cmd, passing args read from $argsfile, substituting
+	# environment variables, and skipping lines starting with a #.
+	envsubst <"$argsfile" | grep -v "^#" | xargs \
+		"$cmd" "$@"
+}
+
+arg mapproxy-seed /srv/mapproxy/config/seed.args >/srv/mapproxy/config/seed.log 2>&1

@@ -1,0 +1,5 @@
+cleanups:
+  all:
+    caches: [osm_cache, osm_cache_28992, osm_cache_25831]
+    remove_before:
+      weeks: 4
