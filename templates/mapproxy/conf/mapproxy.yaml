@@ -31,6 +31,7 @@ grids:
   osm_grid_28992:
     num_levels: 15
     srs: EPSG:28992
+    # https://www.geonovum.nl/uploads/standards/downloads/nederlandse_richtlijn_tiling_-_versie_1.1.pdf
     # west, south, east, north
     bbox: [-285401.92, 22598.08, 595401.92, 903401.92]
     # WMTS defines the tile origin in the upper left corner.
