@@ -90,7 +90,8 @@ upgrade)
     ;;
 
 init)
-    [ "$1" = 'base' ] && {
+    if [ "$1" = 'base' ]; then
+        # We are a generic docker4gis base component.
         shift 1
         DOCKER_REPO=$1
         DOCKER_REGISTRY=${2:-docker.io}
@@ -103,23 +104,22 @@ init)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO" >>.env
-        exit
-    }
+    else
+        # We are e concrete application's component or package.
+        DOCKER_REGISTRY=$1
+        DOCKER_USER=$2
 
-    DOCKER_REGISTRY=$1
-    DOCKER_USER=$2
+        [ "$DOCKER_REGISTRY" ] && shift 1
+        [ "$DOCKER_REGISTRY" ] || read -rp "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " DOCKER_REGISTRY
+        [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
+        [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
-    [ "$DOCKER_REGISTRY" ] && shift 1
-    [ "$DOCKER_REGISTRY" ] || read -rp "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " DOCKER_REGISTRY
-    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
-    [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
+        [ "$DOCKER_USER" ] && shift 1
+        suggestion=$(basename "$(realpath ..)")
+        [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
+        [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 
-    [ "$DOCKER_USER" ] && shift 1
-    suggestion=$(basename "$(realpath ..)")
-    [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
-    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
-
-    echo "DOCKER4GIS_VERSION=$(version)
+        echo "DOCKER4GIS_VERSION=$(version)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=package
@@ -138,8 +138,10 @@ POSTGRES_LOG_STATEMENT=
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
-    cp -r "$DOCKER4GIS_HOME"/base/package/template/* .
-    mkdir -p components
+        cp -r "$DOCKER4GIS_HOME"/base/package/template/* .
+        mkdir -p components
+    fi
+
     pipeline main
     bash -i "$0" alias TEST
     ;;
