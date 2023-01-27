@@ -67,63 +67,45 @@ steps:"
   displayName: 'docker4gis push'"
 }
 
+version() {
+    node -pe "require('$DOCKER4GIS_HOME/package.json').version"
+}
+
 case "$action" in
 
 docker4gis)
     echo docker4gis
     ;;
 
-alias)
-    # https://serverfault.com/a/146747
-    [[ $- == *i* ]] && interactive=true
-    [ "$interactive" ] || {
-        # rerun this action with bash in interactive mode, so that aliases are
-        # loaded
-        bash -i "$0" alias "$@"
-        exit 0
-    }
-
-    command="npx --yes $docker4gis@latest"
-
-    test=$1
-    [ "$test" = 'TEST' ] && {
-        shift 1
-        if [ "$(dg docker4gis 2>/dev/null)" = 'docker4gis' ]; then
-            exit 0
-        else
-            answer=
-            read -rp "Create an alias for \`$command\`? [Yn] " answer
-            [ "$answer" ] || answer=y
-            if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
-                exit 0
-            fi
-        fi
-    }
-
-    name=$1
-
-    [ "$name" ] || read -rp "Enter the name for the alias (default is dg) : " name
-    [ "$name" ] || name=dg
-
-    command_type=$(type -t "$name" 2>/dev/null) && {
-        if [ "$command_type" = "alias" ] && [ "$($name docker4gis)" = 'docker4gis' ]; then
-            # this name was already an alias for docker4gis
-            exit 0
-        fi
-        echo "$name is occupied; choose another name"
-        exit 1
-    }
-
-    echo "alias $name='$command'" >>~/.bashrc
-    # shellcheck source=/dev/null
-    . ~/.bashrc
-    ;;
-
 base)
     echo "$DOCKER_BASE"
     ;;
 
+version)
+    version
+    ;;
+
+upgrade)
+    echo "DOCKER4GIS_VERSION=$(version)" >>.env
+    ;;
+
 init)
+    [ "$1" = 'base' ] && {
+        shift 1
+        DOCKER_REPO=$1
+        DOCKER_REGISTRY=${2:-docker.io}
+        DOCKER_USER=${3:-docker4gis}
+
+        [ "$DOCKER_REPO" ] || read -rp "Enter the base component's name (the \"repo\" in the Docker registry) : " DOCKER_REPO
+        [ "$DOCKER_REPO" ] || exit 1
+
+        echo "DOCKER4GIS_VERSION=$(version)
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER
+DOCKER_REPO=$DOCKER_REPO" >>.env
+        exit
+    }
+
     DOCKER_REGISTRY=$1
     DOCKER_USER=$2
 
@@ -137,9 +119,7 @@ init)
     [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
     [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 
-    DOCKER4GIS_VERSION=$(node -pe "require('$DOCKER4GIS_HOME/package.json').version")
-
-    echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
+    echo "DOCKER4GIS_VERSION=$(version)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=package
@@ -258,7 +238,53 @@ build | run | br | push | test | stop | geoserver)
     "$DOCKER_BASE/main.sh" . "$action" "$@"
     ;;
 
+alias)
+    # https://serverfault.com/a/146747
+    [[ $- == *i* ]] && interactive=true
+    [ "$interactive" ] || {
+        # rerun this action with bash in interactive mode, so that aliases are
+        # loaded
+        bash -i "$0" alias "$@"
+        exit 0
+    }
+
+    command="npx --yes $docker4gis@latest"
+
+    test=$1
+    [ "$test" = 'TEST' ] && {
+        shift 1
+        if [ "$(dg docker4gis 2>/dev/null)" = 'docker4gis' ]; then
+            exit 0
+        else
+            answer=
+            read -rp "Create an alias for \`$command\`? [Yn] " answer
+            [ "$answer" ] || answer=y
+            if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
+                exit 0
+            fi
+        fi
+    }
+
+    name=$1
+
+    [ "$name" ] || read -rp "Enter the name for the alias (default is dg) : " name
+    [ "$name" ] || name=dg
+
+    command_type=$(type -t "$name" 2>/dev/null) && {
+        if [ "$command_type" = "alias" ] && [ "$($name docker4gis)" = 'docker4gis' ]; then
+            # this name was already an alias for docker4gis
+            exit 0
+        fi
+        echo "$name is occupied; choose another name"
+        exit 1
+    }
+
+    echo "alias $name='$command'" >>~/.bashrc
+    # shellcheck source=/dev/null
+    . ~/.bashrc
+    ;;
+
 *)
-    echo "Usage: $docker4gis init | init component | build | run | br | push | test | stop | geoserver"
+    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | init base | docker4gis | base | version | upgrade"
     ;;
 esac
