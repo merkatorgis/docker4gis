@@ -16,16 +16,26 @@ DOCKER4GIS_HOME=$(realpath "$DOCKER4GIS_HOME")
 DOCKER_BASE="$DOCKER4GIS_HOME"/base
 
 pipeline() {
-    main=$1
+    local main=$1
 
     write() {
         echo "$2" >>"$1"
     }
 
     init() {
-        echo -n "" >"$1"
-        write "$1" "trigger:
-- $2
+        local file=$1
+        local trigger=$main
+        local pr=none
+        [ "$file" = "$build_validation" ] && {
+            trigger=none
+            pr=$main
+        }
+        echo -n '' >"$file"
+        write "$file" "trigger:
+- $trigger
+
+pr:
+- $pr
 
 pool:
   vmImage: ubuntu-latest
@@ -34,19 +44,20 @@ steps:"
     }
 
     build() {
-        write "$1" "- script: docker login -u=$DOCKER_USER -p='\$(DOCKER_PASSWORD)' $DOCKER_REGISTRY
+        local file=$1
+        write "$file" "- script: docker login -u=$DOCKER_USER -p='\$(DOCKER_PASSWORD)' $DOCKER_REGISTRY
   displayName: 'docker login'
 
 - script: npx --yes docker4gis@latest build
   displayName: 'docker4gis build'"
     }
 
-    build_validation=azure-pipeline-build-validation.yml
-    init "$build_validation" none
+    local build_validation=azure-pipeline-build-validation.yml
+    init "$build_validation"
     build "$build_validation"
 
-    continuous_integration=azure-pipeline-continuous-integration.yml
-    init "$continuous_integration" "$main"
+    local continuous_integration=azure-pipeline-continuous-integration.yml
+    init "$continuous_integration"
     write "$continuous_integration" "- checkout: self
   persistCredentials: 'true'
   clean: 'true'
