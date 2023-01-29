@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Uncomment for debugging the commands that are issued:
+# set -x
+
 action=$1
 shift 1
 
@@ -142,12 +145,12 @@ POSTFIX_DOMAIN=" >>.env
 component | base-component)
     if [ "$action" = base-component ]; then
         # We are a generic docker4gis base component.
-        DOCKER_REPO=$1
-        DOCKER_REGISTRY=${2:-docker.io}
-        DOCKER_USER=${3:-docker4gis}
-
-        [ "$DOCKER_REPO" ] || read -rp "Enter the base component's name (the \"repo\" in the Docker registry) : " DOCKER_REPO
-        [ "$DOCKER_REPO" ] || exit 1
+        repo=$1
+        [ "$repo" ] || read -rp "Enter the base component's name (the \"repo\" in the Docker registry) : " repo
+        [ "$repo" ] || exit 1
+        DOCKER4GIS_VERSION=$(version)
+        DOCKER_REGISTRY=docker.io
+        DOCKER_USER=docker4gis
     else
         # We are a concrete application's component.
         for env_file in ../*/.env; do
@@ -175,8 +178,8 @@ component | base-component)
         # up until first . character, if any (to support forked repos named
         # component.name.surname)
         suggestion=${suggestion%%.*}
-        [ "$DOCKER_REPO" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
-        [ "$DOCKER_REPO" ] || DOCKER_REPO=$suggestion
+        [ "$repo" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
+        [ "$repo" ] || repo=$suggestion
 
         [ "$component" ] || read -rp "Enter the $docker4gis base image name, e.g. proxy, or postgis : " component
         [ "$component" ] || exit 1
@@ -219,10 +222,10 @@ component | base-component)
         rm -rf ./template
     fi
 
-    echo "DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:-$(version)}
+    echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$DOCKER_REPO" >>.env
+DOCKER_REPO=$repo" >>.env
 
     pipeline main
     ;;
