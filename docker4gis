@@ -101,36 +101,20 @@ upgrade)
     ;;
 
 init)
-    if [ "$1" = 'base' ]; then
-        # We are a generic docker4gis base component.
-        shift 1
-        DOCKER_REPO=$1
-        DOCKER_REGISTRY=${2:-docker.io}
-        DOCKER_USER=${3:-docker4gis}
+    DOCKER_REGISTRY=$1
+    DOCKER_USER=$2
 
-        [ "$DOCKER_REPO" ] || read -rp "Enter the base component's name (the \"repo\" in the Docker registry) : " DOCKER_REPO
-        [ "$DOCKER_REPO" ] || exit 1
+    [ "$DOCKER_REGISTRY" ] && shift 1
+    [ "$DOCKER_REGISTRY" ] || read -rp "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " DOCKER_REGISTRY
+    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
+    [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
-        echo "DOCKER4GIS_VERSION=$(version)
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$DOCKER_REPO" >>.env
-    else
-        # We are e concrete application's component or package.
-        DOCKER_REGISTRY=$1
-        DOCKER_USER=$2
+    [ "$DOCKER_USER" ] && shift 1
+    suggestion=$(basename "$(realpath ..)")
+    [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
+    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 
-        [ "$DOCKER_REGISTRY" ] && shift 1
-        [ "$DOCKER_REGISTRY" ] || read -rp "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " DOCKER_REGISTRY
-        [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
-        [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
-
-        [ "$DOCKER_USER" ] && shift 1
-        suggestion=$(basename "$(realpath ..)")
-        [ "$DOCKER_USER" ] || read -rp "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " DOCKER_USER
-        [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
-
-        echo "DOCKER4GIS_VERSION=$(version)
+    echo "DOCKER4GIS_VERSION=$(version)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=package
@@ -149,87 +133,96 @@ POSTGRES_LOG_STATEMENT=
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
-        cp -r "$DOCKER4GIS_HOME"/base/package/template/* .
-        mkdir -p components
-    fi
+    cp -r "$DOCKER4GIS_HOME"/base/package/template/* .
+    mkdir -p components
 
     pipeline main
-    bash -i "$0" alias TEST
     ;;
 
-component)
-    for env_file in ../*/.env; do
-        [ -f "$env_file" ] || break
-        # shellcheck source=/dev/null
-        . "$env_file"
-        if [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
-            inited=true
-            break
-        fi
-    done
+component | base-component)
+    if [ "$action" = base-component ]; then
+        # We are a generic docker4gis base component.
+        DOCKER_REPO=$1
+        DOCKER_REGISTRY=${2:-docker.io}
+        DOCKER_USER=${3:-docker4gis}
 
-    [ "$inited" ] || {
-        echo "Package directory not foud; to create one, run $docker4gis init."
-        exit 1
-    }
+        [ "$DOCKER_REPO" ] || read -rp "Enter the base component's name (the \"repo\" in the Docker registry) : " DOCKER_REPO
+        [ "$DOCKER_REPO" ] || exit 1
+    else
+        # We are a concrete application's component.
+        for env_file in ../*/.env; do
+            [ -f "$env_file" ] || break
+            # shellcheck source=/dev/null
+            . "$env_file"
+            if [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
+                inited=true
+                break
+            fi
+        done
 
-    [ "$1" ] || interactive=true
-    repo=$1
-    component=$2
-    tag=$3
-    template=$4
+        [ "$inited" ] || {
+            echo "Package directory not foud; to create one, run $docker4gis init."
+            exit 1
+        }
 
-    suggestion=$(basename "$(realpath "$PWD")")
-    # up until first . character, if any (to support forked repos named
-    # component.name.surname)
-    suggestion=${suggestion%%.*}
-    [ "$repo" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
-    [ "$repo" ] || repo=$suggestion
+        [ "$1" ] || interactive=true
+        repo=$1
+        component=$2
+        tag=$3
+        template=$4
 
-    [ "$component" ] || read -rp "Enter the $docker4gis base image name, e.g. proxy, or postgis : " component
-    [ "$component" ] || exit 1
+        suggestion=$(basename "$(realpath "$PWD")")
+        # up until first . character, if any (to support forked repos named
+        # component.name.surname)
+        suggestion=${suggestion%%.*}
+        [ "$DOCKER_REPO" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
+        [ "$DOCKER_REPO" ] || DOCKER_REPO=$suggestion
 
-    [ "$interactive" ] && {
-        [ "$tag" ] || read -rp "Enter the base image's tag to use (default is latest) : " tag
-    }
-    [ "$tag" ] || tag=latest
+        [ "$component" ] || read -rp "Enter the $docker4gis base image name, e.g. proxy, or postgis : " component
+        [ "$component" ] || exit 1
 
-    image=docker4gis/$component:$tag
-    docker image pull "$image" >/dev/null || {
-        echo "Image not found: $image"
-        exit 1
-    }
-    container=$(docker container create "$image")
+        [ "$interactive" ] && {
+            [ "$tag" ] || read -rp "Enter the base image's tag to use (default is latest) : " tag
+        }
+        [ "$tag" ] || tag=latest
 
-    docker container cp "$container":/template . || {
-        echo "$image doesn't seem a $docker4gis component"
-        exit 1
-    }
-    docker container rm "$container" >/dev/null
-    if ! [ "$template" ]; then
-        default=./template/.default
-        if [ -f "$default" ]; then
-            default=$(cat "$default")
-            template=$default
-            [ "$interactive" ] && {
-                choices=$(ls ./template)
-                choices=$(echo "$choices" | xargs)
-                read -rp "Enter the template name (one of: $choices - default is $default) : " template
-                [ "$template" ] || template=$default
-                ls ./template/"$template" >/dev/null 2>&1 || {
-                    echo "Template not found: $template"
-                    exit 1
+        image=docker4gis/$component:$tag
+        docker image pull "$image" >/dev/null || {
+            echo "Image not found: $image"
+            exit 1
+        }
+        container=$(docker container create "$image")
+
+        docker container cp "$container":/template . || {
+            echo "$image doesn't seem a $docker4gis component"
+            exit 1
+        }
+        docker container rm "$container" >/dev/null
+        if ! [ "$template" ]; then
+            default=./template/.default
+            if [ -f "$default" ]; then
+                default=$(cat "$default")
+                template=$default
+                [ "$interactive" ] && {
+                    choices=$(ls ./template)
+                    choices=$(echo "$choices" | xargs)
+                    read -rp "Enter the template name (one of: $choices - default is $default) : " template
+                    [ "$template" ] || template=$default
+                    ls ./template/"$template" >/dev/null 2>&1 || {
+                        echo "Template not found: $template"
+                        exit 1
+                    }
                 }
-            }
+            fi
         fi
+        cp -r ./template/"$template"/* .
+        rm -rf ./template
     fi
-    cp -r ./template/"$template"/* .
-    rm -rf ./template
 
-    echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
+    echo "DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:-$(version)}
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$repo" >>.env
+DOCKER_REPO=$DOCKER_REPO" >>.env
 
     pipeline main
     ;;
@@ -298,6 +291,8 @@ alias)
     ;;
 
 *)
-    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | init base | docker4gis | base | version | upgrade"
+    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | docker4gis | base | version | upgrade"
     ;;
 esac
+
+bash -i "$0" alias TEST
