@@ -167,7 +167,8 @@ Specifically, this means:
    the new image:
    1. Its build script (`build.sh`);
    1. Its run script (`run.sh`);
-   1. The current docker4gis utilities ([/base/.docker4gis/docker4gis](/base/.docker4gis/docker4gis));
+   1. The current docker4gis utilities
+      ([/base/.docker4gis/docker4gis](/base/.docker4gis/docker4gis));
 1. When a specific application component's image is built (using `dg build`)
    as an _extension_ (`FROM`) a docker4gis base component,
    1. The base component's build script is copied out of its image, and made
@@ -184,14 +185,15 @@ Specifically, this means:
 
 ### Base component versions
 
-When developing a base component itself, any change to its repository's `main` branch triggers a "pipeline" that builds
-a new image from the modified code, increments the version number in the
-`version` file in the repo, creates a version tag, and pushes the new image,
-also tagged with that version number, to the Docker Hub.
+When developing a base component itself, any change to its repository's `main`
+branch triggers a "pipeline" that builds a new image from the modified code,
+increments the version number in the `version` file in the repo, creates a
+version tag, and pushes the new image, also tagged with that version number, to
+the Docker Hub.
 
-So you can find the precise code that created a base component's image by selecting the
-tagged version of the repo that corresponds with the tag of the image you
-reference (`FROM`) in your `Dockerfile`.
+So you can find the precise code that created a base component's image by
+selecting the tagged version of the repo that corresponds with the tag of the
+image you reference (`FROM`) in your `Dockerfile`.
 
 ## Development
 
@@ -202,10 +204,10 @@ https://github.com/merkatorgis/docker4gis-proxy.
 Any GitHub user can fork a component's repo, make changes, confirm things still
 build (issuing `dg build`), and create a Pull Request (PR).
 
-When the PR is created (and on any subsequent commits to its originating branch),
-a required check has to be run successfully, before the PR enters a "mergeable"
-state. This automated check verifies that the component's new code can still be
-built.
+When the PR is created (and on any subsequent commits to its originating
+branch), a required check has to be run successfully, before the PR enters a
+"mergeable" state. This automated check verifies that the component's new code
+can still be built.
 
 As a protective measure, the check won't run automatically when the PR comes
 from a fork of a user thas isn't a "collaborator" in the base component repo. In
@@ -213,7 +215,8 @@ that case, the check is to be triggered by a collaborator through a comment
 (`/azp run`) on the PR.
 
 When a PR gets merged, another trigger automatically starts a pipeline that
-creates the component's new version, as described [above](#base-component-versions).
+creates the component's new version, as described
+[above](#base-component-versions).
 
 Everything below this line is "old", and in the process of being rewritten.
 
