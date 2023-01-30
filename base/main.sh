@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Uncomment for debugging the commands that are issued:
+# echo
+# echo " -- main.sh $* --"
+# echo
+# set -x
+
 DOCKER_BASE=$(realpath "$(dirname "$0")")
 export DOCKER_BASE
 

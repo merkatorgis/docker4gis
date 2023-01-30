@@ -1,11 +1,15 @@
 #!/bin/bash
 
+# Uncomment for debugging the commands that are issued:
+# echo
+# echo " -- build.sh $* --"
+# echo
+# set -x
+
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO
-
-repo=$DOCKER_REPO
 
 temp=$(mktemp -d)
 finish() {
@@ -50,8 +54,8 @@ if [ "$docker4gis_base_image" ]; then
     export BASE
 fi
 
-[ "$repo" = .package ] && repo=package
-IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
+[ "$DOCKER_REPO" = .package ] && DOCKER_REPO=package
+IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO:latest
 export IMAGE
 echo
 echo "Building $IMAGE"
@@ -61,9 +65,9 @@ echo "Building $IMAGE"
     # opposed to a docker4gis generic component image, remove any existing
     # container, so that it gets replaced by a new one, started from the new
     # image we're going to build now.
-    [ "$repo" = proxy ] &&
+    [ "$DOCKER_REPO" = proxy ] &&
         container=docker4gis-proxy ||
-        container=$DOCKER_USER-$repo
+        container=$DOCKER_USER-$DOCKER_REPO
     docker container stop "$container" >/dev/null 2>&1
     docker container rm "$container" >/dev/null 2>&1
 }
@@ -71,7 +75,6 @@ echo "Building $IMAGE"
 # Ensure a conf directory for the Dockerfile to ADD or COPY from, and provision
 # it temporarily with the .docker4gis and .plugins directories.
 mkdir -p conf
-DOCKER_BASE=$(npx --yes docker4gis@"${DOCKER4GIS_VERSION:-latest}" base)
 cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
 
 # Execute the actual build script,
