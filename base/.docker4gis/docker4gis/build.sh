@@ -11,6 +11,9 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO
 
+# Put in a new variable, to prevent overwriting the original.
+repo=$DOCKER_REPO
+
 temp=$(mktemp -d)
 finish() {
     local code=$1
@@ -54,8 +57,8 @@ if [ "$docker4gis_base_image" ]; then
     export BASE
 fi
 
-[ "$DOCKER_REPO" = .package ] && DOCKER_REPO=package
-IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO:latest
+[ "$repo" = .package ] && repo=package
+IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
 export IMAGE
 echo
 echo "Building $IMAGE"
@@ -65,9 +68,9 @@ echo "Building $IMAGE"
     # opposed to a docker4gis generic component image, remove any existing
     # container, so that it gets replaced by a new one, started from the new
     # image we're going to build now.
-    [ "$DOCKER_REPO" = proxy ] &&
+    [ "$repo" = proxy ] &&
         container=docker4gis-proxy ||
-        container=$DOCKER_USER-$DOCKER_REPO
+        container=$DOCKER_USER-$repo
     docker container stop "$container" >/dev/null 2>&1
     docker container rm "$container" >/dev/null 2>&1
 }
