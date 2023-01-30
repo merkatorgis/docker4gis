@@ -1,6 +1,9 @@
 #!/bin/bash
 
 # Uncomment for debugging the commands that are issued:
+# echo
+# echo " -- docker4gis $* --"
+# echo
 # set -x
 
 action=$1
@@ -140,6 +143,7 @@ POSTFIX_DOMAIN=" >>.env
     mkdir -p components
 
     pipeline main
+    bash -i "$0" alias TEST
     ;;
 
 component | base-component)
@@ -241,7 +245,9 @@ build | run | br | push | test | stop | geoserver)
         exit 1
     }
 
-    # use the docker4gis version that the component scripts are expecting
+    # If not running an unpublished, local, in-development version of
+    # docker4gis, switch to the version that the component scripts are
+    # expecting.
     [ "$INSTALLED" ] && DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
 
     "$DOCKER_BASE/main.sh" . "$action" "$@"
@@ -297,5 +303,3 @@ alias)
     echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | docker4gis | base | version | upgrade"
     ;;
 esac
-
-bash -i "$0" alias TEST
