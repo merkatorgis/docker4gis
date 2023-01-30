@@ -148,12 +148,14 @@ So, in short, what you typically do is:
       and automatically run the build on each _pull request_ before its changes
       can be merged.
 
-## Version management
+## Background: version management
 
 Fitting within a Docker environment, the _images_ of the different components
 are considered to be the "unit of change" - when a component is modified, the
 resulting changes end up in a new version of the compontent's image, which is
 pushed to the Registry, ready to be used in application updates.
+
+### Extending base components
 
 To achieve this goal of providing all changes as "fully contained" images in the
 registry, the images of base components include their build and run scripts, as
@@ -179,6 +181,8 @@ Specifically, this means:
       built, so that they work just as the run script expects; 1. From the run
       script, the utilities are available in the temporary directory
       `docker4gis`.
+
+### Base component versions
 
 When developing a base component itself, any change to its repository's `main` branch triggers a "pipeline" that builds
 a new image from the modified code, increments the version number in the
@@ -209,7 +213,7 @@ that case, the check is to be triggered by a collaborator through a comment
 (`/azp run`) on the PR.
 
 When a PR gets merged, another trigger automatically starts a pipeline that
-creates the component's new version, as described [above](#version-management).
+creates the component's new version, as described [above](#base-component-versions).
 
 Everything below this line is "old", and in the process of being rewritten.
 
