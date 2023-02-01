@@ -38,9 +38,10 @@ this() {
 case "$action" in
 build)
 	repo=$1
+	shift 1
 	[ "$repo" ] || echo "Please pass the name of the component to build."
 	[ "$repo" ] && this test "$repo" &&
-		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$repo"
+		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$repo" "$@"
 	;;
 run)
 	tag=$1
@@ -53,7 +54,7 @@ run)
 		this test
 	;;
 br)
-	this build "$1" && echo &&
+	this build "$@" && echo &&
 		this run
 	;;
 latest)
