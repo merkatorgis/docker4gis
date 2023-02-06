@@ -32,7 +32,9 @@ steps:
   displayName: 'bump package version'
 
 # Push npm version's changes back to the original repo.
-- script: git push
+- script: |
+    git push
+    git push --tags
   displayName: 'git push'
 
 # Publish to npm, using the environment variable placeholder in .npmrc; see
