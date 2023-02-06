@@ -29,6 +29,10 @@ steps:
 - script: npm version patch
   displayName: 'bump package version'
 
+# Push npm version's changes back to the original repo.
+- script: git push
+  displayName: 'git push'
+
 # Publish to npm, using the environment variable placeholder in .npmrc; see
 # https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#create-and-check-in-a-project-specific-npmrc-file.
 - script: npm publish
