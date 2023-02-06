@@ -18,8 +18,8 @@ steps:
   displayName: 'git config'
 
 - script: |
-    git checkout -b main
-    git push --set-upstream origin main
+    git checkout -b npm-package
+    git push --set-upstream origin npm-package
   displayName: 'git undo detached state'
 
 # Increment version in package.json, git commit, and git tag; see
