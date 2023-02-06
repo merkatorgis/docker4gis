@@ -29,19 +29,8 @@ steps:
 - script: npm version patch
   displayName: 'bump package version'
 
-- task: Npm@1
-  displayName: 'npm whoami'
-  inputs:
-    command: custom
-    customCommand: whoami
-    publishRegistry: useExternalRegistry
-    publishEndpoint: 'npmjs.org'
+- script: echo "//registry.npmjs.org/:_authToken=$(NPM_TOKEN)" >>./npmrc
+  displayName: 'authorise npm'
 
-# Publish to the 'npmjs.org' Service Connection, that is defined in the DevOps
-# project.
-- task: Npm@1
-  displayName: 'publish new package version'
-  inputs:
-    command: publish
-    publishRegistry: useExternalRegistry
-    publishEndpoint: 'npmjs.org'
+- script: npm publish
+  displayName: 'npm publish'
