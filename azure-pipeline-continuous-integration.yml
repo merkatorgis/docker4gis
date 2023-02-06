@@ -26,7 +26,7 @@ steps:
 # https://docs.npmjs.com/cli/v9/commands/npm-version. We don't actually do
 # semantic versioning; we just keep incrementing the PATCH version (see
 # https://semver.org).
-- script: npm version patch
+- script: npm version patch --message '%s [skip ci]'
   displayName: 'bump package version'
 
 # Push npm version's changes back to the original repo.
