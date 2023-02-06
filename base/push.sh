@@ -78,13 +78,11 @@ from="FROM docker4gis/$DOCKER_REPO"
 search="$from:.*"
 replace="$from:$version"
 find . -mindepth 2 -name Dockerfile -exec sed -i "s|$search|$replace|ig" {} \;
-find . -mindepth 2 -name Dockerfile -exec cat {} \;
 
 log "Committing version"
 message="version $version [skip ci]"
 git add .
-git status
-git commit version -m "$message"
+git commit -m "$message"
 
 log "Pushing the commit"
 push
