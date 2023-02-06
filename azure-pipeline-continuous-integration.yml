@@ -29,6 +29,14 @@ steps:
 - script: npm version patch
   displayName: 'bump package version'
 
+- task: Npm@1
+  displayName: 'npm whoami'
+  inputs:
+    command: custom
+    customCommand: whoami
+    publishRegistry: useExternalRegistry
+    publishEndpoint: 'npmjs.org'
+
 # Publish to the 'npmjs.org' Service Connection, that is defined in the DevOps
 # project.
 - task: Npm@1
