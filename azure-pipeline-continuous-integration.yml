@@ -29,11 +29,10 @@ steps:
 - script: npm version patch
   displayName: 'bump package version'
 
-# Publish to the 'npmjs.org' Service Connection, that is defined in the DevOps
-# project.
-- task: Npm@1
-  displayName: 'publish new package version'
-  inputs:
-    command: publish
-    publishRegistry: useExternalRegistry
-    publishEndpoint: 'npmjs.org'
+- script: echo '$(NPM_TOKEN)'
+  displayName: 'echo $(NPM_TOKEN)'
+
+- script: npm publish
+  displayName: 'npm publish'
+  env:
+    NPM_TOKEN: $(NPM_TOKEN)
