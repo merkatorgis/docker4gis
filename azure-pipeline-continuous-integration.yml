@@ -1,4 +1,5 @@
 trigger:
+# "npm-package" -> "master" after merge
 - npm-package
 
 pr:
@@ -17,6 +18,7 @@ steps:
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
 
+# "npm-package" -> "master" (2x) after merge
 - script: |
     git checkout -b npm-package
     git push --set-upstream origin npm-package
@@ -30,7 +32,9 @@ steps:
   displayName: 'bump package version'
 
 # Push npm version's changes back to the original repo.
-- script: git push
+- script: |
+    git push
+    git push --tags
   displayName: 'git push'
 
 # Publish to npm, using the environment variable placeholder in .npmrc; see

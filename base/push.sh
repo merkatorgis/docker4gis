@@ -53,12 +53,13 @@ docker image rm -f "$image":latest
 
 push() {
     if ! git push origin "$@"; then
-        if [ "$?" = 128 ]; then
+        result=$?
+        if [ "$result" = 128 ]; then
             # support a non-remote context (e.g. pipeline)
             echo "INFO: remote not found: origin"
             return 0
         else
-            exit "$?"
+            exit "$result"
         fi
     fi
 }
@@ -70,15 +71,23 @@ log "Writing version file"
 echo "$version" >version
 git add version
 
+log "Upgrading any templates"
+# Note that this makes it okay to commit template Dockerfiles with a _latest_
+# tag (FROM docker4gis/$DOCKER_REPO:latest), which is probably how you were
+# testing extensions of your newly built ba component image.
+search="\(from.*$DOCKER_USER/$DOCKER_REPO\):.*"
+replace="\1:$version"
+find . -mindepth 2 -name Dockerfile -exec sed -i "s|$search|$replace|ig" {} \;
+
 message="version $version [skip ci]"
 
-log "Committing version file"
+log "Committing version"
 git commit version -m "$message"
 
 log "Pushing the commit"
 push
 
-log "Tagging the repo"
+log "Tagging the git repo"
 tag="v-$version"
 git tag -a "$tag" -f -m "$message"
 
