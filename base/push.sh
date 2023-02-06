@@ -53,12 +53,13 @@ docker image rm -f "$image":latest
 
 push() {
     if ! git push origin "$@"; then
-        if [ "$?" = 128 ]; then
+        result=$?
+        if [ "$result" = 128 ]; then
             # support a non-remote context (e.g. pipeline)
             echo "INFO: remote not found: origin"
             return 0
         else
-            exit "$?"
+            exit "$result"
         fi
     fi
 }
