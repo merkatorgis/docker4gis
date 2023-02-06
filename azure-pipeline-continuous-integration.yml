@@ -32,6 +32,8 @@ steps:
 - script: echo '$(NPM_TOKEN)'
   displayName: 'echo $(NPM_TOKEN)'
 
+# Publish to npm, using the environment variable placeholder in .npmrc; see
+# https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#create-and-check-in-a-project-specific-npmrc-file.
 - script: npm publish
   displayName: 'npm publish'
   env:
