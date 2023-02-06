@@ -69,19 +69,19 @@ check_git_clear
 
 log "Writing version file"
 echo "$version" >version
-git add version
 
 log "Upgrading any templates"
 # Note that this makes it okay to commit template Dockerfiles with a _latest_
 # tag (FROM docker4gis/$DOCKER_REPO:latest), which is probably how you were
 # testing extensions of your newly built ba component image.
-search="\(from.*$DOCKER_USER/$DOCKER_REPO\):.*"
-replace="\1:$version"
+from="FROM docker4gis/$DOCKER_REPO"
+search="$from:.*"
+replace="$from:$version"
 find . -mindepth 2 -name Dockerfile -exec sed -i "s|$search|$replace|ig" {} \;
 
-message="version $version [skip ci]"
-
 log "Committing version"
+message="version $version [skip ci]"
+git add .
 git commit version -m "$message"
 
 log "Pushing the commit"
