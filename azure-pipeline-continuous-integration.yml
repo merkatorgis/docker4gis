@@ -36,4 +36,4 @@ steps:
   inputs:
     command: publish
     publishRegistry: useExternalRegistry
-    publishEndpoint: npmjs.org
+    publishEndpoint: 'npmjs.org'
