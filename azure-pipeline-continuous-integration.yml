@@ -1,0 +1,39 @@
+trigger:
+- main
+
+pr:
+- none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+  persistCredentials: 'true'
+  clean: 'true'
+
+- script: |
+    git config --global user.email 'pipeline@azure.com'
+    git config --global user.name 'Azure Pipeline'
+  displayName: 'git config'
+
+- script: |
+    git checkout -b main
+    git push --set-upstream origin main
+  displayName: 'git undo detached state'
+
+# Increment version in package.json, git commit, and git tag; see
+# https://docs.npmjs.com/cli/v9/commands/npm-version. We don't actually do
+# semantic versioning; we just keep incrementing the PATCH version (see
+# https://semver.org).
+- script: npm version patch
+  displayName: 'bump package version'
+
+# Publish to the 'npmjs.org' Service Connection, that is defined in the DevOps
+# project.
+- task: Npm@1
+  displayName: 'publish new package version'
+  inputs:
+    command: publish
+    publishRegistry: useExternalRegistry
+    publishEndpoint: npmjs.org
