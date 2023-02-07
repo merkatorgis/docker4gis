@@ -1,1 +1,1 @@
-FROM docker4gis/package:0.0.61
+FROM docker4gis/package:0.0.62
