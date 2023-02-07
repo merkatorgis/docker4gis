@@ -13,6 +13,14 @@ steps:
   persistCredentials: 'true'
   clean: 'true'
 
+- script: docker login -u=docker4gis -p='$(DOCKER_PASSWORD)' docker.io
+  displayName: 'docker login'
+
+- script: |
+    cd base/package
+    ../../docker4gis build
+  displayName: 'docker4gis build'
+
 - script: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
@@ -30,12 +38,18 @@ steps:
 # https://semver.org).
 - script: npm version patch --message '%s [skip ci]'
   displayName: 'bump package version'
+  
+- script: |
+    cd base/package
+    ../../docker4gis upgrade
+    ../../docker4gis push
+  displayName: 'docker4gis push'
 
 # Push npm version's changes back to the original repo.
-- script: |
-    git push
-    git push --tags
-  displayName: 'git push'
+# - script: |
+#     git push
+#     git push --tags
+#   displayName: 'git push'
 
 # Publish to npm, using the environment variable placeholder in .npmrc; see
 # https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#create-and-check-in-a-project-specific-npmrc-file.
