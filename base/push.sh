@@ -73,7 +73,7 @@ echo "$version" >version
 log "Upgrading any templates"
 # Note that this makes it okay to commit template Dockerfiles with a _latest_
 # tag (FROM docker4gis/$DOCKER_REPO:latest), which is probably how you were
-# testing extensions of your newly built ba component image.
+# testing extensions of your newly built base component image.
 from="FROM docker4gis/$DOCKER_REPO"
 search="$from:.*"
 replace="$from:$version"

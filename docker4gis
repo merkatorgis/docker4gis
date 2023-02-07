@@ -235,6 +235,7 @@ DOCKER_REPO=$repo" >>.env
     ;;
 
 build | run | br | push | test | stop | geoserver)
+    # Export all variables in .env.
     set -a
     # shellcheck source=/dev/null
     . .env
