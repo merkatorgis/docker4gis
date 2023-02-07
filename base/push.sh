@@ -45,8 +45,13 @@ image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 log "Tagging image"
 docker image tag "$image":latest "$image":"$version"
 
-log "Pushing image"
+log "Pushing $image:$version"
 docker image push "$image":"$version"
+
+# This is important for base components (and harmless for extension components),
+# since the default base image tag sugested in `dg component` is `latest`.
+log "Pushing $image:latest"
+docker image push "$image":latest
 
 log "Removing local 'latest' image"
 docker image rm -f "$image":latest
