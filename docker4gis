@@ -299,11 +299,12 @@ alias)
 
     command_type=$(type -t "$name" 2>/dev/null) && {
         if [ "$command_type" = "alias" ] && [ "$($name docker4gis)" = 'docker4gis' ]; then
-            # this name was already an alias for docker4gis
-            exit 0
+            : # This name was already an alias for docker4gis; nothing to do.
+        else
+            echo "$name is occupied; choose another name"
+            "$0" alias
         fi
-        echo "$name is occupied; choose another name"
-        exit 1
+        exit
     }
 
     echo "alias $name='$command'" >>~/.bashrc
