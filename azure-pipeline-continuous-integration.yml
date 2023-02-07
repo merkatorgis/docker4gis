@@ -27,18 +27,20 @@ steps:
     git push --set-upstream origin npm-package
   displayName: 'git undo detached state'
 
-# Increment version in package.json, git commit, and git tag; see
-# https://docs.npmjs.com/cli/v9/commands/npm-version. We don't actually do
-# semantic versioning; we just keep incrementing the PATCH version (see
-# https://semver.org).
+# Increment version; see https://docs.npmjs.com/cli/v9/commands/npm-version. We
+# don't actually do semantic versioning; we just keep incrementing the PATCH
+# version (see https://semver.org).
 - script: |
-    npm version patch --message '%s [skip ci]'
+    npm config set git-tag-version false
+    npm version patch --message 'npm package %s [skip ci]'
     version=$(./docker4gis version)
     cd base/package
     ../../docker4gis upgrade
     ../upgrade_templates.sh "$version" package
     git add .
-    git commit -m "$version [skip ci]"
+    git commit -m "docker image $version [skip ci]"
+    tag="v$version"
+    git tag -a "$tag" -f -m "tag $version [skip ci]"
   displayName: 'bump package version'
 
 - script: |
