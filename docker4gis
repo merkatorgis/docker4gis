@@ -49,12 +49,15 @@ pool:
 steps:"
     }
 
-    build() {
+    login() {
         local file=$1
-        [ "$action" = 'base-component' ] || write "$file" "- script: echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
+        write "$file" "- script: echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
   displayName: 'docker login'
   "
+    }
 
+    build() {
+        local file=$1
         write "$file" "- script: npx --yes docker4gis@latest build
   displayName: 'docker4gis build'"
     }
@@ -69,6 +72,7 @@ steps:"
   persistCredentials: 'true'
   clean: 'true'
 "
+    login "$continuous_integration"
     build "$continuous_integration"
     write "$continuous_integration" "
 - script: |
