@@ -83,7 +83,7 @@ log "Pushing the commit"
 push
 
 log "Tagging the git repo"
-tag="v-$version"
+tag="v$version"
 git tag -a "$tag" -f -m "$message"
 
 log "Pushing the tag"
