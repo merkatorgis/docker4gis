@@ -17,11 +17,6 @@ steps:
   displayName: 'docker login'
 
 - script: |
-    cd base/package
-    ../../docker4gis build
-  displayName: 'docker4gis build'
-
-- script: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
@@ -36,20 +31,30 @@ steps:
 # https://docs.npmjs.com/cli/v9/commands/npm-version. We don't actually do
 # semantic versioning; we just keep incrementing the PATCH version (see
 # https://semver.org).
-- script: npm version patch --message '%s [skip ci]'
-  displayName: 'bump package version'
-  
 - script: |
+    npm version patch --message '%s [skip ci]'
+    version=$(docker4gis version)
     cd base/package
     ../../docker4gis upgrade
-    ../../docker4gis push
-  displayName: 'docker4gis push'
+    ../upgrade_templates.sh "$version" package
+    git add .
+    git commit -m "$version [skip ci]"
+  displayName: 'bump package version'
 
-# Push npm version's changes back to the original repo.
-# - script: |
-#     git push
-#     git push --tags
-#   displayName: 'git push'
+- script: |
+    cd base/package
+    DOCKER_BASE=..
+    ./build.sh
+  displayName: 'build package image'
+  
+- script: |
+    version=$(docker4gis version)
+    image=docker4gis/package
+    latest=$image:latest
+    image=$image:$version
+    docker image tag "$latest" "$image"
+    docker image push "$image"
+  displayName: 'push package image'
 
 # Publish to npm, using the environment variable placeholder in .npmrc; see
 # https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#create-and-check-in-a-project-specific-npmrc-file.
@@ -57,3 +62,9 @@ steps:
   displayName: 'npm publish'
   env:
     NPM_TOKEN: $(NPM_TOKEN)
+
+# Push npm version's and our changes back to the original repo.
+- script: |
+    git push
+    git push --tags
+  displayName: 'git push version'
