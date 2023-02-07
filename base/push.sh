@@ -79,8 +79,10 @@ log "Upgrading any templates"
 here=$(dirname "$0")
 "$here/upgrade_templates.sh" "$version"
 
+tag="v$version"
+message="$tag [skip ci]"
+
 log "Committing version"
-message="version $version [skip ci]"
 git add .
 git commit -m "$message"
 
@@ -88,7 +90,6 @@ log "Pushing the commit"
 push
 
 log "Tagging the git repo"
-tag="v$version"
 git tag -a "$tag" -f -m "$message"
 
 log "Pushing the tag"
