@@ -1,0 +1,23 @@
+trigger:
+- none
+
+pr:
+- none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+  persistCredentials: 'true'
+  clean: 'true'
+
+- script: |
+    echo '$(DOCKER_PASSWORD)' | docker login -u=docker4gis --password-stdin docker.io
+  displayName: 'docker login'
+
+- script: |
+    npm whoami
+  displayName: 'npm login'
+  env:
+    NPM_TOKEN: $(NPM_TOKEN)
