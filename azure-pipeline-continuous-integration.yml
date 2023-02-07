@@ -47,9 +47,8 @@ steps:
 # apparently npm version not only skips the tag, but also the commit.
 - script: |
     npm config set git-tag-version false
-    npm version patch
+    version=$(npm version patch)
     git add .
-    version=$(./docker4gis version)
     cd base/package
     ../../docker4gis upgrade
     ../upgrade_templates.sh "$version" package

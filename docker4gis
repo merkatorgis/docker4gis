@@ -24,6 +24,11 @@ DOCKER_BASE="$DOCKER4GIS_HOME"/base
 pipeline() {
     local main=$1
 
+    # Init version file as well.
+    [ -f package.json ] || echo '{
+  "version": "0.0.0"
+}' >package.json
+
     write() {
         echo "$2" >>"$1"
     }
@@ -90,7 +95,7 @@ steps:"
 }
 
 version() {
-    node -pe "require('$DOCKER4GIS_HOME/package.json').version"
+    node --print "require('$DOCKER4GIS_HOME/package.json').version"
 }
 
 case "$action" in

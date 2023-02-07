@@ -25,16 +25,13 @@ check_git_clear() {
 }
 check_git_clear
 
-version=1
-if [ -f version ]; then
-    # read current version from file
-    version=$(cat version)
-    if ! [ "$version" -gt 0 ] 2>/dev/null; then
-        error "version must contain a positive integer number"
-    fi
-    # increment
-    ((version++))
-fi
+# Use npm to increment our version; see
+# https://docs.npmjs.com/cli/v9/commands/npm-version. Npm assumes semantic
+# versioning; we don't actually do that - instead, we just keep incrementing the
+# PATCH version (see https://semver.org). With git-tag-version set to false,
+# apparently npm version not only skips the tag, but also the commit.
+npm config set git-tag-version false
+version=$(npm version patch)
 
 log() {
     echo "• $1..."
@@ -53,6 +50,9 @@ docker image push "$image":"$version"
 log "Pushing $image:latest"
 docker image push "$image":latest
 
+# This is for when the push is done from a local development environment, to
+# signal `dg run` that this image is no longer in development, and it should
+# start the new versioned image.
 log "Removing local 'latest' image"
 docker image rm -f "$image":latest
 
@@ -71,9 +71,6 @@ push() {
 
 # stop if git repo received new changes
 check_git_clear
-
-log "Writing version file"
-echo "$version" >version
 
 log "Upgrading any templates"
 here=$(dirname "$0")
