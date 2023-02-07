@@ -43,7 +43,7 @@ steps:
 
 - script: |
     cd base/package
-    DOCKER_BASE=..
+    export DOCKER_BASE=..
     ./build.sh
   displayName: 'build package image'
   
