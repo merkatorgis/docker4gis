@@ -1,9 +1,9 @@
 trigger:
-# NOTE: "npm-package" -> "master" after merge
-- npm-package
+- none
 
 pr:
-- none
+# NOTE: "npm-package" -> "master" after merge
+- npm-package
 
 pool:
   vmImage: ubuntu-latest
