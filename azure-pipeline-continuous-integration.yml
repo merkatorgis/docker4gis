@@ -29,7 +29,8 @@ steps:
 
 # Increment version; see https://docs.npmjs.com/cli/v9/commands/npm-version. We
 # don't actually do semantic versioning; we just keep incrementing the PATCH
-# version (see https://semver.org).
+# version (see https://semver.org). With git-tag-version set to false,
+# apparently npm version not only skips the tag, but also the commit.
 - script: |
     npm config set git-tag-version false
     npm version patch
@@ -45,12 +46,14 @@ steps:
     git tag -a "$tag" -f -m "$message"
   displayName: 'bump package version'
 
+# Build the new package image using the bumped docker4gis.
 - script: |
     cd base/package
     export DOCKER_BASE=..
     ./build.sh
   displayName: 'build package image'
-  
+
+# Push the just built package image to the Docker Hub. 
 - script: |
     version=$(./docker4gis version)
     image=docker4gis/package
@@ -67,7 +70,8 @@ steps:
   env:
     NPM_TOKEN: $(NPM_TOKEN)
 
-# Push npm version's and our changes back to the original repo.
+# Now that everything succeeded, push npm version's and our changes back to the
+# original repo.
 - script: |
     git push
     git push --tags
