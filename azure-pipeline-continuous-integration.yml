@@ -32,15 +32,17 @@ steps:
 # version (see https://semver.org).
 - script: |
     npm config set git-tag-version false
-    npm version patch --message 'npm package %s [skip ci]'
+    npm version patch
+    git add .
     version=$(./docker4gis version)
     cd base/package
     ../../docker4gis upgrade
     ../upgrade_templates.sh "$version" package
     git add .
-    git commit -m "docker image $version [skip ci]"
     tag="v$version"
-    git tag -a "$tag" -f -m "tag $version [skip ci]"
+    message="$tag [skip ci]"
+    git commit -m "$message"
+    git tag -a "$tag" -f -m "$message"
   displayName: 'bump package version'
 
 - script: |
