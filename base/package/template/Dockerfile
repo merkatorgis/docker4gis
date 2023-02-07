@@ -1,1 +1,1 @@
-FROM docker4gis/package:npx-357
+FROM docker4gis/package:0.0.60
