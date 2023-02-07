@@ -1,0 +1,21 @@
+trigger:
+# NOTE: "npm-package" -> "master" after merge
+- npm-package
+
+pr:
+- none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+  persistCredentials: 'true'
+  clean: 'true'
+
+# Build the package image.
+- script: |
+    cd base/package
+    export DOCKER_BASE=..
+    ./build.sh
+  displayName: 'build package image'

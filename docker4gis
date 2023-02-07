@@ -51,7 +51,7 @@ steps:"
 
     build() {
         local file=$1
-        write "$file" "- script: docker login -u=$DOCKER_USER -p='\$(DOCKER_PASSWORD)' $DOCKER_REGISTRY
+        write "$file" "- script: echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
   displayName: 'docker login'
 
 - script: npx --yes docker4gis@latest build
