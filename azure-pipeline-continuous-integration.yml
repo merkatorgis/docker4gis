@@ -33,7 +33,7 @@ steps:
 # https://semver.org).
 - script: |
     npm version patch --message '%s [skip ci]'
-    version=$(docker4gis version)
+    version=$(./docker4gis version)
     cd base/package
     ../../docker4gis upgrade
     ../upgrade_templates.sh "$version" package
@@ -48,7 +48,7 @@ steps:
   displayName: 'build package image'
   
 - script: |
-    version=$(docker4gis version)
+    version=$(./docker4gis version)
     image=docker4gis/package
     latest=$image:latest
     image=$image:$version
