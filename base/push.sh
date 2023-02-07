@@ -71,13 +71,8 @@ log "Writing version file"
 echo "$version" >version
 
 log "Upgrading any templates"
-# Note that this makes it okay to commit template Dockerfiles with a _latest_
-# tag (FROM docker4gis/$DOCKER_REPO:latest), which is probably how you were
-# testing extensions of your newly built base component image.
-from="FROM docker4gis/$DOCKER_REPO"
-search="$from:.*"
-replace="$from:$version"
-find . -mindepth 2 -name Dockerfile -exec sed -i "s|$search|$replace|ig" {} \;
+here=$(dirname "$0")
+"$here/upgrade_templates.sh" "$version"
 
 log "Committing version"
 message="version $version [skip ci]"

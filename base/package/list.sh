@@ -161,7 +161,7 @@ for repo_file in "$components"/*; do
     last_repo && add_repo
 done
 
-# Echo the collected commands to run eachcomponent.
+# Echo the collected commands to run each component.
 cat "$output"
 
 # Tidy up.
