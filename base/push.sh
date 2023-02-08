@@ -39,9 +39,18 @@ npm config set git-tag-version false
 version=$(npm version patch)
 echo "$version"
 
+# Base components have templates with Dockerfiles stating the image's version.
+log "Upgrading any templates"
+here=$(dirname "$0")
+"$here/upgrade_templates.sh" "$version"
+
+# (Re)build the image, to include any upgraded templates.
+log "Building the image"
+"$(dirname "$0")"/../docker4gis build
+
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 
-log "Tagging image"
+log "Tagging the image"
 docker image tag "$image":latest "$image":"$version"
 
 log "Pushing $image:$version"
@@ -55,7 +64,7 @@ docker image push "$image":latest
 # This is for when the push is done from a local development environment, to
 # signal `dg run` that this image is no longer in development, and it should
 # start the new versioned image.
-log "Removing local 'latest' image"
+log "Removing the local 'latest' image"
 docker image rm -f "$image":latest
 
 push() {
@@ -71,19 +80,10 @@ push() {
     fi
 }
 
-# We had `check_git_clear` here to stop if the git repo received new changes
-# while we were waiting for the `docker image push`. This was a good idea before
-# we had `npm version` writing to package.json. For now, let's assume we're the
-# only ones writing here at this time.
-
-log "Upgrading any templates"
-here=$(dirname "$0")
-"$here/upgrade_templates.sh" "$version"
-
 tag="$version"
 message="$tag [skip ci]"
 
-log "Committing version"
+log "Committing the version"
 git add .
 git commit -m "$message"
 

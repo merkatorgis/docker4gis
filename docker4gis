@@ -54,32 +54,22 @@ pool:
 steps:"
     }
 
-    login() {
-        local file=$1
-        write "$file" "- script: echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
-  displayName: 'docker login'
-  "
-    }
-
-    build() {
-        local file=$1
-        write "$file" "- script: npx --yes docker4gis@latest build
-  displayName: 'docker4gis build'"
-    }
-
     local build_validation=azure-pipeline-build-validation.yml
     init "$build_validation"
-    build "$build_validation"
+    write "$build_validation" "- script: |
+    npx --yes docker4gis@latest build
+  displayName: 'docker4gis build'"
 
     local continuous_integration=azure-pipeline-continuous-integration.yml
     init "$continuous_integration"
     write "$continuous_integration" "- checkout: self
   persistCredentials: 'true'
   clean: 'true'
-"
-    login "$continuous_integration"
-    build "$continuous_integration"
-    write "$continuous_integration" "
+
+- script: |
+    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
+  displayName: 'docker login'
+
 - script: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
@@ -90,7 +80,8 @@ steps:"
     git push --set-upstream origin $main
   displayName: 'git undo detached state'
   
-- script: npx --yes docker4gis@latest push
+- script: |
+    npx --yes docker4gis@latest push
   displayName: 'docker4gis push'"
 }
 
