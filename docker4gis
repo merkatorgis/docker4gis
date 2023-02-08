@@ -54,8 +54,16 @@ pool:
 steps:"
     }
 
+    login() {
+        echo "- script: |
+    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
+  displayName: 'docker login'"
+    }
+
     local build_validation=azure-pipeline-build-validation.yml
     init "$build_validation"
+    [ "$action" = init ] && write "$build_validation" "$(login)
+"
     write "$build_validation" "- script: |
     npx --yes docker4gis@latest build
   displayName: 'docker4gis build'"
@@ -66,9 +74,7 @@ steps:"
   persistCredentials: 'true'
   clean: 'true'
 
-- script: |
-    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
-  displayName: 'docker login'
+$(login)
 
 - script: |
     git config --global user.email 'pipeline@azure.com'
