@@ -148,6 +148,7 @@ POSTFIX_DOMAIN=" >>.env
 
     cp -r "$DOCKER_BASE"/package/template/* .
     mkdir -p components
+    echo "$DOCKER_USER".log >>.gitignore
 
     pipeline main
     bash -i "$0" alias TEST
