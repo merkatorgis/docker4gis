@@ -32,19 +32,18 @@ error() {
 for file in ../*/build.sh; do
     [ -f "$file" ] || break
     dir=$(dirname "$file")
-    if [ -f "$dir"/.env ]; then
+    if [ -f "$dir"/.env ] && [ -f "$dir"/package.json ]; then
+        # Start a subshell to prevent overwriting environment variables.
         (
             DOCKER_REPO=
             # shellcheck source=/dev/null
             . "$dir"/.env
-            # If there's a build.sh, a .env and a DOCKER_REPO, then it must
-            # be a docker4gis repo directory.
+            # If there's a build.sh, a package.json, a .env and a DOCKER_REPO,
+            # then it must be a docker4gis repo directory.
             [ "$DOCKER_REPO" ] && {
-                version=latest
-                version_file="$dir"/version
-                if [ -f "$version_file" ]; then
-                    version=$(cat "$version_file")
-                fi
+                version=$(node --print "require('$dir/package.json').version")
+                version="v$version"
+                [ "$version" = 'v0.0.0' ] && version=latest
                 if [ "$DOCKER_REPO" = package ]; then
                     # Just remember that this was the package directory.
                     echo "$dir" >"$package_dir_container"

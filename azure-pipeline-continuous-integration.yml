@@ -47,17 +47,15 @@ steps:
 # apparently npm version not only skips the tag, but also the commit.
 - script: |
     npm config set git-tag-version false
-    npm version patch
+    version=$(npm version patch)
     git add .
-    version=$(./docker4gis version)
     cd base/package
     ../../docker4gis upgrade
     ../upgrade_templates.sh "$version" package
     git add .
-    tag="v$version"
-    message="$tag [skip ci]"
+    message="$version [skip ci]"
     git commit -m "$message"
-    git tag -a "$tag" -f -m "$message"
+    git tag -a "$version" -f -m "$message"
   displayName: 'bump version'
 
 # Build the new package image using the bumped docker4gis.
