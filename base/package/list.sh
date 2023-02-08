@@ -42,7 +42,8 @@ for file in ../*/build.sh; do
             # then it must be a docker4gis repo directory.
             [ "$DOCKER_REPO" ] && {
                 version=$(node --print "require('$dir/package.json').version")
-                [ "$version" = '0.0.0' ] && version=latest
+                version="v$version"
+                [ "$version" = 'v0.0.0' ] && version=latest
                 if [ "$DOCKER_REPO" = package ]; then
                     # Just remember that this was the package directory.
                     echo "$dir" >"$package_dir_container"

@@ -25,17 +25,19 @@ check_git_clear() {
 }
 check_git_clear
 
+log() {
+    echo "• $1..."
+}
+
 # Use npm to increment our version; see
 # https://docs.npmjs.com/cli/v9/commands/npm-version. Npm assumes semantic
 # versioning; we don't actually do that - instead, we just keep incrementing the
 # PATCH version (see https://semver.org). With git-tag-version set to false,
 # apparently npm version not only skips the tag, but also the commit.
+log "Bumping our version"
 npm config set git-tag-version false
 version=$(npm version patch)
-
-log() {
-    echo "• $1..."
-}
+echo "$version"
 
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 
@@ -69,14 +71,16 @@ push() {
     fi
 }
 
-# stop if git repo received new changes
-check_git_clear
+# We had `check_git_clear` here to stop if the git repo received new changes
+# while we were waiting for the `docker image push`. This was a good idea before
+# we had `npm version` writing to package.json. For now, let's assume we're the
+# only ones writing here at this time.
 
 log "Upgrading any templates"
 here=$(dirname "$0")
 "$here/upgrade_templates.sh" "$version"
 
-tag="v$version"
+tag="$version"
 message="$tag [skip ci]"
 
 log "Committing version"
