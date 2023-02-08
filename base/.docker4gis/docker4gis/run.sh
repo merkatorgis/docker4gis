@@ -55,13 +55,18 @@ if
     BASE=$("$dotdocker4gis" "$temp" "$IMAGE")
 then
     pushd "$BASE" >/dev/null || finish 1
-    docker4gis/network.sh &&
-        # Execute the (base) image's run script,
-        # passing args read from its args file,
-        # substituting environment variables,
-        # and skipping lines starting with a #.
-        envsubst <args | grep -v "^#" | xargs \
-            ./run.sh "$@"
+    export NETWORK=$DOCKER_USER
+    docker4gis/network.sh "$NETWORK" || finish 2
+    export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER
+    mkdir -p "$FILEPORT" || finish 3
+    export VOLUME=$CONTAINER
+    docker volume create "$VOLUME" >/dev/null || finish 4
+    # Execute the (base) image's run script,
+    # passing args read from its args file,
+    # substituting environment variables,
+    # and skipping lines starting with a #.
+    envsubst <args | grep -v "^#" | xargs \
+        ./run.sh "$@"
     result=$?
     popd >/dev/null || finish 1
 fi

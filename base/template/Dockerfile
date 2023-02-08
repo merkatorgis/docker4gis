@@ -1,7 +1,7 @@
 FROM a_generc_image:a-specific-tag
 
 # Allow configuration before things start up.
-COPY conf/entrypoint /entrypoint
+COPY conf/entrypoint /
 ENTRYPOINT ["/entrypoint"]
 CMD ["component_name"]
 
@@ -13,7 +13,7 @@ RUN /tmp/bats/install.sh
 ONBUILD ARG DOCKER_USER
 ONBUILD ENV DOCKER_USER=$DOCKER_USER
 
-# Extension template required by `dg component`.
+# Extension template, as required by `dg component`.
 COPY template /template/
 # Make this an extensible base component; see
 # https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
