@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = 'component_name' ]; then
+	shift 1
+
+	# Here you can configure stuff, if needed, before starting the original
+	# ENTRYPOINT/CMD (which you can find by `inspect`ing the image you're
+	# extending FROM).
+
+	exec the_original_entrypoint_or_cmd "$@"
+fi
+
+# This allows you to, in rare cases, run a container with a different command.
+exec "$@"
