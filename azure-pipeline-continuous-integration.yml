@@ -70,7 +70,7 @@ steps:
     version=$(./docker4gis version)
     image=docker4gis/package
     latest=$image:latest
-    image=$image:$version
+    image=$image:v$version
     docker image tag "$latest" "$image"
     docker image push "$image"
   displayName: 'push package image'
