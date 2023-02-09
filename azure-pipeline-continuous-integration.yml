@@ -9,10 +9,6 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- checkout: self
-  persistCredentials: 'true'
-  clean: 'true'
-
 # Login to the Docker Hub, so that we can push the image we'll build.
 - script: |
     echo '$(DOCKER_PASSWORD)' | docker login -u=docker4gis --password-stdin docker.io
