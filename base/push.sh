@@ -61,12 +61,6 @@ docker image push "$image":"$version"
 log "Pushing $image:latest"
 docker image push "$image":latest
 
-# This is for when the push is done from a local development environment, to
-# signal `dg run` that this image is no longer in development, and it should
-# start the new versioned image.
-log "Removing the local 'latest' image"
-docker image rm -f "$image":latest
-
 push() {
     if ! git push origin "$@"; then
         result=$?
