@@ -34,7 +34,7 @@ steps:
   displayName: 'git config'
 
 - script: |
-    git remote add origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
+    git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
   displayName: 'git bypass branch protection'
 
 # Prepare the git repo to accept commits.
