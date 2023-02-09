@@ -30,19 +30,38 @@ pipeline() {
 }' >package.json
 
     write() {
-        echo "$2" >>"$1"
-    }
-
-    init() {
         local file=$1
+        local steps=$2
         local trigger=$main
         local pr=none
         [ "$file" = "$build_validation" ] && {
             trigger=none
             pr=$main
         }
-        echo -n '' >"$file"
-        write "$file" "trigger:
+
+        login() {
+            if [ "$file" = "$continuous_integration" ]; then
+                echo
+                if [ "$action" = 'base-component' ]; then
+                    git_repo=$(basename "$(realpath .)")
+                    echo "- script: |"
+                    echo "    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
+                else
+                    echo "- checkout: self"
+                    echo "  persistCredentials: 'true'"
+                fi
+                echo "  displayName: 'git login'"
+            fi
+            if [ "$file" = "$continuous_integration" ] || [ "$action" = 'init' ]; then
+                echo
+                echo "- script: |"
+                echo "    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
+                echo "  displayName: 'docker login'"
+                echo '#'
+            fi
+        }
+
+        echo "trigger:
 - $trigger
 
 pr:
@@ -51,32 +70,17 @@ pr:
 pool:
   vmImage: ubuntu-latest
 
-steps:"
-    }
-
-    login() {
-        echo "- script: |
-    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
-  displayName: 'docker login'"
+steps:$(login)
+$steps" >"$file"
     }
 
     local build_validation=azure-pipeline-build-validation.yml
-    init "$build_validation"
-    [ "$action" = init ] && write "$build_validation" "$(login)
-"
     write "$build_validation" "- script: |
     npx --yes docker4gis@latest build
   displayName: 'docker4gis build'"
 
     local continuous_integration=azure-pipeline-continuous-integration.yml
-    init "$continuous_integration"
-    write "$continuous_integration" "- checkout: self
-  persistCredentials: 'true'
-  clean: 'true'
-
-$(login)
-
-- script: |
+    write "$continuous_integration" "- script: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'

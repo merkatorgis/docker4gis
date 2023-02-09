@@ -9,10 +9,6 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- checkout: self
-  persistCredentials: 'true'
-  clean: 'true'
-
 # Build the package image.
 - script: |
     cd base/package

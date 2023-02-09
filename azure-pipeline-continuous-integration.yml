@@ -9,9 +9,12 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- checkout: self
-  persistCredentials: 'true'
-  clean: 'true'
+# Allow the pipeline to push directly to the protected branch, by explicitly
+# setting an admin user account, and a Personal Access Token as the password.
+# The token value is stored in our LastPass.
+- script: |
+    git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
+  displayName: 'git login'
 
 # Login to the Docker Hub, so that we can push the image we'll build.
 - script: |
@@ -32,10 +35,6 @@ steps:
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
-
-- script: |
-    git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
-  displayName: 'git bypass branch protection'
 
 # Prepare the git repo to accept commits.
 # NOTE: "npm-package" -> "master" (2x) after merge
