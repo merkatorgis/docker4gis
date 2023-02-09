@@ -109,7 +109,7 @@ version)
     version
     ;;
 
-upgrade)
+bump)
     echo "DOCKER4GIS_VERSION=$(version)" >>.env
     ;;
 
@@ -313,6 +313,6 @@ alias)
     ;;
 
 *)
-    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | docker4gis | base | version | upgrade"
+    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | docker4gis | base | version | bump"
     ;;
 esac
