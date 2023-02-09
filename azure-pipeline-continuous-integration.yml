@@ -33,12 +33,17 @@ steps:
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
 
+- script: |
+    git remote add origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
+  displayName: 'git bypass branch protection'
+
 # Prepare the git repo to accept commits.
 # NOTE: "npm-package" -> "master" (2x) after merge
 - script: |
     git checkout -b npm-package
     git push --set-upstream origin npm-package
   displayName: 'git undo detached state'
+
 
 # Use npm to increment our version; see
 # https://docs.npmjs.com/cli/v9/commands/npm-version. Npm assumes semantic
