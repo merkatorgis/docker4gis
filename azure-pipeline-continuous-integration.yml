@@ -9,6 +9,10 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
+- script: |
+    git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
+  displayName: 'git bypass branch protection'
+
 # Login to the Docker Hub, so that we can push the image we'll build.
 - script: |
     echo '$(DOCKER_PASSWORD)' | docker login -u=docker4gis --password-stdin docker.io
@@ -28,10 +32,6 @@ steps:
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
-
-- script: |
-    git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
-  displayName: 'git bypass branch protection'
 
 # Prepare the git repo to accept commits.
 # NOTE: "npm-package" -> "master" (2x) after merge
