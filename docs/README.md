@@ -218,6 +218,11 @@ When a PR gets merged, another trigger automatically starts a pipeline that
 creates the component's new version, as described
 [above](#base-component-versions).
 
+### New base components
+
+Should you aspire to create a whole new base component, then issue `dg
+base-component` in a clean repo to scaffold a basic draft.
+
 Everything below this line is "old", and in the process of being rewritten.
 
 ## Table of contents
