@@ -95,6 +95,21 @@ version() {
     node --print "require('$DOCKER_BASE/../package.json').version"
 }
 
+dotenv() {
+    local flag=$1
+    local file=${2:-.env}
+
+    [ "$flag" = 'export' ] && set -a
+    # shellcheck source=/dev/null
+    . "$file"
+    [ "$flag" = 'export' ] && set +a
+
+    [ "$flag" = 'forgiving' ] || [ "$DOCKER4GIS_VERSION" ] || {
+        echo "Current directory not recognised as a docker4gis package or component."
+        exit 1
+    }
+}
+
 case "$action" in
 
 docker4gis)
@@ -169,8 +184,7 @@ component | base-component)
         # We are a concrete application's component.
         for env_file in ../*/.env; do
             [ -f "$env_file" ] || break
-            # shellcheck source=/dev/null
-            . "$env_file"
+            dotenv forgiving "$env_file"
             if [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
                 inited=true
                 break
@@ -245,16 +259,8 @@ DOCKER_REPO=$repo" >>.env
     ;;
 
 build | run | br | push | test | stop | geoserver)
-    # Export all variables in .env.
-    set -a
-    # shellcheck source=/dev/null
-    . .env
-    set +a
 
-    [ "$DOCKER4GIS_VERSION" ] || {
-        echo "Current directory not recognised as a docker4gis package or component."
-        exit 1
-    }
+    dotenv export
 
     # If not running an unpublished, local, in-development version of
     # docker4gis, switch to the version that the component scripts are
@@ -263,6 +269,13 @@ build | run | br | push | test | stop | geoserver)
     [ "$INSTALLED" ] && DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
 
     "$DOCKER_BASE/main.sh" . "$action" "$@"
+    ;;
+
+login)
+    password=${1:?"password parameter not set"}
+    dotenv
+    user=${2:-$DOCKER_USER}
+    echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
     ;;
 
 alias)
@@ -313,6 +326,6 @@ alias)
     ;;
 
 *)
-    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | docker4gis | base | version | bump"
+    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | docker4gis | base | login | version | bump"
     ;;
 esac
