@@ -1,6 +1,6 @@
 {
   "name": "docker4gis",
-  "version": "0.0.79",
+  "version": "0.0.80",
   "description": "Extensible linked Docker images for common GIS components. Created by https://www.merkator.com",
   "bin": {
     "docker4gis": "docker4gis"
