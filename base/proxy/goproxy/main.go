@@ -144,18 +144,18 @@ func main() {
 
 }
 
-func cors(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Vary", "Origin")
-	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-	w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, HEAD")
-	w.Header().Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+func cors(h http.Header, r *http.Request) {
+	h.Set("Vary", "Origin")
+	h.Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	h.Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, HEAD")
+	h.Set("Access-Control-Allow-Headers", "SOAPAction, X-Requested-With, Origin, Content-Type, Authorization, Accept, access_token")
+	h.Set("Access-Control-Allow-Credentials", "true")
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.RequestURI)
 	if r.Method == "OPTIONS" || r.Method == "HEAD" {
-		cors(w, r)
+		cors(w.Header(), r)
 	} else if r.URL.Path == "/" && r.URL.Query().Get("url") != "" {
 		if target, err := url.Parse(r.FormValue("url")); err != nil {
 			log.Printf("%+v", err)
