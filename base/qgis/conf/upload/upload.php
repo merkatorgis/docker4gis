@@ -135,6 +135,18 @@ for ($i = 0; $i < count($file['name']); $i++) {
         Replace layer source remote URLs with local file URLs.
         */
 
+        // Remove all /vsicurl/ prefixes from the file.
+        $search = '\([">]\)/vsicurl/';
+        $replace = '\1';
+        command("sed -i 's~$search~$replace~g' '$full_path'");
+
+        // Remove all authcfg suffixes from the file.
+        $search = " authcfg='.\+'";
+        $replace = '';
+        // Tricky because of the single quotes in the $search.
+        $script = '"s~' . $search . '~' . $replace . '~g"';
+        command("sed -i $script '$full_path'");
+
         // https://localhost:7443, https://www.geoloket.nl, etc.
         $origin = $_SERVER['HTTP_ORIGIN'];
 
@@ -145,6 +157,10 @@ for ($i = 0; $i < count($file['name']); $i++) {
         // https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img
         $urls = null;
         command($grep, $urls);
+
+        // pre($grep);
+        // pre($urls);
+        // error();
 
         // '1_04%20ZZW%20S5-2_IMG%20raster%201x1.img'
         $paths = preg_replace("|.*$dir(.*)|", '$1', $urls);
