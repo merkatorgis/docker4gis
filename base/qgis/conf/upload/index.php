@@ -35,7 +35,7 @@
 
 <body>
 
-  <h1>Upload file to QGIS Server</h1>
+  <h1>Upload files to QGIS Server</h1>
 
   <div id="box">
 
