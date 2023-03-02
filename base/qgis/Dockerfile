@@ -8,7 +8,9 @@ RUN apt install -y php libapache2-mod-php
 RUN echo upload_max_filesize = 500M >>/etc/php/7.4/apache2/php.ini
 RUN echo post_max_size = 510M >>/etc/php/7.4/apache2/php.ini
 
-# Our php app.
+# Our php app, reachable via
+# https://<PROXY_HOST>/<DOCKER_USER>/qgisupload/index.php, or
+# https://localhost:7443/<DOCKER_USER>/qgisupload/index.php.
 COPY conf/upload /var/www/html/upload
 
 # Run the qgis-mapserv-wrapper script for urls starting with /qgis/, instead of
