@@ -13,11 +13,13 @@ RUN echo post_max_size = 510M >>/etc/php/7.4/apache2/php.ini
 # https://localhost:7443/<DOCKER_USER>/qgisupload/index.php.
 COPY conf/upload /var/www/html/upload
 
-# Run the qgis-mapserv-wrapper script for urls starting with /qgis/, instead of
-# for _all_ urls, so that we can run php scripts as well.
+# In qgis.conf, for both the ScriptAliasMatch and the <LocationMatch>, replace
+# the default "^/.*" with "^/qgis/.*", so that the qgis-mapserv-wrapper script
+# is run for all URLs starting with /qgis/, instead of for _all_ URLs. This
+# allows us to run php scripts for non-/qgis/* paths.
 RUN sed -i 's~"\^/\.\*"~"^/qgis/.*"~g' /etc/apache2/conf-enabled/qgis.conf
 
-# Add custom configuration to qgis.conf's <LocationMatch> directive.
+# Add custom configuration to qgis.conf's <LocationMatch "^/qgis/.*"> directive.
 COPY conf/include.conf /tmp/include.conf
 RUN sed -i 's~\(</LocationMatch>\)~    Include /tmp/include.conf\n\1~g' /etc/apache2/conf-enabled/qgis.conf
 

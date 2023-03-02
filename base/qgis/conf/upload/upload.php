@@ -135,26 +135,32 @@ for ($i = 0; $i < count($file['name']); $i++) {
         Replace layer source remote URLs with local file URLs.
         */
 
+        // https://localhost:7443, https://www.geoloket.nl, etc.
+        $origin = $_SERVER['HTTP_ORIGIN'];
+        // https://localhost:7443/files/qgis/65521-1/
+        $dir_pattern = "$origin.*$dir";
+
         // Remove all /vsicurl/ prefixes from the file.
-        $search = '\([">]\)/vsicurl/';
-        $replace = '\1';
+        $search = '\([">]\)/vsicurl/' . "\($dir_pattern\)";
+        $replace = '\1\2';
         command("sed -i 's~$search~$replace~g' '$full_path'");
 
+        // https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img
+        $file_pattern = $dir_pattern . '[^ "<]\+';
+        // Escape double quotes when script is given between double quotes.
+        $file_pattern_double_quotes = $dir_pattern . '[^ \"<]\+';
+
         // Remove all authcfg suffixes from the file.
-        $search = " authcfg='.\+'";
-        $replace = '';
-        // Tricky because of the single quotes in the $search.
+        $search = "\($file_pattern_double_quotes\)\s\+authcfg='.\+'";
+        $replace = '\1';
+        // Must give script in double quotes because of the single quotes in the
+        // $search.
         $script = '"s~' . $search . '~' . $replace . '~g"';
         command("sed -i $script '$full_path'");
 
-        // https://localhost:7443, https://www.geoloket.nl, etc.
-        $origin = $_SERVER['HTTP_ORIGIN'];
-
-        // Find all URLs that need manipulation.
-        $pattern = "$origin.*$dir" . '[^"<]\+';
+        // Gather into $urls all the file URLs that need rewriting.
         // --only-matching to just get the matched text, instead of the whole line.
-        $grep = "grep --only-matching '$pattern' '$full_path'";
-        // https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img
+        $grep = "grep --only-matching '$file_pattern' '$full_path'";
         $urls = null;
         command($grep, $urls);
 
