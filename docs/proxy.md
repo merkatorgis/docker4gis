@@ -54,10 +54,11 @@ of URL parameters.
 
 #### Authorized destinations
 Any proxy destination can be marked to `authorise`. In that case,
-access for each request is first tested by issuing a `GET` request to the
-URL in the `AUTH_PATH` environment variable, with a `method`
-(GET/PUT/POST/DELETE) and a `path` parameter (any request headers come along
-as well): it should return either status `200 OK` or `401 Unautorized`.
+access for each request is first tested by issuing a `POST` request to the
+URL in the `AUTH_PATH` environment variable, with a JSON oject in the body,
+containing the `method` (GET/PUT/POST/DELETE), the `path`, the `query` parameters,
+and the `body`. Any request headers come along as well. The endpoint should respond
+with either status `200 OK`, or `401 Unauthorized`, or `403 Forbidden`.
 
 ### Multiple applications
 
