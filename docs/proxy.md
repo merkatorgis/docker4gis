@@ -87,16 +87,20 @@ before expiration.
 
 ### Additional destinations
 
-In your `run/build.sh` script, extend the line running the proxy, eg:
+Extend your proxy componet's `conf/args` file to add destinations, eg:
 ```
-component proxy     "${DOCKER_BASE}/proxy" \
-	dynamic="authorise,http://${DOCKER_USER}-dynamic" \
-	extra1=http://container1 \
-	extra2=https://somewhere.outside.com
+dynamic=authorise,http://"$DOCKER_USER"-dynamic
+extra1=http://container1
+extra2=https://somewhere.outside.com
 ```
 So a client request for `https://${PROXY_HOST}/${DOCKER_USER}/extra1` will trigger a request
 from the proxy to `http://container1` and echo the response from there back to the client.
+
+Destinations with the `authorise,` prefix are subjected to the
+[AUTH_PATH endpoint](#athorised-destinations).
+
 Note that containers on the Docker network are addressed by their container name.
+
 Also note that since the only route into a container is through the proxy,
 there's no need for any SSL on the destination containers.
 
