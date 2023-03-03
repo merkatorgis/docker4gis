@@ -32,13 +32,14 @@ defined in a Docker _image_, that is stored in a Docker _registry_. Whether the
 container runs on your development laptop, on your staging server, or on your
 production server, if it's started from the same image, it'll run in the same
 context. This way, apps gain a great level of baked-in robustness and
-predictability, which are great enablers for  extension and improvement.
+predictability, which are great enablers for extension and improvement.
 
 ### docker4gis
 
 A docker4gis app/website consists of several Docker images, from which
 interconnected containers are run behind a reverse proxy HTTPS gateway
 container, eg
+
 ```
                   | - app
                   |
@@ -48,10 +49,10 @@ browser - proxy - |    |
                   |    |
                   | - geoserver
 ```
+
 The docker4gis repo provides base images, the scripts to build and run them, as
 well as extend them, and a common interface to all this, called the [_main
 script_](#building-things)
-
 
 ## Getting started
 
@@ -76,7 +77,7 @@ before cloning the repo should do the trick.
 
 ### Fork
 
-Create a fork*) of [the main docker4gis
+Create a fork\*) of [the main docker4gis
 repo](https://github.com/merkatorgis/docker4gis) & clone your fork locally with
 GitHub Desktop.
 
@@ -129,18 +130,23 @@ On a server, the images are never built, only run. So the only thing you need
 there, is the little run script that runs the package.
 
 On the server, run:
+
 ```
 docker container run --rm {DOCKER_REGISTRY}{DOCKER_USER}/package:{tag} > {DOCKER_USER}
 ```
+
 e.g.
+
 ```
 docker container run --rm docker.example.com/theapp/package:237 > theapp
 ```
+
 Then, make it executable: `chmod +x theapp` and edit the needed environment
 values.
 
 When you run it, pass a specific tag, and it will pull the images from the
 registry, and run the containers. So the example is run like:
+
 ```
 ./theapp 237
 ```
@@ -187,10 +193,12 @@ you through [NPM](https://www.npmjs.com/package/bats), if available.
 
 You'll want to include the common [helper file](../base/test_helper/load.bash)
 like this:
+
 ```bash
 #!/usr/bin/env bats
 load "$DOCKER_BASE"/test_helper/load.bash
 ```
+
 This will load the [bats-assert](https://github.com/bats-core/bats-assert) and
 [bats-file](https://github.com/bats-core/bats-file) modules.
 
@@ -203,6 +211,7 @@ file, except for the extra .bats suffix.
 In any bash commands under test, you'll want to include the [bats plugin
 file](../base/.plugins/bats/.bats.bash) like this (the test runner installs it
 in your home directory):
+
 ```bash
 #!/bin/bash
 # shellcheck source=/dev/null
@@ -213,6 +222,7 @@ source ~/.bats.bash
 
 This plugin provides the `@sub` function as a means to break up shell scripts in
 small testable subroutines, eg:
+
 ```bash
 #!/bin/bash
 ID=$1
@@ -250,6 +260,7 @@ The error code of the actual subcommand is available in `$status`.
 
 In case the main script needs to survive a failing subroutine, use `@subvive`
 instead of `@sub`, eg:
+
 ```bash
 ...
 if @subvive 1 daytime; then
@@ -259,11 +270,11 @@ fi
 ...
 ```
 
-
 ##### Validations
 
 In the subroutine scripts, include the plugin as well, and make generously use
 of its myriad of assertion functions to validate input parameters, eg:
+
 ```bash
 #!/bin/bash
 ...
@@ -278,9 +289,11 @@ assert_integer_min_max_length MAX_TIME_M "$MAX_TIME_M" 00 59 2
 assert_integer_min_max_length cur_time "$cur_time" 0000 2359 4
 ...
 ```
+
 Any violated assertion will make the script fail with error 22 EINVAL, using the
 given name and value in the error message. So from a `.bats` test script, use
 `assert_failure 22` to test for proper input invalidation, eg:
+
 ```bash
 #!/usr/bin/env bats
 load "$DOCKER_BASE"/test_helper/load.bash
@@ -297,9 +310,10 @@ load "$DOCKER_BASE"/test_helper/load.bash
 }
 ...
 ```
+
 (Note that these tests use the [helper](#helper) `$cmd` variable.)
 
-## Base images 
+## Base images
 
 - cron
 - elm
@@ -319,6 +333,7 @@ load "$DOCKER_BASE"/test_helper/load.bash
 - [proxy](proxy.md)
 - registry
 - serve
+- [qgis](../templates/qgis/README.md)
 
 ## Other topics
 
@@ -326,7 +341,8 @@ load "$DOCKER_BASE"/test_helper/load.bash
 - certificates
 - [Cloud development environment](clouddevenv.md)
 
-*) fork & merkatorgis:
+\*) fork & merkatorgis:
+
 - If you fix, extend, or otherwise improve things, please create a pull request,
   so that it can be merged into the originating merkatorgis/docker4gis
   repository.
