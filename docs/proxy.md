@@ -54,10 +54,11 @@ of URL parameters.
 
 #### Authorized destinations
 Any proxy destination can be marked to `authorise`. In that case,
-access for each request is first tested by issuing a `GET` request to the
-URL in the `AUTH_PATH` environment variable, with a `method`
-(GET/PUT/POST/DELETE) and a `path` parameter (any request headers come along
-as well): it should return either status `200 OK` or `401 Unautorized`.
+access for each request is first tested by issuing a `POST` request to the
+URL in the `AUTH_PATH` environment variable, with a JSON oject in the body,
+containing the `method` (GET/PUT/POST/DELETE), the `path`, the `query` parameters,
+and the `body`. Any request headers come along as well. The endpoint should respond
+with either status `200 OK`, or `401 Unauthorized`, or `403 Forbidden`.
 
 ### Multiple applications
 
@@ -86,16 +87,20 @@ before expiration.
 
 ### Additional destinations
 
-In your `run/build.sh` script, extend the line running the proxy, eg:
+Extend your proxy componet's `conf/args` file to add destinations, eg:
 ```
-component proxy     "${DOCKER_BASE}/proxy" \
-	dynamic="authorise,http://${DOCKER_USER}-dynamic" \
-	extra1=http://container1 \
-	extra2=https://somewhere.outside.com
+dynamic=authorise,http://"$DOCKER_USER"-dynamic
+extra1=http://container1
+extra2=https://somewhere.outside.com
 ```
 So a client request for `https://${PROXY_HOST}/${DOCKER_USER}/extra1` will trigger a request
 from the proxy to `http://container1` and echo the response from there back to the client.
+
+Destinations with the `authorise,` prefix are subjected to the
+[AUTH_PATH endpoint](#athorised-destinations).
+
 Note that containers on the Docker network are addressed by their container name.
+
 Also note that since the only route into a container is through the proxy,
 there's no need for any SSL on the destination containers.
 
