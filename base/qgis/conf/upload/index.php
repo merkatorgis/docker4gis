@@ -40,29 +40,35 @@
   <div id="box">
 
     <div>
-      <form enctype="multipart/form-data" action="upload.php" method="post">
+      <form id="form" enctype="multipart/form-data" action="upload.php" method="post">
         <p>
           <label>
             Select file *<br />
             <input type="file" name="file[]" id="file" required multiple />
           </label>
         </p>
-
-        <p>
-          <label>
-            Project (if not .qgs)<br />
-            <input type="text" name="project" id="project" value="<?= $project ?>" />
-          </label>
-        </p>
-
-        <p>
-          <input type="submit" name="upload" id="upload" value="Upload" />
-        </p>
       </form>
+
+      <!-- The proxy will not forward the multipart/form-data request body to
+        the authorisation endpoint; include the project value as a query
+        parameter (using the submit event listener below). -->
+      <p>
+        <label>
+          Project (if not .qgs)<br />
+          <input type="text" name="project" id="project" value="<?= $project ?>" />
+        </label>
+      </p>
+
+      <p>
+        <input type="submit" form="form" name="upload" id="upload" value="Upload" />
+      </p>
 
       <script>
         file.addEventListener('change', () => {
           project.disabled = file.value.endsWith('qgs') || file.value.endsWith('qgz');
+        });
+        form.addEventListener('submit', () => {
+          form.action += `?project=${project.value}`;
         });
       </script>
     </div>
