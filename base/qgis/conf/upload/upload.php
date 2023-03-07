@@ -135,13 +135,13 @@ for ($i = 0; $i < count($file['name']); $i++) {
         Replace layer source remote URLs with local file URLs.
         */
 
-        // https://localhost:7443, https://www.geoloket.nl, etc.
-        $origin = $_SERVER['HTTP_ORIGIN'];
-        // https://localhost:7443/files/qgis/65521-1/
-        $dir_pattern = "$origin.*$dir";
+        // localhost:7443, www.geoloket.nl, etc.
+        $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+        // https://localhost:7443/files/qgis/65521-1/, https://uid:pwd@localhost:7443/files/qgis/65521-1/
+        $dir_pattern = "https://.*$host.*$dir";
 
         // Remove all /vsicurl/ prefixes from the file.
-        $search = '\([">]\)/vsicurl/' . "\($dir_pattern\)";
+        $search = '\([">]\)/vsicurl/.*' . "\($dir_pattern\)";
         $replace = '\1\2';
         command("sed -i 's~$search~$replace~g' '$full_path'");
 
