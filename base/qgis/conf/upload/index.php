@@ -66,6 +66,7 @@
       <script>
         file.addEventListener('change', () => {
           project.disabled = file.value.endsWith('qgs') || file.value.endsWith('qgz');
+          project.value = project.disabled ? '' : project.value;
         });
         form.addEventListener('submit', () => {
           if (project.value) {
