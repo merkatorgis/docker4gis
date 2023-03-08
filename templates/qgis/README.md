@@ -6,9 +6,9 @@ to have the data served as WMS (and more).
 ## Setup
 
 1. Use this template to create a `qgis` component in your application.
-1. Also add a [dynamic](../templates/serve/dynamic) component to serve any
+1. Also add a [dynamic](../serve/dynamic) component to serve any
    static files from `$DOCKER_BINDS_DIR/fileport/$DOCKER_USER`.
-1. A [proxy](../templates/proxy) component is needed as well, but you probably
+1. A [proxy](../proxy) component is needed as well, but you probably
    already have it.
 
 ## Prepare project in QGIS
@@ -35,8 +35,8 @@ to have the data served as WMS (and more).
       1. In the QGIS menu, choose Layer | Add Layer | e.g. Add Raster Layer...
          and use the copied URL as the new layer's data source (choose the HTTP
          Protocol Source Type).
-      1. If needed (see [below](#authorisation)), provision the Basic
-         authentication credentials for QGIS Server.
+      1. If needed (see [below](#qgis-desktop-authentication)), provision the
+         Basic authentication credentials for QGIS Server.
 1. When done adding layers, zoom to the extent of the widest layer.
 1. Edit the project's properties; go to the QGIS Server tab. Under WMS
    capabilities,
