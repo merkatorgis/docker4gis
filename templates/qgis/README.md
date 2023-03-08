@@ -21,8 +21,6 @@ to have the data served as WMS (and more).
       e.g. [https://localhost:7443/qgisupload/index.php]().
    1. Using the Select Files button, select your QGIS project file (.qgs or
       .qgz).
-   1. Note that the Project field is filled with the base name of your QGIS
-      project file.
    1. Now click the Upload button.
    1. When the upload completes, you'll see the project file listed are in a
       newly created directory for your project on the server.
