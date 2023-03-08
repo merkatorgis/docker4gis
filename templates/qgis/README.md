@@ -77,7 +77,7 @@ If you haven't already, set a URL value for the
 variable, and serve a handler there, that tests who is logged in, and if the
 current request is allowed for that user.
 
-### authorise
+### authorise,
 
 In your proxy component's `conf/args` file, add the following [additional
 destinations](https://github.com/merkatorgis/docker4gis/blob/master/docs/proxy.md#additional-destinations):
