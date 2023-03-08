@@ -125,4 +125,4 @@ itself when acessing the `/files/qgis/...` layer source URLs.
 1. Click the Save button and close the Options dialog.
 
 Then, when adding a new map layer with a file source, choose the `QGIS Server
-(Basic)` authentication configuration fromhe drop down list.
+(Basic)` authentication configuration from the drop down list.
