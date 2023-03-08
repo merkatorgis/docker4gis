@@ -91,7 +91,7 @@ files=authorise,http://$DOCKER_USER-dynamic/files/
 ### Check
 
 In your `AUTH_PATH` endpoint, determine who can do what, based on the logged-in
-user's roles, a the `path` of the incoming request.
+user's roles, and the `path` of the incoming request.
 
 For instance, you could:
 
