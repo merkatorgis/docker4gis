@@ -63,9 +63,9 @@ the URL.
 
 The docker4gis proxy automatically provides three paths for QGIS Server:
 
-- qgis=http://$DOCKER_USER-qgis/qgis/
-- qgisupload=http://$DOCKER_USER-qgis/upload/
-- files=http://$DOCKER_USER-dynamic/files/
+- `qgis=http://$DOCKER_USER-qgis/qgis/`
+- `qgisupload=http://$DOCKER_USER-qgis/upload/`
+- `files=http://$DOCKER_USER-dynamic/files/`
 
 And then it works. But. Everything is accessible to everyone. You shouldn't want
 that.
