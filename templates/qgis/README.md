@@ -97,6 +97,8 @@ For instance, you could:
 
 - Limit access to paths starting with `/qgis` to users that are logged into your
   application.
+    - Limit access to specific project paths and/or layers parameter values,
+      based on specific roles that the user should have.
 - Limit access to paths starting with `/qgisupload` to logged-in users that are
   an administrator.
 - For paths starting with `/files`:
