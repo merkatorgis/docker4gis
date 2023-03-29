@@ -31,6 +31,12 @@ export POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
 export MSYS_NO_PATHCONV=1
 
+docker >/dev/null 2>&1 || {
+	err_code=$?
+	echo "Command \`docker\` failed; is Docker running?"
+	exit "$err_code"
+}
+
 dir=$1
 action=$2
 shift 2
