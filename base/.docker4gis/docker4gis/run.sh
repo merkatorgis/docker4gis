@@ -25,6 +25,10 @@ CONTAINER=$DOCKER_USER-$repo
 [ "$repo" = proxy ] && CONTAINER=docker4gis-proxy
 export CONTAINER
 
+NETWORK=$DOCKER_USER
+[ "$repo" = proxy ] && NETWORK=$CONTAINER
+export NETWORK
+
 echo
 echo "Starting $CONTAINER from $IMAGE..."
 
@@ -55,7 +59,6 @@ if
     BASE=$("$dotdocker4gis" "$temp" "$IMAGE")
 then
     pushd "$BASE" >/dev/null || finish 1
-    export NETWORK=$DOCKER_USER
     docker4gis/network.sh "$NETWORK" || finish 2
     export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER
     mkdir -p "$FILEPORT" || finish 3
