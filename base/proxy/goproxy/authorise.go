@@ -68,7 +68,11 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 				authorization = strings.ReplaceAll(authorization, "\\\\", "\\")
 				authorization = strings.ReplaceAll(authorization, "\\\"", "\"")
 			}
-			r.Header.Set("Authorization", authorization)
+			if len(authorization) > 0 {
+				r.Header.Set("Authorization", authorization)
+			} else {
+				r.Header.Del("Authorization")
+			}
 			// Also, substitute any authorization placeholders in the request,
 			// to cater for use cases where the Authorization header isn't
 			// usable. In the authPath endpoint, do check that the placeholder
