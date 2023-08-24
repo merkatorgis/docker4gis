@@ -210,14 +210,14 @@ component | base-component)
         # up until first . character, if any (to support forked repos named
         # component.name.surname)
         suggestion=${suggestion%%.*}
-        [ "$repo" ] || read -rp "Enter this repo's name (default is $suggestion) : " repo
+        [ "$repo" ] || read -rp "Name the new component (default is $suggestion) : " repo
         [ "$repo" ] || repo=$suggestion
 
-        [ "$component" ] || read -rp "Enter the $docker4gis base image name, e.g. proxy, or postgis : " component
-        [ "$component" ] || exit 1
+        [ "$component" ] || read -rp "Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $repo) : " component
+        [ "$component" ] || component=$repo
 
         [ "$interactive" ] && {
-            [ "$tag" ] || read -rp "Enter the base image's tag to use (default is latest) : " tag
+            [ "$tag" ] || read -rp "Which base image tag to use? (default is latest) : " tag
         }
         [ "$tag" ] || tag=latest
 
