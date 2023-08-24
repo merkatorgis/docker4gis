@@ -15,7 +15,7 @@ New as in:
 
 Clone your project's Git repo, cd into its root, and run 
 ```
-  npx --yes docker4gis@latest init
+npx --yes docker4gis@latest init
 ```
 It will ask you which docker registry to use, how the application is called,
 and whether you want to create an "alias" (if you don'thave it already) for the
@@ -34,7 +34,7 @@ running application: proxy, app, api, database, geoserver, etc.
 To add a component: create another repo for it, clone the component repo _as a
 sibling of the package directory_ (this is important), cd into its root, and run
 ```
-  dg component
+dg component
 ```
 (assuming you had the docker4gis alias created with its default
 name). It will ask you how to call the component, which base docker4gis
