@@ -13,10 +13,14 @@ New as in:
 
 ### Package
 
-Clone your project's Git repo, cd into its root, and run `npx --yes docker4gis@latest init`. It will ask you which docker registry to use, how the
-application is called, and whether you want to create an "alias" (if you don't
-have it already) for the docker4gis command (so that you can type e.g. `dg init`
-instead of `npx --yes docker4gis@latest init`).
+Clone your project's Git repo, cd into its root, and run 
+```
+npx --yes docker4gis@latest init
+```
+It will ask you which docker registry to use, how the application is called,
+and whether you want to create an "alias" (if you don'thave it already) for the
+docker4gis command (so that you can type e.g. `dg init` instead of `npx --yes
+docker4gis@latest init`).
 
 This _package_ repo is to manage the application's package image, which is used
 to run a specific version of the application, with all the specific versions of
@@ -29,7 +33,10 @@ running application: proxy, app, api, database, geoserver, etc.
 
 To add a component: create another repo for it, clone the component repo _as a
 sibling of the package directory_ (this is important), cd into its root, and run
-`dg component` (assuming you had the docker4gis alias created with its default
+```
+dg component
+```
+(assuming you had the docker4gis alias created with its default
 name). It will ask you how to call the component, which base docker4gis
 component it should extend, and which version of the base component to use
 (default is `latest`). If the base component has multiple "flavours", the
