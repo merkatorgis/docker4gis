@@ -186,7 +186,7 @@ Specifically, this means:
    are copied out of the base component's image:
    1. The base component's run script (`run.sh`);
    1. The docker4gis utilities as they were at the time the base component was
-      built, so that they work just as the run script expects; 1. From the run
+      built, so that they work just as the run script expects; from the run
       script, the utilities are available in the temporary directory
       `docker4gis`.
 
