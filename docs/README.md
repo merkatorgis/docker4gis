@@ -236,10 +236,10 @@ base-component` in a clean repo to scaffold a basic draft.
 
 Then, when you have something that could work, issue `dg build` to build an
 initial local version of the new component's base image. In a new repo of an
-existing project, issue `dg scaffold` to set up an environment where you can
+existing project, issue `dg template` to set up an environment where you can
 test creating an extension of the unpublished new base component. When that
-works, copy the scaffold repo's contents (except the `.env` file) to the
-`template` directory of the base component
+works, copy the scaffold repo's contents (except the `.env` and `package.json`
+files) to the `template` directory of the base component.
 
 Everything below this line is "old", and in the process of being rewritten.
 

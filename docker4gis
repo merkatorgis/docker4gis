@@ -181,7 +181,7 @@ POSTFIX_DOMAIN=" >>.env
     bash -i "$0" alias TEST
     ;;
 
-component | base-component | scaffold)
+component | base-component | template)
     write_dotenv() {
         echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY
@@ -231,18 +231,18 @@ DOCKER_REPO=$repo" >>.env
             "Name the new component (default is $suggestion) : " repo
         [ "$repo" ] || repo=$suggestion
 
-        [ "$action" = scaffold ] && {
-            write_dotenv
-            cp -r "$DOCKER_BASE"/template/template/* .
-            echo "FROM docker4gis/$repo:latest" >./Dockerfile
-            package_json
-            exit 0
-        }
-
         [ "$component" ] || read -rp \
             "Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $repo) : " \
             component
         [ "$component" ] || component=$repo
+
+        [ "$action" = template ] && {
+            write_dotenv
+            cp -r "$DOCKER_BASE"/template/template/* .
+            echo "FROM docker4gis/$component:latest" >./Dockerfile
+            package_json
+            exit 0
+        }
 
         [ "$interactive" ] && {
             [ "$tag" ] || read -rp \
@@ -364,6 +364,6 @@ alias)
     ;;
 
 *)
-    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | scaffold | docker4gis | base | login | version | bump"
+    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | template | docker4gis | base | login | version | bump"
     ;;
 esac
