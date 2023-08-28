@@ -110,7 +110,8 @@ Note that the pipeline needs access to the Docker registry; in the generated
 pipelines, there's a variable `DOCKER_PASSWORD` that you should provision. Also,
 Git permissions are required for the pipeline to commit new version files and
 tags. In Azure DevOps, this is configured in Project Settings | Repsitories |
-All Repositories | Security; the user `{project name} Build Service ({organsation name})` should get `Allow` for the items "Bypass policies when
+All Repositories | Security; the user `{project name} Build Service
+({organsation name})` should get `Allow` for the items "Bypass policies when
 pushing", "Contribute", "Create tag", and "Read".
 
 Remember that now the `push` action happens _automatically_, you should refrain
@@ -147,7 +148,9 @@ So, in short, what you typically do is:
 1. Once all components are pushed, `dg build` and `dg push` the package as well.
 1. On the server:
    1. Run the package image (once) to echo the script that runs the application:
-      `docker container run --rm {DOCKER_REGISTRY}/{DOCKER_USER}/package:{tag} > {file_name}`, e.g. `docker container run --rm docker.example.com/theapp/package:237 > theapp`.
+      `docker container run --rm {DOCKER_REGISTRY}/{DOCKER_USER}/package:{tag} >
+{file_name}`, e.g. `docker container run --rm
+docker.example.com/theapp/package:237 > theapp`.
    1. Edit the variables in the file to match the environment.
    1. Make the file executable: `chmod +x theapp`.
    1. Execute it: `./theapp 237`.
@@ -219,11 +222,6 @@ When the PR is created (and on any subsequent commits to its originating
 branch), a required check has to be run successfully, before the PR enters a
 "mergeable" state. This automated check verifies that the component's new code
 can still be built.
-
-As a protective measure, the check won't run automatically when the PR comes
-from a fork of a user thas isn't a "collaborator" in the base component repo. In
-that case, the check is to be triggered by a collaborator through a comment
-(`/azp run`) on the PR.
 
 When a PR gets merged, another trigger automatically starts a pipeline that
 creates the component's new version, as described
