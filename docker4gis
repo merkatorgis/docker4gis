@@ -173,7 +173,7 @@ POSTGRES_LOG_STATEMENT=
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
-    cp -r "$DOCKER_BASE"/package/template/* .
+    cp -r "$DOCKER_BASE"/package/template/. .
     mkdir -p components
     echo "$DOCKER_USER".log >>.gitignore
 
@@ -200,7 +200,7 @@ DOCKER_REPO=$repo" >>.env
         DOCKER_REGISTRY=docker.io
         DOCKER_USER=docker4gis
 
-        cp -r "$DOCKER_BASE"/template/* .
+        cp -r "$DOCKER_BASE"/template/. .
     else
         # We are a concrete application's component.
         for env_file in ../*/.env; do
@@ -238,7 +238,7 @@ DOCKER_REPO=$repo" >>.env
 
         [ "$action" = template ] && {
             write_dotenv
-            cp -r "$DOCKER_BASE"/template/template/* .
+            cp -r "$DOCKER_BASE"/template/template/. .
             echo "FROM docker4gis/$component:latest" >./Dockerfile
             package_json
             exit 0
@@ -287,7 +287,7 @@ DOCKER_REPO=$repo" >>.env
                 }
             fi
         fi
-        cp -r ./template/"$template"/* .
+        cp -r ./template/"$template"/. .
         rm -rf ./template
     fi
 
