@@ -114,8 +114,8 @@ stop)
 	;;
 geoserver)
 	container=$DOCKER_USER-$DOCKER_REPO
-	from=$container:/opt/geoserver_data/workspaces
-	to=./conf/workspaces
+	from=$container:/opt/geoserver_data
+	to=./conf/geoserver_data
 	echo "About to replace '$to' with '$from'"
 	read -rn 1 -p 'Press any key to continue (or Ctrl-C to cancel) ... '
 	echo
