@@ -113,15 +113,13 @@ stop)
 	"$DOCKER_BASE/stop.sh"
 	;;
 geoserver)
-	app_name=${1:-$DOCKER_USER}
-	container=$DOCKER_USER-geoserver
-	data_dir=$(docker container exec "$container" bash -c 'echo "$GEOSERVER_DATA_DIR"')
-	from=$container:$data_dir/workspaces/$app_name
-	to=geoserver/conf/$app_name/workspaces
-	echo "About to overwrite './$to/$app_name' with '$from'"
-	read -rn 1 -p 'Press any key to continue (or Ctrl-C to cancel)...'
+	container=$DOCKER_USER-$DOCKER_REPO
+	from=$container:/opt/geoserver_data/workspaces
+	to=./conf/workspaces
+	echo "About to replace '$to' with '$from'"
+	read -rn 1 -p 'Press any key to continue (or Ctrl-C to cancel) ... '
 	echo
-	rm -rf "${to:?}/$app_name"
+	rm -rf "$to"
 	docker container cp "$from" "$to"
 	;;
 *)
