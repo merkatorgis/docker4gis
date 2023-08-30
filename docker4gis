@@ -192,7 +192,7 @@ DOCKER_REPO=$repo" >>.env
         # We are a generic docker4gis base component.
         repo=$1
         [ "$repo" ] || read -rp \
-            "Enter the base component's name (the \"repo\" in the Docker registry) : " \
+            "Enter the base component's name (the \"repository\" in the Docker registry) : " \
             repo
         [ "$repo" ] || exit 1
         DOCKER4GIS_VERSION=$(version)
@@ -200,6 +200,9 @@ DOCKER_REPO=$repo" >>.env
         DOCKER_USER=docker4gis
 
         cp -r "$DOCKER_BASE"/template/. .
+        search='{{COMPONENT}}'
+        replace=$repo
+        find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
     else
         # We are a concrete application's component.
         for env_file in ../*/.env; do

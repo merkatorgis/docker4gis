@@ -11,7 +11,7 @@ VOLUME=$VOLUME
 
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
-	-v "$(docker4gis/bind.sh "$FILEPORT" /fileport)" \
+	--mount type=bind,source="$FILEPORT",target=/fileport \
 	--mount source="$VOLUME",target=/volume \
 	--network "$NETWORK" \
-	-d "$IMAGE" component_name "$@"
+	-d "$IMAGE" {{COMPONENT}} "$@"
