@@ -114,13 +114,7 @@ stop)
 	;;
 geoserver)
 	container=$DOCKER_USER-$DOCKER_REPO
-	from=$container:/opt/geoserver_data
-	to=./conf/geoserver_data
-	echo "About to replace '$to' with '$from'"
-	read -rn 1 -p 'Press any key to continue (or Ctrl-C to cancel) ... '
-	echo
-	rm -rf "$to"
-	docker container cp "$from" "$to"
+	eval "$(docker container exec "$container" dg geoserver)"
 	;;
 *)
 	echo "Unknown action: $action"

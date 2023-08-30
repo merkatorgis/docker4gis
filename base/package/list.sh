@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Uncomment for debugging the commands that are issued:
+# echo
+# echo " -- $0 $* --"
+# echo
+# set -x
+
 # compiles a list of commands to run all repos' containers
 
 # Either empty (we're creating the package image's run.sh script from the
