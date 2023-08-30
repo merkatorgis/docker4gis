@@ -7,7 +7,6 @@
 # or package repo in the dev env).
 directive=$1
 
-BASE=$BASE
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
@@ -28,49 +27,59 @@ error() {
     finish 1
 }
 
-# In the dev env, component repos should be found as sibblings of the current directory.
-for file in ../*/build.sh; do
-    [ -f "$file" ] || break
-    dir=$(dirname "$file")
-    if [ -f "$dir"/.env ] && [ -f "$dir"/package.json ]; then
-        # Start a subshell to prevent overwriting environment variables.
-        (
-            DOCKER_REPO=
-            # shellcheck source=/dev/null
-            . "$dir"/.env
-            # If there's a build.sh, a package.json, a .env and a DOCKER_REPO,
-            # then it must be a docker4gis repo directory.
-            [ "$DOCKER_REPO" ] && {
-                version=$(node --print "require('$dir/package.json').version")
-                version="v$version"
-                [ "$version" = 'v0.0.0' ] && version=latest
-                if [ "$DOCKER_REPO" = package ]; then
-                    # Just remember that this was the package directory.
-                    echo "$dir" >"$package_dir_container"
-                else
-                    [ "$version" = latest ] || {
-                        # If the version was updated (to something other than
-                        # "latest"), then apparently the image was pushed. Since
-                        # that could have been done by the pipeline (out of our
-                        # sight), we might locally have a now unwanted leftover
-                        # "latest" image.
-                        current_version_file=./components/"$DOCKER_REPO"
-                        [ -f "$current_version_file" ] && current_version=$(cat "$current_version_file")
-                        if ! [ "$current_version" = "$version" ]; then
-                            image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
-                            docker image rm -f "$image":latest >/dev/null 2>&1
-                        fi
-                    }
-                    # Add this repo's version to the list of components.
-                    echo "$version" >"$temp_components"/"$DOCKER_REPO"
+# In the dev env, component repos should be found as siblings of the current
+# directory.
+for dotenv in ../*/.env; do
+    dir=$(dirname "$dotenv")
+    [ -f "$dotenv" ] || continue
+    # Start a subshell to prevent overwriting environment variables.
+    (
+        DOCKER4GIS_VERSION=
+        DOCKER_REGISTRY=
+        DOCKER_USER=
+        DOCKER_REPO=
+        # shellcheck source=/dev/null
+        . "$dotenv"
+        # If this is a docker4gis repo directory, it must have these variables
+        # set. Otherwise, exit the subshell (which happens to be the last thing
+        # in the for loop).
+        [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ] && [ "$DOCKER_REPO" ] || exit
+
+        packagejson=$dir/package.json
+        [ -f "$packagejson" ] || exit
+        version=$(node --print "require('$packagejson').version")
+        if [ "$version" = 0.0.0 ]; then
+            version=latest
+        else
+            version=v$version
+        fi
+
+        if [ "$DOCKER_REPO" = package ]; then
+            # Just remember that this was the package directory.
+            echo "$dir" >"$package_dir_container"
+        else
+            [ "$version" = latest ] || {
+                # If the version was updated (to something other than
+                # "latest"), then apparently the image was pushed. Since
+                # that could have been done by the pipeline (out of our
+                # sight), we might locally have a now unwanted leftover
+                # "latest" image.
+                current_version_file=./components/"$DOCKER_REPO"
+                [ -f "$current_version_file" ] && current_version=$(cat "$current_version_file")
+                if ! [ "$current_version" = "$version" ]; then
+                    image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
+                    docker image rm -f "$image":latest >/dev/null 2>&1
                 fi
             }
-        )
-    fi
+            # Add this repo's version to the list of components.
+            echo "$version" >"$temp_components"/"$DOCKER_REPO"
+        fi
+    )
 done
+
 components=./components
 # Replace the current components list with the new list. In the pipeline, no
-# component sibblings are found, and the current list of components remains.
+# component siblings are found, and the current list of components remains.
 if ls "$temp_components"/* >/dev/null 2>&1; then
     package_dir=$(cat "$package_dir_container")
     [ -d "$package_dir" ] || error "package directory not found"
@@ -110,15 +119,17 @@ add_repo() {
                 error "version unknown for '$repo'; was it pushed already?"
             fi
         fi
-        # use local image _if_ it exists
+        # Use local image _if_ it exists.
         local_image_exists "$image:$tag" ||
-            # otherwise, try to find it in the registry
+            # Otherwise, try to find it in the registry. Note that this is why
+            # the build validation pipeline of the package repo has to log into
+            # the docker registry.
             docker image pull "$image:$tag" >/dev/null ||
             error "image '$image:$tag' not found"
     fi
 
     if [ "$tag" ]; then
-        echo "$BASE/docker4gis/run.sh $repo $tag" >>"$output"
+        echo "$DOCKER_BASE/.docker4gis/docker4gis/run.sh $repo $tag" >>"$output"
         echo "$image:$tag" >&2
     else
         error "no tag for '$image'"

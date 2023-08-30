@@ -28,6 +28,7 @@ x() {
 }
 
 buildscript=./build.sh
+[ "$DOCKER_REPO" = package ] && buildscript=$DOCKER_BASE/package/build.sh
 # Ensure we have something to run.
 x "$buildscript"
 
@@ -65,7 +66,7 @@ echo "Building $IMAGE"
 
 [ "$DOCKER_USER" = docker4gis ] || {
     # When building a concrete application's component or package image, as
-    # opposed to a docker4gis generic component image, remove any existing
+    # opposed to a docker4gis base component image, remove any existing
     # container, so that it gets replaced by a new one, started from the new
     # image we're going to build now.
     [ "$repo" = proxy ] &&

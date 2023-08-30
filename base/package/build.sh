@@ -1,34 +1,40 @@
 #!/bin/bash
 
-[ "$IMAGE" ] && extension=true
 IMAGE=${IMAGE:-docker4gis/package}
 DOCKER_BASE=$DOCKER_BASE
+DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+
+[ "$IMAGE" = docker4gis/package ] || extension=true
 
 mkdir -p conf
 
 finish() {
     rm -rf conf
+    [ "$extension" ] && [ -f Dockerfile ] && rm Dockerfile
     exit "${1:-0}"
 }
 
-if [ "$extension" ]; then
-    # We're building a concrete application's package image; compile a list of
-    # commands to run its containers (otherwise, we're building the base
-    # docker4gis/package image).
+[ "$extension" ] && {
+    # We're building a concrete application's package image (i.e. an extension
+    # of the base docker4gis/package image, as opposed to that base image
+    # itself); compile a list of commands to run its containers.
     runscript=conf/run.sh
     echo '#!/bin/bash' >"$runscript"
     # echo 'set -x' >>"$runscript"
     # echo 'find .' >>"$runscript"
     chmod +x "$runscript"
     here=$(realpath "$(dirname "$0")")
-    # shellcheck disable=SC2016
-    # Set BASE to the .docker4gis directory that was copied out of the base
-    # docker4gis/package image, containing both build.sh ($0) and list.sh,
-    # put there by the Dockerfile.
-    BASE='"$(dirname "$0")"' "$here"/list.sh >>"$runscript" || finish 1
-fi
+    "$here"/list.sh >>"$runscript" || finish 1
+    if [ "$DOCKER4GIS_VERSION" = latest ]; then
+        # This would just be a debugging/testing situation.
+        tag=latest
+    else
+        tag=v$DOCKER4GIS_VERSION
+    fi
+    echo "FROM docker4gis/package:$tag" >Dockerfile
+}
 
 cp -r "$DOCKER_BASE"/.docker4gis conf
 docker image build \
