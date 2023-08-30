@@ -30,8 +30,8 @@ error() {
 # In the dev env, component repos should be found as siblings of the current
 # directory.
 for dotenv in ../*/.env; do
-    dir=$(dirname "$dotenv")
-    [ -f "$dotenv" ] || continue
+    # Break when there's none.
+    [ -f "$dotenv" ] || break
     # Start a subshell to prevent overwriting environment variables.
     (
         DOCKER4GIS_VERSION=
@@ -44,6 +44,8 @@ for dotenv in ../*/.env; do
         # set. Otherwise, exit the subshell (which happens to be the last thing
         # in the for loop).
         [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ] && [ "$DOCKER_REPO" ] || exit
+
+        dir=$(dirname "$dotenv")
 
         packagejson=$dir/package.json
         [ -f "$packagejson" ] || exit

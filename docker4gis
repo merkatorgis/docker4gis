@@ -30,9 +30,6 @@ package_json() {
 pipeline() {
     local main=$1
 
-    # Init version file as well.
-    package_json
-
     write() {
         local file=$1
         local steps=$2
@@ -176,6 +173,7 @@ POSTFIX_DOMAIN=" >>.env
     mkdir -p components
     echo "$DOCKER_USER".log >>.gitignore
 
+    package_json
     pipeline main
     bash -i "$0" alias TEST
     ;;
@@ -188,8 +186,16 @@ DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$repo" >>.env
     }
 
-    if [ "$action" = base-component ]; then
-        # We are a generic docker4gis base component.
+    replace_component() {
+        search='{{COMPONENT}}'
+        replace=$repo
+        find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
+    }
+
+    package_json
+
+    [ "$action" = base-component ] && {
+        # Creating a generic docker4gis base component.
         repo=$1
         [ "$repo" ] || read -rp \
             "Enter the base component's name (the \"repository\" in the Docker registry) : " \
@@ -200,102 +206,117 @@ DOCKER_REPO=$repo" >>.env
         DOCKER_USER=docker4gis
 
         cp -r "$DOCKER_BASE"/template/. .
-        search='{{COMPONENT}}'
-        replace=$repo
-        find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
-    else
-        # We are a concrete application's component.
-        for env_file in ../*/.env; do
-            [ -f "$env_file" ] || break
-            dotenv forgiving "$env_file"
-            if [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
-                inited=true
-                break
-            fi
-        done
+        replace_component
 
-        [ "$inited" ] || {
-            echo "Package directory not foud; to create one, run $docker4gis init."
-            exit 1
-        }
+        write_dotenv
+        pipeline main
+        # And we're done!
+        exit
+    }
 
-        [ "$1" ] || interactive=true
-        repo=$1
-        component=$2
-        tag=$3
-        template=$4
+    # Creating a concrete application's component.
 
-        suggestion=$(basename "$(realpath "$PWD")")
-        # up until first . character, if any (to support forked repos named
-        # component.name.surname)
-        suggestion=${suggestion%%.*}
-        [ "$repo" ] || read -rp \
-            "Name the new component (default is $suggestion) : " repo
-        [ "$repo" ] || repo=$suggestion
-
-        [ "$component" ] || read -rp \
-            "Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $repo) : " \
-            component
-        [ "$component" ] || component=$repo
-
-        [ "$action" = template ] && {
-            write_dotenv
-            cp -r "$DOCKER_BASE"/template/template/. .
-            echo "FROM docker4gis/$component:latest" >./Dockerfile
-            package_json
-            exit 0
-        }
-
-        [ "$interactive" ] && {
-            [ "$tag" ] || read -rp \
-                "Which base image tag to use? (default is latest) : " tag
-        }
-        [ "$tag" ] || tag=latest
-
-        image=docker4gis/$component:$tag
-        # Normally, we want to make sure the specified image is exactly as it is
-        # in the Registry. But this cannot work for new, unpublished component;
-        # in that case, we rely on a fresh local build of the new component
-        # image.
-        [ "$action" = unpublished-component ] || {
-            docker image pull "$image" >/dev/null
-        }
-        container=$(docker container create "$image") || {
-            echo "Image not found: $image"
-            exit 1
-        }
-
-        docker container cp "$container":/template . || {
-            echo "$image doesn't seem a $docker4gis component"
-            exit 1
-        }
-        docker container rm "$container" >/dev/null
-        if ! [ "$template" ]; then
-            default=./template/.default
-            if [ -f "$default" ]; then
-                default=$(cat "$default")
-                template=$default
-                [ "$interactive" ] && {
-                    choices=$(ls ./template)
-                    choices=$(echo "$choices" | xargs)
-                    read -rp \
-                        "Enter the template name (one of: $choices - default is $default) : " \
-                        template
-                    [ "$template" ] || template=$default
-                    ls ./template/"$template" >/dev/null 2>&1 || {
-                        echo "Template not found: $template"
-                        exit 1
-                    }
-                }
-            fi
+    # Load the package's environment values.
+    for env_file in ../*/.env; do
+        # Break when there's none.
+        [ -f "$env_file" ] || break
+        dotenv forgiving "$env_file"
+        if [ "$DOCKER_REPO" = package ] && [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
+            inited=true
+            break
         fi
-        cp -r ./template/"$template"/. .
-        rm -rf ./template
-    fi
+    done
+
+    [ "$inited" ] || {
+        echo "Package directory not foud; to create one, run $docker4gis init."
+        exit 1
+    }
+
+    [ "$1" ] || interactive=true
+    repo=$1
+    component=$2
+    tag=$3
+    template=$4
+
+    suggestion=$(basename "$(realpath "$PWD")")
+    # Up until first `.` character, if any (to support forked repos named
+    # component.name.surname).
+    suggestion=${suggestion%%.*}
+    [ "$repo" ] || read -rp \
+        "Name the new component (default is $suggestion) : " repo
+    [ "$repo" ] || repo=$suggestion
 
     write_dotenv
 
+    component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $repo"
+    [ "$action" = template ] || component_question="$component_question, n for none"
+
+    [ "$component" ] || read -rp \
+        "$component_question) : " \
+        component
+    [ "$component" ] || component=$repo
+
+    [ "$action" = template ] && {
+        # Just scaffolding an inital setup for developing a template for a new
+        # base component.
+        cp -r "$DOCKER_BASE"/template/template/. .
+    }
+
+    [ "$component" = n ] && {
+        # Creating a component _not_ extending a docker4gis base component.
+        cp -r "$DOCKER_BASE"/template/. .
+        rm -rf template
+        pipeline main
+    }
+
+    [ "$action" = template ] || [ "$component" = n ] && {
+        replace_component
+        # And we're done!
+        exit
+    }
+
+    # Creating a component extending a docker4gis base component.
+
     pipeline main
+
+    [ "$interactive" ] && {
+        [ "$tag" ] || read -rp \
+            "Which base image tag to use? (default is latest) : " tag
+    }
+    [ "$tag" ] || tag=latest
+
+    image=docker4gis/$component:$tag
+    container=$(docker container create "$image") || {
+        echo "Image not found: $image"
+        exit 1
+    }
+
+    docker container cp "$container":/template . || {
+        echo "$image doesn't seem a $docker4gis component"
+        exit 1
+    }
+    docker container rm "$container" >/dev/null
+    if ! [ "$template" ]; then
+        default=./template/.default
+        if [ -f "$default" ]; then
+            default=$(cat "$default")
+            template=$default
+            [ "$interactive" ] && {
+                choices=$(ls ./template)
+                choices=$(echo "$choices" | xargs)
+                read -rp \
+                    "Enter the template name (one of: $choices - default is $default) : " \
+                    template
+                [ "$template" ] || template=$default
+                ls ./template/"$template" >/dev/null 2>&1 || {
+                    echo "Template not found: $template"
+                    exit 1
+                }
+            }
+        fi
+    fi
+    cp -r ./template/"$template"/. .
+    rm -rf ./template
     ;;
 
 build | run | br | push | test | stop | geoserver)
