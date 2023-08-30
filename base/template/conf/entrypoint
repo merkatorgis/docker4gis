@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-if [ "$1" = 'component_name' ]; then
+if [ "$1" = '{{COMPONENT}}' ]; then
 	shift 1
 
 	# Here you can configure stuff, if needed, before starting the original

@@ -3,7 +3,7 @@ FROM a_generc_image:a-specific-tag
 # Allow configuration before things start up.
 COPY conf/entrypoint /
 ENTRYPOINT ["/entrypoint"]
-CMD ["component_name"]
+CMD ["{{COMPONENT}}"]
 
 # Example plugin use.
 COPY conf/.plugins/bats /tmp/bats
