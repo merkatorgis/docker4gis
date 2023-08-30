@@ -364,6 +364,6 @@ alias)
     ;;
 
 *)
-    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | template | docker4gis | base | login | version | bump"
+    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
     ;;
 esac
