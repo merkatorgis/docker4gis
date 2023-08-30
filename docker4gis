@@ -2,7 +2,7 @@
 
 # Uncomment for debugging the commands that are issued:
 # echo
-# echo " -- docker4gis $* --"
+# echo " -- $0 $* --"
 # echo
 # set -x
 
