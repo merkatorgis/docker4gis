@@ -28,12 +28,33 @@
       max-width: 20em;
       margin-top: .25em;
     }
+
+    #loading {
+      background-color: rgb(0, 0, 0, 0.2);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #loading img {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      top: calc(50% - 29px);
+      left: calc(50% - 29px);
+    }
   </style>
 </head>
 
 <?php $project = isset($_REQUEST['project']) ? $_REQUEST['project'] : ''; ?>
 
 <body>
+  <div id="loading" hidden>
+    <!-- https://github.com/SamHerbert/SVG-Loaders -->
+    <img src="spinning-circles.svg">
+  </div>
 
   <h1>Upload files to QGIS Server</h1>
 
@@ -83,6 +104,7 @@
           project.value = project.disabled ? '' : project.value;
         });
         form.addEventListener('submit', () => {
+          loading.hidden = false;
           if (project.value) {
             form.action += `?project=${project.value}`;
           }
