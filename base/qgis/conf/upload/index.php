@@ -63,9 +63,23 @@
         <input type="submit" form="form" name="upload" id="upload" value="Upload" />
       </p>
 
+      <p id="error" style="color: red;" hidden>
+        Please use .qgs project file type<br />
+        instead of .qgz.
+      </p>
+
       <script>
         file.addEventListener('change', () => {
-          project.disabled = file.value.endsWith('qgs') || file.value.endsWith('qgz');
+          function ext(ext) {
+            return Array.from(file.files).find(({
+              name
+            }) => name.toLowerCase().endsWith('.' + ext));
+          }
+
+          upload.disabled = ext('qgz');
+          error.hidden = !upload.disabled;
+
+          project.disabled = ext('qgs');
           project.value = project.disabled ? '' : project.value;
         });
         form.addEventListener('submit', () => {

@@ -7,15 +7,6 @@ function error(int $code = 500, string $message = ''): void
     exit();
 }
 
-function command(string $command, array &$output = null, int &$result_code = null): string
-{
-    $result = exec($command, $output, $result_code);
-    if ($result === false) {
-        error(500, "Command failed: <pre>$command</pre> Output: <pre>$output</pre> Result code: <pre>$result_code</pre>");
-    }
-    return $result;
-}
-
 function pre($value): void
 {
     echo '<pre>';
@@ -64,8 +55,7 @@ for ($i = 0; $i < count($file['name']); $i++) {
 
     $path_parts = pathinfo($name);
 
-    $qgz = strcasecmp($path_parts['extension'], 'qgz') === 0;
-    $isProject = $qgz || strcasecmp($path_parts['extension'], 'qgs') === 0;
+    $isProject = strcasecmp($path_parts['extension'], 'qgs') === 0;
 
     if ($isProject) {
         $project = $path_parts['filename'];
@@ -93,8 +83,7 @@ for ($i = 0; $i < count($file['name']); $i++) {
 
     $path_parts = pathinfo($name);
 
-    $qgz = strcasecmp($path_parts['extension'], 'qgz') === 0;
-    $isProject = $qgz || strcasecmp($path_parts['extension'], 'qgs') === 0;
+    $isProject = strcasecmp($path_parts['extension'], 'qgs') === 0;
 
     $base = '/fileport';
     $dir = "/files/qgis/$project/";
@@ -115,73 +104,6 @@ for ($i = 0; $i < count($file['name']); $i++) {
     // Save the file.
     move_uploaded_file($tmp_name, $full_path)
         || error(500, "Uploading file $path failed.");
-
-    if ($qgz) {
-        // Unzip .qgz file to .qgs file.
-        // -o  overwrite files WITHOUT prompting
-        // -d  extract files into exdir
-        command("unzip -o '$full_path' -d '$full_dir'");
-        $path = $dir . $project . '.qgs';
-        $full_path = $base . $path;
-    }
-
-    if ($isProject) {
-        // Copy the project file to use for the server.
-        $server_path = "$full_path.server";
-        command("cp '$full_path' '$server_path'");
-        $full_path = $server_path;
-
-        /*
-        Replace layer source remote URLs with local file URLs.
-        */
-
-        // localhost:7443, www.geoloket.nl, etc.
-        $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-        // https://localhost:7443/files/qgis/65521-1/, https://uid:pwd@localhost:7443/files/qgis/65521-1/
-        $dir_pattern = "https://.*$host.*$dir";
-
-        // Remove all /vsicurl/ prefixes from the file.
-        $search = '\([">]\)/vsicurl/.*' . "\($dir_pattern\)";
-        $replace = '\1\2';
-        command("sed -i 's~$search~$replace~g' '$full_path'");
-
-        // https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img
-        $file_pattern = $dir_pattern . '[^ "<]\+';
-        // Escape double quotes when script is given between double quotes.
-        $file_pattern_double_quotes = $dir_pattern . '[^ \"<]\+';
-
-        // Remove all authcfg suffixes from the file.
-        $search = "\($file_pattern_double_quotes\)\s\+authcfg='.\+'";
-        $replace = '\1';
-        // Must give script in double quotes because of the single quotes in the
-        // $search.
-        $script = '"s~' . $search . '~' . $replace . '~g"';
-        command("sed -i $script '$full_path'");
-
-        // Gather into $urls all the file URLs that need rewriting.
-        // --only-matching to just get the matched text, instead of the whole line.
-        $grep = "grep --only-matching '$file_pattern' '$full_path'";
-        $urls = null;
-        command($grep, $urls);
-
-        // pre($grep);
-        // pre($urls);
-        // error();
-
-        // '1_04%20ZZW%20S5-2_IMG%20raster%201x1.img'
-        $paths = preg_replace("|.*$dir(.*)|", '$1', $urls);
-        // '1_04 ZZW S5-2_IMG raster 1x1.img' - It's only because we need to do
-        // this, that we cannot just do one global sed for all URLs.
-        $paths = array_map('urldecode', $paths);
-
-        for ($j = 0; $j < count($urls); $j++) {
-            // 'https://localhost:7443/files/qgis/65521-1/1_04%20ZZW%20S5-2_IMG%20raster%201x1.img'
-            $search = $urls[$j];
-            // '/fileport/files/qgis/65521-1/1_04 ZZW S5-2_IMG raster 1x1.img'
-            $replace = $full_dir . $paths[$j];
-            command("sed -i 's~$search~$replace~g' '$full_path'");
-        }
-    }
 }
 
 header("Location: index.php?project=$project");

@@ -1,12 +1,16 @@
-FROM camptocamp/qgis-server:3.22
+FROM camptocamp/qgis-server:3.32.0
+
+# https://stackoverflow.com/a/65054734/2389922
+ENV TZ=Europe/Amsterdam
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install php.
 RUN apt update
 RUN apt install -y php libapache2-mod-php
 
 # Higher file upload limit.
-RUN echo upload_max_filesize = 500M >>/etc/php/7.4/apache2/php.ini
-RUN echo post_max_size = 510M >>/etc/php/7.4/apache2/php.ini
+RUN echo upload_max_filesize = 500M >>/etc/php/*/apache2/php.ini
+RUN echo post_max_size = 510M >>/etc/php/*/apache2/php.ini
 
 # Our php app, reachable via
 # https://<PROXY_HOST>/<DOCKER_USER>/qgisupload/index.php, or
