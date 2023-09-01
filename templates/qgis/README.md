@@ -6,9 +6,9 @@ to have the data served as WMS (and more).
 ## Setup
 
 1. Use this template to create a `qgis` component in your application.
-1. Also add a [dynamic](../templates/serve/dynamic) component to serve any
+1. Also add a [dynamic](../serve/dynamic) component to serve any
    static files from `$DOCKER_BINDS_DIR/fileport/$DOCKER_USER`.
-1. A [proxy](../templates/proxy) component is needed as well, but you probably
+1. A [proxy](../proxy) component is needed as well, but you probably
    already have it.
 
 ## Prepare project in QGIS
@@ -58,9 +58,9 @@ the URL.
 
 The docker4gis proxy automatically provides three paths for QGIS Server:
 
-- qgis=http://$DOCKER_USER-qgis/qgis/
-- qgisupload=http://$DOCKER_USER-qgis/upload/
-- files=http://$DOCKER_USER-dynamic/files/
+- `qgis=http://$DOCKER_USER-qgis/qgis/`
+- `qgisupload=http://$DOCKER_USER-qgis/upload/`
+- `files=http://$DOCKER_USER-dynamic/files/`
 
 And then it works. But. Everything is accessible to everyone. You shouldn't want
 that.
@@ -72,7 +72,7 @@ If you haven't already, set a URL value for the
 variable, and serve a handler there, that tests who is logged in, and if the
 current request is allowed for that user.
 
-### authorise
+### authorise,
 
 In your proxy component's `conf/args` file, add the following [additional
 destinations](https://github.com/merkatorgis/docker4gis/blob/master/docs/proxy.md#additional-destinations):
@@ -86,12 +86,14 @@ files=authorise,http://$DOCKER_USER-dynamic/files/
 ### Check
 
 In your `AUTH_PATH` endpoint, determine who can do what, based on the logged-in
-user's roles, a the `path` of the incoming request.
+user's roles, and the `path` of the incoming request.
 
 For instance, you could:
 
 - Limit access to paths starting with `/qgis` to users that are logged into your
   application.
+  - Limit access to specific project paths and/or layers parameter values,
+    based on specific roles that the user should have.
 - Limit access to paths starting with `/qgisupload` to logged-in users that are
   an administrator.
 - For paths starting with `/files`:

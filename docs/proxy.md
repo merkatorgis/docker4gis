@@ -57,8 +57,11 @@ Any proxy destination can be marked to `authorise`. In that case,
 access for each request is first tested by issuing a `POST` request to the
 URL in the `AUTH_PATH` environment variable, with a JSON oject in the body,
 containing the `method` (GET/PUT/POST/DELETE), the `path`, the `query` parameters,
-and the `body`. Any request headers come along as well. The endpoint should respond
-with either status `200 OK`, or `401 Unauthorized`, or `403 Forbidden`.
+and the `body`. Any request headers come along as well.
+
+The endpoint should respond with either status `200 OK`, or `401 Unauthorized`, or
+`403 Forbidden`. On `200 OK`, any content in the response's body will be set as the
+value of the `Authentiation` header in the request to the destination URL.
 
 ### Multiple applications
 
