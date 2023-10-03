@@ -115,7 +115,10 @@ analyze() {
     # https://www.postgresql.org/docs/13/app-pgdump.html
     time {
         echo "Waiting for ANALYZE to complete..."
-        sql "analyze"
+        sql "
+            SET maintenance_work_mem TO '512MB';
+            analyze;
+        "
     }
 }
 
@@ -158,7 +161,7 @@ restore() {
 
     # mark the database as provisioned in all cases, since if we weren't
     # restoring a dump, we're expected to be provisioning the database from DDL
-    # instead
+    # instead, see onstart.sh
     sql "alter database $database set app.provisioned to true"
 }
 
@@ -186,8 +189,9 @@ dump_schema() {
                 --file="$backup" &&
             echo "Dump created: '$backup'" &&
             chmod +rx "$backup" &&
-            version=$(sql "select $schema.__version()" -At 2>/dev/null) &&
-            echo "$version" >"$backup/__version"
+            if version=$(sql "select $schema.__version()" -At 2>/dev/null); then
+                echo "$version" >"$backup/__version"
+            fi
     }
 }
 
@@ -243,6 +247,22 @@ upgrade() {
         )
 }
 
+flag() {
+    if [ "$?" = 0 ]; then
+        flag=DONE
+    else
+        flag=FAILED
+    fi
+    [ "$1" = start ] && flag=BUSY
+    # Remove any old flag.
+    rm -f "$dir"/*.flag
+    # Write new flag.
+    touch "$dir/$flag.flag"
+}
+
 # dump or restore or upgrade or dump_schema or restore_schema (see Dockerfile)
 action=$(basename "$0")
+
+flag start
 $action "$@"
+flag
