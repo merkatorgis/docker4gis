@@ -253,11 +253,19 @@ flag() {
     else
         flag=FAILED
     fi
-    [ "$1" = start ] && flag=BUSY
+    [ "$1" = start ] && {
+        flag=BUSY
+        if busy=$(ls "$dir"/BUSY.*.flag 2>/dev/null); then
+            echo "Exiting while another dump/restore process is still busy:"
+            echo "$busy"
+            exit
+        fi
+    }
+    ext=$action.flag
     # Remove any old flag.
-    rm -f "$dir"/*.flag
+    rm -f "$dir"/*."$ext"
     # Write new flag.
-    touch "$dir/$flag.flag"
+    touch "$dir/$flag.$ext"
 }
 
 # dump or restore or upgrade or dump_schema or restore_schema (see Dockerfile)
