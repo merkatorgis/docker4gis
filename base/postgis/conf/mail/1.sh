@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pushd schema/1
+pushd schema/"$(basename "$0" .sh)"
 
 pg.sh -f send.sql
 
