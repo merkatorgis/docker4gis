@@ -43,6 +43,50 @@ finish() {
     exit "${1:-$?}"
 }
 
+iptables() {
+    # Force the container's ip address to the one listed in iptables.
+
+    # Find the container's HostPorts.
+    ports=$(
+        docker container inspect \
+            --format '
+                {{range .HostConfig.PortBindings}}
+                    {{range .}}
+                        {{.HostPort}}
+                    {{end}}
+                {{end}}
+            ' \
+            "$CONTAINER"
+    )
+
+    # Find the ip listed for these ports in iptables.
+    for port in $ports; do
+        which iptables-save >/dev/null 2>&1 &&
+            ip=$(sudo iptables-save |
+                # Look for lines with this port.
+                grep -P "\s+--dport\s+$port" |
+                # Only search lines in the NAT table.
+                grep MASQUERADE |
+                # Pick the address part from patterns like ' -d 172.18.0.13/32'.
+                grep -Po "\s+-d\s+\K[^/]+") &&
+            # Accept the first match (i.e. prevent overwriting the ip that was
+            # found for one port with the empty result for a following
+            # non-matched port).
+            break
+    done
+
+    # If no ip is known, then we're done.
+    [ "$ip" ] || return
+
+    network=$DOCKER_USER
+
+    # Disconnect the container from the network.
+    docker network disconnect "$network" "$CONTAINER"
+
+    # Reconnect, specifying the designated ip address.
+    docker network connect --ip "$ip" "$network" "$CONTAINER"
+}
+
 if
     dotdocker4gis="$(dirname "$0")"/.docker4gis.sh
     BASE=$("$dotdocker4gis" "$temp" "$IMAGE")
@@ -56,6 +100,7 @@ then
         envsubst <args | grep -v "^#" | xargs \
             ./run.sh "$@"
     result=$?
+    [ "$result" = 0 ] && [ "$DOCKER_ENV" != DEVELOPMENT ] && iptables
     popd >/dev/null || finish 1
 fi
 
