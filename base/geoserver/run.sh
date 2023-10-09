@@ -4,6 +4,7 @@ set -e
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
+IP=$IP
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -24,13 +25,14 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e XMS="$XMS" \
 	-e XMX="$XMX" \
 	-e GEOSERVER_HOST="$GEOSERVER_HOST" \
+	-e GEOSERVER_USER="$GEOSERVER_USER" \
+	-e GEOSERVER_PASSWORD="$GEOSERVER_PASSWORD" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/gwc /geoserver/cache)" \
-	--network "$DOCKER_USER" \
-	-e GEOSERVER_USER="$GEOSERVER_USER" \
-	-e GEOSERVER_PASSWORD="$GEOSERVER_PASSWORD" \
 	-p "$GEOSERVER_PORT":8080 \
+	--network "$DOCKER_USER" \
+	--ip "$IP" \
 	"$@" \
 	-d "$IMAGE"

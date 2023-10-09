@@ -11,6 +11,7 @@ POSTGRES_LOG_STATEMENT=$POSTGRES_LOG_STATEMENT
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
+IP=$IP
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -39,6 +40,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	--mount source="$CONTAINER",target=/var/lib/postgresql/data \
 	-p "$POSTGIS_PORT":5432 \
 	--network "$DOCKER_USER" \
+	--ip "$IP" \
 	-d "$IMAGE"
 
 # wait until all DDL has run

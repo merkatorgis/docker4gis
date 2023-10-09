@@ -9,6 +9,7 @@ AUTOCERT=${AUTOCERT:-false}
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
+IP=$IP
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -66,6 +67,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-p "$PROXY_PORT":443 \
 	-p "$PROXY_PORT_HTTP":80 \
 	--network "$network" \
+	--ip "$IP" \
 	--add-host="$(hostname)":"$(getip "$(hostname)")" \
 	-d "$IMAGE" proxy "$@"
 

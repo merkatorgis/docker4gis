@@ -7,6 +7,7 @@ MYSQL_DATABASE=${2:-$DOCKER_USER}
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
+IP=$IP
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -33,6 +34,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	--mount source="$CONTAINER",target=/var/lib/mysql \
 	-p "$MYSQL_PORT":3306 \
 	--network "$DOCKER_USER" \
+	--ip "$IP" \
 	-d "$IMAGE"
 
 # wait for db

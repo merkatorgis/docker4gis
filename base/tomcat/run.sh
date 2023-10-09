@@ -4,6 +4,7 @@ set -e
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
+IP=$IP
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -24,7 +25,8 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
 	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
-	--network "$DOCKER_USER" \
 	-p "$TOMCAT_PORT":8080 \
+	--network "$DOCKER_USER" \
+	--ip "$IP" \
 	"$@" \
 	-d "$IMAGE"
