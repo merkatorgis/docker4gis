@@ -1,3 +1,3 @@
-FROM docker4gis/cron:344
+FROM docker4gis/cron:438
 
-RUN cron.sh '*/1 * * * *' /tmp/conf/DOCKER_USER/example.sh
+RUN cron.sh '* * * * *' /tmp/conf/DOCKER_USER/example.sh
