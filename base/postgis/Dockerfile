@@ -44,9 +44,9 @@ COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
 RUN apt install -y lsb-release wget; \
 	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
 	apt update; \
-	apt install -y mysql-connector-odbc; \
-	# install proper paths to the odbc drivers
-	RUN template=$(mktemp); \
+	apt install -y mysql-connector-odbc
+# install proper paths to the odbc drivers
+RUN template=$(mktemp); \
 	add() { echo "$1" >> "$template"; }; \
 	add '[MySQL ODBC 8.0 Unicode Driver]'; \
 	add "Driver=$(ls /usr/lib/x86_64-linux-gnu/odbc/libmyodbc*w.so)"; \
@@ -114,6 +114,7 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 RUN curl https://packages.microsoft.com/config/debian/$(cut -d. -f1 /etc/debian_version)/prod.list \
 	> /etc/apt/sources.list.d/mssql-release.list
 RUN apt-get update; \
+	ACCEPT_EULA=Y apt-get install -y msodbcsql18 || \
 	ACCEPT_EULA=Y apt-get install -y msodbcsql17
 # optional: for bcp and sqlcmd
 RUN ACCEPT_EULA=Y apt-get install -y mssql-tools; \
