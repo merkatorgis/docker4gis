@@ -8,6 +8,7 @@ ARG POSTGIS_VERSION
 # postgis/postgis:12-3.2 <- debian:bullseye = 11
 # postgis/postgis:13-3.2 <- debian:bullseye = 11
 # postgis/postgis:14-3.2 <- debian:bullseye = 11
+# postgis/postgis:16-3.4 <- debian:bullseye = 11
 FROM postgis/postgis:${POSTGRESQL_VERSION}-${POSTGIS_VERSION}
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
@@ -40,21 +41,12 @@ ARG MYSQL_VERSION
 ENV MYSQL_VERSION=${MYSQL_VERSION}
 # https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb
 COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
-# hard downloaded archived debian9 version (postgis 10-2.5), since apt support
-# for debian9 is dropped
-COPY conf/src/mysql-connector-odbc-debian-9 /mysql-connector-odbc
-RUN . /etc/os-release; \
-	if [ "$VERSION_ID" = 9 ]; then \
-		cp /mysql-connector-odbc/bin/* /usr/bin; \
-		cp /mysql-connector-odbc/lib/* /usr/lib/x86_64-linux-gnu/odbc; \
-	else \
-		apt install -y lsb-release wget; \
-		dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
-		apt update; \
-		apt install -y mysql-connector-odbc; \
-	fi
-# install proper paths to the odbc drivers
-RUN template=$(mktemp); \
+RUN apt install -y lsb-release wget; \
+	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
+	apt update; \
+	apt install -y mysql-connector-odbc; \
+	# install proper paths to the odbc drivers
+	RUN template=$(mktemp); \
 	add() { echo "$1" >> "$template"; }; \
 	add '[MySQL ODBC 8.0 Unicode Driver]'; \
 	add "Driver=$(ls /usr/lib/x86_64-linux-gnu/odbc/libmyodbc*w.so)"; \
