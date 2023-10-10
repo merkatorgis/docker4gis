@@ -35,11 +35,9 @@ time {
     # clear the "last" file (see last.sh)
     echo '' >/last
 
-    /subconf.sh /tmp/admin/conf.sh
     /subconf.sh /tmp/mail/conf.sh
     /subconf.sh /tmp/web/conf.sh
-
-    
+    /subconf.sh /tmp/admin/conf.sh
 
     # This corresponds to the Dockerfile's ONBUILD COPY conf /tmp/conf
     find /tmp/conf -name "conf.sh" -exec /subconf.sh {} \;
