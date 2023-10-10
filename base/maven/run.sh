@@ -12,6 +12,6 @@ DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
 docker volume create "$CONTAINER" >/dev/null
 docker container run --rm --name "$CONTAINER" \
-    -v "$(docker4gis/bind.sh "$src_dir" /src)" \
+    --mount type=bind,source="$src_dir",target=/src \
     --mount source="$CONTAINER",target=/root/.m2 \
     "$IMAGE"

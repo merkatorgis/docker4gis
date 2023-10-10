@@ -62,7 +62,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e "$(docker4gis/noop.sh AUTH_PATH "$AUTH_PATH")" \
 	-e "$(docker4gis/noop.sh APP "$APP")" \
 	-e "$(docker4gis/noop.sh HOMEDEST "$HOMEDEST")" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/certificates /certificates)" \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/certificates,target=/certificates \
 	--mount source="$volume",target=/config \
 	-p "$PROXY_PORT":443 \
 	-p "$PROXY_PORT_HTTP":80 \
@@ -72,7 +72,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-d "$IMAGE" proxy "$@"
 
 for network in $(docker container exec "$CONTAINER" ls /config); do
-	if docker network inspect "$network" 1>/dev/null 2>&1; then
+	if docker network inspect "$network" >/dev/null 2>&1; then
 		docker network connect "$network" "$CONTAINER"
 	fi
 done

@@ -27,10 +27,10 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e GEOSERVER_HOST="$GEOSERVER_HOST" \
 	-e GEOSERVER_USER="$GEOSERVER_USER" \
 	-e GEOSERVER_PASSWORD="$GEOSERVER_PASSWORD" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/secrets /secrets)" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/gwc /geoserver/cache)" \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/secrets,target=/secrets \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/fileport,target=/fileport \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/runner,target=/util/runner/log \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/gwc,target=/geoserver/cache \
 	-p "$GEOSERVER_PORT":8080 \
 	--network "$DOCKER_USER" \
 	--ip "$IP" \

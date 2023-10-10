@@ -28,9 +28,9 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e MYSQL_DATABASE="$MYSQL_DATABASE" \
 	-e CONTAINER="$CONTAINER" \
 	-e GATEWAY="$gateway" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR/secrets" /secrets)" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR/fileport" /fileport)" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR/runner" /util/runner/log)" \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/secrets,target=/secrets \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/fileport,target=/fileport \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/runner,target=/util/runner/log \
 	--mount source="$CONTAINER",target=/var/lib/mysql \
 	-p "$MYSQL_PORT":3306 \
 	--network "$DOCKER_USER" \
