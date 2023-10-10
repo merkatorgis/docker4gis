@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# e.g. '*/1 * * * *' (or 'startup')
+# e.g. '* * * * *' (or 'startup')
 schedule=$1
 
 # e.g. /klic/scripts/insert.sh
@@ -14,10 +14,18 @@ shift 2
 [ "$startup" = startup ] &&
 	shift 1
 
+# Preserve quoted arguments with spaces; see
+# https://www.gnu.org/software/bash/manual/bash.html#index-printf.
+args=$(printf '%q ' "$@")
+
+format() {
+	echo "runner.sh '$script' $args"
+}
+
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
-	echo "runner.sh '$script' $*" >>/util/cron/startup.sh
+	format >>/util/cron/startup.sh
 
 [ "$schedule" = startup ] || (
 	crontab -l 2>/dev/null
-	echo "$schedule runner.sh '$script' $*"
+	echo "$schedule" "$(format)"
 ) | crontab -
