@@ -5,7 +5,11 @@ RUN apk update; apk add --no-cache \
 
 ADD conf /tmp/conf
 
+# Install plugin gs.
 RUN /tmp/conf/.plugins/gs/install.sh
+
+# Update plugin runner.
+COPY conf/.plugins/runner/runner.sh /usr/local/bin
 
 RUN	mv /tmp/conf/cron.sh /util/; \
 	mkdir -p /util/cron; \
