@@ -12,8 +12,13 @@ shift 1
 log="/util/runner/log/${DOCKER_USER}/$(whoami)${script}.$(date -I).log"
 mkdir -p "$(dirname "${log}")"
 
+# Preserve quoted arguments with spaces; see
+# https://www.gnu.org/software/bash/manual/bash.html#index-printf.
+args=$(printf '%q ' "$@")
+action="${script} $$ $args"
+
 echo "$$ > $(date -Ins)" >>"${log}"
-"${script}" "$$" "$@" >>"${log}" 2>&1
+"$action" >>"${log}" 2>&1
 err="$?"
 
 echo "$$ < $(date -Ins)" >>"${log}"
