@@ -2,4 +2,4 @@
 
 src_dir="$(pwd)/../../war_project"
 
-"$BASE"/build.sh maven 229 "$src_dir"
+"$BASE"/build.sh maven 441 "$src_dir"
