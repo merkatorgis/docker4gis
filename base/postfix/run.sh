@@ -4,6 +4,7 @@ set -e
 IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
+IP=$IP
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -15,9 +16,10 @@ POSTFIX_PORT=$(docker4gis/port.sh "${POSTFIX_PORT:-25}")
 
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/fileport /fileport)" \
-	-v "$(docker4gis/bind.sh "$DOCKER_BINDS_DIR"/runner /util/runner/log)" \
-	-p "$POSTFIX_PORT":25 \
 	-e "$(docker4gis/noop.sh DESTINATION "$POSTFIX_DESTINATION")" \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/fileport,target=/fileport \
+	--mount type=bind,source="$DOCKER_BINDS_DIR"/runner,target=/util/runner/log \
+	-p "$POSTFIX_PORT":25 \
 	--network "$DOCKER_USER" \
+	--ip "$IP" \
 	-d "$IMAGE"

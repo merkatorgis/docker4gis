@@ -13,7 +13,7 @@ mkdir -p "$fileport"
 
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
+	--mount type=bind,source="$fileport",target=/fileport \
 	--network "$DOCKER_USER" \
-	-v "$(docker4gis/bind.sh "$fileport" /fileport)" \
 	"$@" \
 	-d "$IMAGE"
