@@ -19,8 +19,10 @@ restore
 # run the DDL to either provision the database from scratch, or migrate the
 # existing database to the latest version
 time {
-    # maybe this image contains a newer (minor, updatable without dump &
-    # restore) version of PostGIS than the last image that served this database
+    # Maybe this image contains a newer (minor, updatable without dump &
+    # restore) version of PostGIS than the last image that served this database.
+    # See
+    # https://github.com/postgis/docker-postgis/blob/master/update-postgis.sh
     update-postgis.sh
 
     extension ogr_fdw
