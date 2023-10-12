@@ -133,24 +133,31 @@ restore() {
         sql "drop schema if exists tiger cascade"
 
         # restore from the backup file
-        # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
+
         local postgis_restore_pl
         postgis_restore_pl=$(find / -name postgis_restore.pl 2>/dev/null)
-        echo "Restoring using '$postgis_restore_pl'..."
-        local success=false &&
-            perl "$postgis_restore_pl" "$backup" | sql 2>"$err" &&
-            sql "select __restore_settings()" &&
-            # tag the current dump files as done
-            tag &&
-            echo "Restored: '$backup.$tag'" &&
-            success=true
-
+        if [ -x "$postgis_restore_pl" ]; then
+            # Use postgis_restore_pl if it exists, see
+            # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
+            echo "Restoring using '$postgis_restore_pl'..."
+            "$postgis_restore_pl" "$backup" | sql 2>"$err"
+        else
+            echo "Restoring using pg_restore..."
+            pg_restore \
+                --username="$POSTGRES_USER" \
+                --dbname="$database" \
+                --verbose \
+                --jobs="$jobs" \
+                "$backup" 2>"$err"
+        fi
+        # restore database settings
+        sql "select __restore_settings()"
+        # tag the current dump files as done
+        tag
+        echo "Restored: '$backup.$tag'"
         echo "> Listing '$err.$tag':"
         cat "$err.$tag"
         echo "< Listing '$err.$tag' completed"
-
-        # return true (0) or false (1)
-        $success
     }
 
     # if the database was not yet provisioned, try to restore a dump, if present
@@ -202,7 +209,6 @@ restore_schema() {
             pg_restore \
                 --username="$POSTGRES_USER" \
                 --dbname="$database" \
-                --create \
                 --schema="$schema" \
                 --verbose \
                 --jobs="$jobs" \
