@@ -11,7 +11,7 @@ if [ "$1" = 'postgis' ]; then
 	/conf.sh
 
 	# kick off configuration scripts after the database has started
-	/onstart.sh >~/onstart.log &
+	/onstart.sh 2>&1 | tee /onstart.log &
 
 	# run the database server
 	exec docker-entrypoint.sh postgres -c "config_file=$CONFIG_FILE"

@@ -188,7 +188,7 @@ COPY conf/mail /tmp/mail
 COPY conf/web /tmp/web
 
 # install source for schema admin
-COPY conf/mail /tmp/admin
+COPY conf/admin /tmp/admin
 
 # install database server administrative scripts
 COPY ["conf/entrypoint", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
