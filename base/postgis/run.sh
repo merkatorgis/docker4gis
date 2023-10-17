@@ -44,6 +44,8 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-d "$IMAGE"
 
 # wait until all DDL has run
+sql="alter database $POSTGRES_DB set app.ddl_done to false"
+docker container exec "$CONTAINER" pg.sh -c "$sql" >/dev/null 2>&1
 while
 	sql="select current_setting('app.ddl_done', true)"
 	result=$(docker container exec "$CONTAINER" pg.sh -Atc "$sql")

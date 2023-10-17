@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# run.sh waits until this is true
-pg.sh -c "alter database $POSTGRES_DB set app.ddl_done to false"
-
 extension() {
     pg.sh -c "create extension if not exists $1"
 }
