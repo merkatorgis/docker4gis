@@ -18,10 +18,34 @@ shift 2
 [ "$startup" = startup ] &&
 	shift 1
 
+dir=/cron
+mkdir -p "$dir"
+
+# /cron/tmp.LpGlJDdcdy
+temp=$(mktemp -p "$dir")
+rm -f "$temp"
+
+# tmp.LpGlJDdcdy
+file=$(basename "$temp")
+# LpGlJDdcdy
+file=${file#*.}
+
+lock=$dir/$file
+job=$lock.job
+
+echo "#!/bin/sh" >"$job"
+echo "runner.sh '$script' $*" >>"$job"
+chmod +x "$job"
+
+# Use flock to prevent duplicate cron jobs. Each job gets a unique script and
+# lock file; flock won't start that script if a previous job is still running.
+# The generated script ignores the arguments it gets; they're only repeated in
+# the crontab so that the user will recognise the cron job.
+
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
-	echo "runner.sh '$script' $*" >>/util/cron/startup.sh
+	echo "flock -n $lock $job '$script' $*" >>/util/cron/startup.sh
 
 [ "$schedule" = startup ] || (
 	crontab -l 2>/dev/null
-	echo "$schedule runner.sh '$script' $*"
+	echo "$schedule flock -n $lock $job '$script' $*"
 ) | crontab -
