@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+for build_arg in "$@"; do
+    suffix=$suffix-$build_arg
+done
+
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO
@@ -37,6 +41,8 @@ log() {
 log "Bumping our version"
 npm config set git-tag-version false
 version=$(npm version patch)
+# Include any build_args in the image's tag.
+version=$version$suffix
 echo "$version"
 
 # Base components have templates with Dockerfiles stating the image's version.
@@ -46,7 +52,7 @@ here=$(dirname "$0")
 
 # (Re)build the image, to include any upgraded templates.
 log "Building the image"
-"$(dirname "$0")"/../docker4gis build
+"$(dirname "$0")"/../docker4gis build "$@"
 
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 
@@ -65,7 +71,7 @@ push() {
     if ! git push origin "$@"; then
         result=$?
         if [ "$result" = 128 ]; then
-            # support a non-remote context (e.g. pipeline)
+            # Support a non-remote context (e.g. pipeline).
             echo "INFO: remote not found: origin"
             return 0
         else
