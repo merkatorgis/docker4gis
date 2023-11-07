@@ -46,11 +46,14 @@ this() {
 }
 
 dir() {
-	# Perform the current action in the given component/package directory, with
-	# the given parameters.
+	# If the first argument is a docker4gis component/package directory, perform
+	# the current action in the given component/package directory, with the
+	# given parameters.
 	repo=$1
 	shift 1
 	if [ "$repo" ] && ! [ "$repo" = "$DOCKER_REPO" ]; then
+		# Use a file-based mechanism to enable signalling from the subshell
+		# below.
 		dir_found=$(mktemp)
 		rm "$dir_found"
 		for env_file in ../*/.env; do
@@ -60,28 +63,27 @@ dir() {
 				. "$env_file"
 				if [ "$repo" = "$DOCKER_REPO" ]; then
 					dir=$(dirname "$env_file")
+					# Signal.
 					touch "$dir_found"
 					# echo " ! cd to $dir"
 					cd "$dir" || exit 1
 					"$DOCKER_BASE"/../docker4gis "$action" "$@"
 				fi
 			)
+			ret=$?
 		done
 		if [ -f "$dir_found" ]; then
-			rm "$dir_found"
-			exit 0
-		else
-			echo "Cannot find directory for $repo."
-			exit 1
+			rm -f "$dir_found"
+			exit "$ret"
 		fi
 	fi
 }
 
 case "$action" in
 build)
-	dir "$1"
+	dir "$@"
 	this test &&
-		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh"
+		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$@"
 	;;
 run)
 	dir package "$@"
@@ -98,15 +100,15 @@ run)
 	fi && echo && this test
 	;;
 br)
-	this build "$1" && echo &&
+	this build "$@" && echo &&
 		this run
 	;;
 push)
-	dir "$1"
-	"$DOCKER_BASE/push.sh"
+	dir "$@"
+	"$DOCKER_BASE/push.sh" "$@"
 	;;
 test)
-	dir "$1"
+	dir "$@"
 	"$DOCKER_BASE/test.sh"
 	;;
 stop)
