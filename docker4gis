@@ -192,6 +192,19 @@ DOCKER_REPO=$repo" >>.env
         find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
     }
 
+    finish() {
+        local message=${1:-"$action initialised ✅"}
+        local code=${2:-0}
+        echo "$message"
+        exit "$code"
+    }
+
+    error() {
+        local message=${1:-error}
+        local code=${2:-1}
+        finish "$message" "$code"
+    }
+
     package_json
 
     [ "$action" = base-component ] && {
@@ -200,7 +213,7 @@ DOCKER_REPO=$repo" >>.env
         [ "$repo" ] || read -rp \
             "Enter the base component's name (the \"repository\" in the Docker registry) : " \
             repo
-        [ "$repo" ] || exit 1
+        [ "$repo" ] || error
         DOCKER4GIS_VERSION=$(version)
         DOCKER_REGISTRY=docker.io
         DOCKER_USER=docker4gis
@@ -211,7 +224,7 @@ DOCKER_REPO=$repo" >>.env
         write_dotenv
         pipeline main
         # And we're done!
-        exit
+        finish
     }
 
     # Creating a concrete application's component.
@@ -227,10 +240,8 @@ DOCKER_REPO=$repo" >>.env
         fi
     done
 
-    [ "$inited" ] || {
-        echo "Package directory not foud; to create one, run $docker4gis init."
-        exit 1
-    }
+    [ "$inited" ] ||
+        error "Package directory not foud; to create one, run $docker4gis init."
 
     [ "$1" ] || interactive=true
     repo=$1
@@ -248,13 +259,15 @@ DOCKER_REPO=$repo" >>.env
 
     write_dotenv
 
-    component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $repo"
+    suggestion=$repo
+    [ "$repo" = api ] && suggestion=postgrest
+    component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $suggestion"
     [ "$action" = template ] || component_question="$component_question, n for none"
 
     [ "$component" ] || read -rp \
         "$component_question) : " \
         component
-    [ "$component" ] || component=$repo
+    [ "$component" ] || component=$suggestion
 
     [ "$action" = template ] && {
         # Just scaffolding an inital setup for developing a template for a new
@@ -272,7 +285,7 @@ DOCKER_REPO=$repo" >>.env
     [ "$action" = template ] || [ "$component" = n ] && {
         replace_component
         # And we're done!
-        exit
+        finish
     }
 
     # Creating a component extending a docker4gis base component.
@@ -286,15 +299,15 @@ DOCKER_REPO=$repo" >>.env
     [ "$tag" ] || tag=latest
 
     image=docker4gis/$component:$tag
-    container=$(docker container create "$image") || {
-        echo "Image not found: $image"
-        exit 1
-    }
+    docker image pull "$image" ||
+        error "Image not found: $image"
 
-    docker container cp "$container":/template . || {
-        echo "$image doesn't seem a $docker4gis component"
-        exit 1
-    }
+    container=$(docker container create "$image") ||
+        error "Failed to create container from image $image"
+
+    docker container cp "$container":/template . ||
+        error "$image doesn't seem a $docker4gis component"
+
     docker container rm "$container" >/dev/null
     if ! [ "$template" ]; then
         default=./template/.default
@@ -308,15 +321,14 @@ DOCKER_REPO=$repo" >>.env
                     "Enter the template name (one of: $choices - default is $default) : " \
                     template
                 [ "$template" ] || template=$default
-                ls ./template/"$template" >/dev/null 2>&1 || {
-                    echo "Template not found: $template"
-                    exit 1
-                }
+                ls ./template/"$template" >/dev/null 2>&1 ||
+                    error "Template not found: $template"
             }
         fi
     fi
     cp -r ./template/"$template"/. .
     rm -rf ./template
+    finish
     ;;
 
 build | run | br | push | test | stop | geoserver)
