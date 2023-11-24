@@ -261,6 +261,8 @@ DOCKER_REPO=$repo" >>.env
 
     suggestion=$repo
     [ "$repo" = api ] && suggestion=postgrest
+    [ "$repo" = app ] && suggestion=angular
+    [ "$repo" = dynamic ] && suggestion=serve
     component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $suggestion"
     [ "$action" = template ] || component_question="$component_question, n for none"
 
@@ -310,9 +312,14 @@ DOCKER_REPO=$repo" >>.env
 
     docker container rm "$container" >/dev/null
     if ! [ "$template" ]; then
+        # Test if there are multiple templates, by checking the existence of the
+        # '.default' file.
         default=./template/.default
         if [ -f "$default" ]; then
             default=$(cat "$default")
+            # Override the default template if there's a template named just
+            # like the repo itself.
+            [ -d "./template/$repo" ] && default=$repo
             template=$default
             [ "$interactive" ] && {
                 choices=$(ls ./template)
