@@ -226,31 +226,35 @@ restore_schema() {
 # render the database read-only, before creating a new dump - restore the dump
 # in a new, empty database to get it writable again
 upgrade() {
+    # Create a temporary database to connect to when terminating all connections
+    # to the database to dump.
+    local upgrade_database=__u__p__g__r__a__d__e__
+    sql "drop database if exists $upgrade_database" &&
+        sql "create database $upgrade_database" &&
+        # Connect to NOT the database to dump.
+        sql -d "$upgrade_database" "
+            -- temporarily disallow new connections
+            -- https://www.postgresql.org/docs/13/sql-alterdatabase.html
+            alter database $database allow_connections false;
 
-    # connect to NOT the database at hand
-    sql -d postgres "
-        -- temporarily disallow new connections
-        -- https://www.postgresql.org/docs/13/sql-alterdatabase.html
-        alter database $database allow_connections false;
+            -- make future connections read-only
+            -- https://www.postgresql.org/docs/13/runtime-config-client.html
+            alter database $database set default_transaction_read_only to on;
 
-        -- make future connections read-only
-        -- https://www.postgresql.org/docs/13/runtime-config-client.html
-        alter database $database set default_transaction_read_only to on;
+            -- terminate any (presumably writable) connections
+            -- https://www.postgresql.org/docs/13/functions-admin.html
+            -- https://www.postgresql.org/docs/13/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW
+            select pg_terminate_backend(pid) from pg_stat_activity where datname = '$database';
 
-        -- terminate any (presumably writable) connections
-        -- https://www.postgresql.org/docs/13/functions-admin.html
-        -- https://www.postgresql.org/docs/13/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW
-        select pg_terminate_backend(pid) from pg_stat_activity where datname = '$database';
-
-        -- reallow new (read-only) connections
-        alter database $database allow_connections true;
-    " &&
+            -- reallow new (read-only) connections
+            alter database $database allow_connections true;
+        " &&
         dump "$@" &&
-        (
+        {
             echo >&2
             echo "NOTICE: since an 'upgrade' dump was created, database $database is now read-only..." >&2
             echo "  See https://github.com/merkatorgis/docker4gis/blob/master/docs/postgis.md#upgrade..." >&2
-        )
+        }
 }
 
 flag() {
@@ -262,9 +266,9 @@ flag() {
     [ "$1" = start ] && {
         flag=BUSY
         if busy=$(ls "$dir"/BUSY.*.flag 2>/dev/null); then
-            echo "Exiting while another dump/restore process is still busy:"
+            echo "Exiting since another dump/restore process is still busy:"
             echo "$busy"
-            exit
+            exit 1
         fi
     }
     ext=$action.flag
@@ -272,9 +276,11 @@ flag() {
     rm -f "$dir"/*."$ext"
     # Write new flag.
     touch "$dir/$flag.$ext"
+    # Succeed or fail.
+    [ "$flag" = DONE ]
 }
 
-# dump or restore or upgrade or dump_schema or restore_schema (see Dockerfile)
+# dump | restore | upgrade | dump_schema | restore_schema (see Dockerfile)
 action=$(basename "$0")
 
 flag start
