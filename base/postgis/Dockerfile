@@ -35,40 +35,10 @@ RUN apt install -y \
 	postgresql-${POSTGRESQL_VERSION}-plsh \
 	postgresql-${POSTGRESQL_VERSION}-pldebugger
 
-ARG MYSQL_VERSION
-# install mysql repository to
-# install package mysql-connector-odbc
-ENV MYSQL_VERSION=${MYSQL_VERSION}
-# https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb
-COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
-RUN apt install -y lsb-release wget; \
-	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
-	apt update; \
-	apt install -y mysql-connector-odbc
-# install proper paths to the odbc drivers
-RUN template=$(mktemp); \
-	add() { echo "$1" >> "$template"; }; \
-	add '[MySQL ODBC 8.0 Unicode Driver]'; \
-	add "Driver=$(ls /usr/lib/x86_64-linux-gnu/odbc/libmyodbc*w.so)"; \
-	add '[MySQL ODBC 8.0 ANSI Driver]'; \
-	add "Driver=$(ls /usr/lib/x86_64-linux-gnu/odbc/libmyodbc*a.so)"; \
-	odbcinst -i -d -f "$template"
-
 # install packages needed for building several components
 ENV BUILD_TOOLS="build-essential"
 ENV BUILD_TOOLS="${BUILD_TOOLS} postgresql-server-dev-${POSTGRESQL_VERSION}"
 RUN apt install -y ${BUILD_TOOLS}
-
-ARG ODBC_FDW_VERSION
-# compile & install odbc_fdw
-ENV ODBC_FDW_VERSION=${ODBC_FDW_VERSION}
-ENV BUILD_TOOLS="${BUILD_TOOLS} unixodbc-dev"
-RUN apt install -y ${BUILD_TOOLS}
-# https://github.com/CartoDB/odbc_fdw/archive/0.5.1.tar.gz
-ADD conf/src/odbc_fdw-${ODBC_FDW_VERSION}.tar.gz /
-RUN cd /odbc_fdw-${ODBC_FDW_VERSION}; \
-	make; \
-	make install
 
 ARG MONGO_FDW_VERSION
 # compile & install mongo_fdw
@@ -101,35 +71,6 @@ ADD conf/src/michelp-pgjwt-${PGJWT_VERSION}.tar.gz /
 RUN cd /michelp-pgjwt-${PGJWT_VERSION}; \
 	make install
 
-# install the Microsoft ODBC driver for SQL Server
-# https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15
-ENV BUILD_TOOLS="${BUILD_TOOLS} curl"
-ENV BUILD_TOOLS="${BUILD_TOOLS} apt-transport-https"
-ENV BUILD_TOOLS="${BUILD_TOOLS} ca-certificates"
-RUN apt install -y ${BUILD_TOOLS}
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-#Download appropriate package for the OS version
-# https://www.ionos.com/digitalguide/server/know-how/how-to-check-debian-version/
-# https://unix.stackexchange.com/a/316087
-RUN curl https://packages.microsoft.com/config/debian/$(cut -d. -f1 /etc/debian_version)/prod.list \
-	> /etc/apt/sources.list.d/mssql-release.list
-RUN apt-get update; \
-	ACCEPT_EULA=Y apt-get install -y msodbcsql18 || \
-	ACCEPT_EULA=Y apt-get install -y msodbcsql17
-# optional: for bcp and sqlcmd
-RUN ACCEPT_EULA=Y apt-get install -y mssql-tools; \
-	echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile; \
-	echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc; \
-	. ~/.bashrc
-# optional: for unixODBC development headers
-RUN apt-get install -y unixodbc-dev
-# optional: kerberos library for debian-slim distributions
-RUN apt-get install -y libgssapi-krb5-2
-# prevent TCP Provider: Error code 0x2746
-# https://stackoverflow.com/a/59503719
-# https://github.com/microsoft/msphpsql/issues/1021
-RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/g' /etc/ssl/openssl.cnf
-
 ARG PGXN_VERSION
 # compile & install PostgreSQL Extension Network client
 ENV PGXN_VERSION=${PGXN_VERSION}
@@ -159,20 +100,66 @@ RUN pgxn install safeupdate
 # https://pgxn.org/dist/range_agg/
 RUN [ "$POSTGRESQL_VERSION" -lt 14 ] && pgxn install range_agg || true
 
+# install the Microsoft ODBC driver for SQL Server
+# https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15
+ENV BUILD_TOOLS="${BUILD_TOOLS} curl"
+ENV BUILD_TOOLS="${BUILD_TOOLS} apt-transport-https"
+ENV BUILD_TOOLS="${BUILD_TOOLS} ca-certificates"
+ENV BUILD_TOOLS="${BUILD_TOOLS} unixodbc-dev"
+RUN apt install -y ${BUILD_TOOLS}
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+#Download appropriate package for the OS version
+# https://www.ionos.com/digitalguide/server/know-how/how-to-check-debian-version/
+# https://unix.stackexchange.com/a/316087
+RUN curl https://packages.microsoft.com/config/debian/$(cut -d. -f1 /etc/debian_version)/prod.list \
+	> /etc/apt/sources.list.d/mssql-release.list
+RUN apt-get update; \
+	ACCEPT_EULA=Y apt-get install -y msodbcsql18 || \
+	ACCEPT_EULA=Y apt-get install -y msodbcsql17
+# optional: for bcp and sqlcmd
+RUN ACCEPT_EULA=Y apt-get install -y mssql-tools; \
+	echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile; \
+	echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc; \
+	. ~/.bashrc
+# prevent TCP Provider: Error code 0x2746
+# https://stackoverflow.com/a/59503719
+# https://github.com/microsoft/msphpsql/issues/1021
+RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/g' /etc/ssl/openssl.cnf
+
+ARG ODBC_FDW_VERSION
+# compile & install odbc_fdw
+ENV ODBC_FDW_VERSION=${ODBC_FDW_VERSION}
+# https://github.com/CartoDB/odbc_fdw/archive/0.5.1.tar.gz
+ADD conf/src/odbc_fdw-${ODBC_FDW_VERSION}.tar.gz /
+RUN cd /odbc_fdw-${ODBC_FDW_VERSION}; \
+	make; \
+	make install
+
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
 	apt autoremove -y
 
+ARG MYSQL_VERSION
+# install mysql repository to
+# install package mysql-connector-odbc
+ENV MYSQL_VERSION=${MYSQL_VERSION}
+# https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb
+COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
+RUN apt install -y lsb-release wget; \
+	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
+	apt update; \
+	apt install -y mysql-connector-odbc
+
 # install plugin runner
 COPY conf/.plugins/runner/runner.sh /usr/local/bin
-
-# install plugin pg
-COPY conf/.plugins/pg/pg.sh /usr/local/bin
-COPY conf/.plugins/pg/refresh.sh /usr/local/bin
 
 # install plugin mail
 COPY conf/.plugins/mail /tmp/.plugins/mail
 RUN /tmp/.plugins/mail/install.sh
+
+# install plugin pg
+COPY conf/.plugins/pg/pg.sh /usr/local/bin
+COPY conf/.plugins/pg/refresh.sh /usr/local/bin
 
 # install plugin bats
 COPY conf/.plugins/bats /tmp/.plugins/bats
