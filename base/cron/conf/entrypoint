@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$1" = 'cron' ]; then
+	(
+		sleep 60
+		/startup.sh
+	) &
+	rsyslogd -n &
+	exec cron -fL 15
+fi
+
+exec "$@"

@@ -1,23 +1,56 @@
-FROM docker4gis/postgis:11-alpine
+FROM debian:bookworm-20240211
 
-RUN apk update; apk add --no-cache \
-	bash curl wget unzip grep sed
+ONBUILD ARG DOCKER_USER
+ONBUILD ENV DOCKER_USER=${DOCKER_USER}
 
-ADD conf /tmp/conf
+RUN apt update; apt install -y \
+	cron rsyslog \
+	curl wget unzip
 
-# Install plugin gs.
-RUN /tmp/conf/.plugins/gs/install.sh
+RUN echo '*.* /dev/stdout' > /etc/rsyslog.d/stdout.conf
 
-RUN	mv /tmp/conf/cron.sh /util/; \
-	mkdir -p /util/cron; \
-	mv /tmp/conf/startup.sh /util/cron/; \
-	mv /tmp/conf/entrypoint/* /
+# Set install time variables for the timezone plugin.
+ONBUILD ARG TZ
+ONBUILD ENV TZ=${TZ}
 
-ENV PATH=/util:$PATH
+# Install timezone plugin.
+COPY conf/.plugins/timezone /tmp/timezone
+# ONBUILD since we need the TZ variable on install.
+ONBUILD RUN /tmp/timezone/install.sh
 
+# Install the runner plugin.
+COPY conf/.plugins/runner /tmp/runner
+RUN /tmp/runner/install.sh
+
+# Install the cron.sh utility.
+COPY conf/cron.sh /usr/local/bin
+
+RUN echo '#!/bin/bash' >/startup.sh; \
+	chmod +x /startup.sh
+
+COPY conf/entrypoint /
 ENTRYPOINT ["/entrypoint"]
 CMD ["cron"]
 
+# Install the pg plugin.
+COPY conf/.plugins/pg /tmp/pg
+RUN /tmp/pg/install.sh
+
+# Set run time variables for the pg plugin.
+ONBUILD ARG PGHOST
+ONBUILD ENV PGHOST=${PGHOST}
+ONBUILD ARG PGHOSTADDR
+ONBUILD ENV PGHOSTADDR=${PGHOSTADDR}
+ONBUILD ARG PGPORT
+ONBUILD ENV PGPORT=${PGPORT}
+ONBUILD ARG PGDATABASE
+ONBUILD ENV PGDATABASE=${PGDATABASE}
+ONBUILD ARG PGUSER
+ONBUILD ENV PGUSER=${PGUSER}
+ONBUILD ARG PGPASSWORD
+ONBUILD ENV PGPASSWORD=${PGPASSWORD}
+
+# Make this an extensible docker4gis image.
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh
 COPY run.sh /.docker4gis/run.sh

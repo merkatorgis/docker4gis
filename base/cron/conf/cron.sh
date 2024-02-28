@@ -43,7 +43,7 @@ chmod +x "$job"
 # the crontab so that the user will recognise the cron job.
 
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
-	echo "flock -n $lock $job '$script' $*" >>/util/cron/startup.sh
+	echo "flock -n $lock $job '$script' $*" >>/startup.sh
 
 [ "$schedule" = startup ] || (
 	crontab -l 2>/dev/null

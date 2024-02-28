@@ -24,6 +24,15 @@ export AUTH_PATH=
 export APP=
 export HOMEDEST=
 
+export TZ=
+
+export PGHOST=
+export PGHOSTADDR=
+export PGPORT=
+export PGDATABASE=
+export PGUSER=
+export PGPASSWORD=
+
 export POSTGRES_LOG_STATEMENT=
 # export POSTGRES_LOG_STATEMENT=ddl
 # export POSTGRES_LOG_STATEMENT=all
