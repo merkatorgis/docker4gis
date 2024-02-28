@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-POSTGRES_USER=${1:-postgres}
-POSTGRES_PASSWORD=${2:-postgres}
-POSTGRES_DB=${3:-$DOCKER_USER}
-
 SHM_SIZE=${SHM_SIZE:-64m}
 POSTGRES_LOG_STATEMENT=$POSTGRES_LOG_STATEMENT
 
@@ -29,11 +25,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
 	-e POSTGRES_LOG_STATEMENT="$POSTGRES_LOG_STATEMENT" \
 	-e "$(docker4gis/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \
-	-e POSTGRES_USER="$POSTGRES_USER" \
-	-e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-	-e POSTGRES_DB="$POSTGRES_DB" \
 	-e CONTAINER="$CONTAINER" \
-	--mount type=bind,source="$DOCKER_BINDS_DIR"/secrets,target=/secrets \
 	--mount type=bind,source="$DOCKER_BINDS_DIR"/certificates,target=/certificates \
 	--mount type=bind,source="$DOCKER_BINDS_DIR"/fileport,target=/fileport \
 	--mount type=bind,source="$DOCKER_BINDS_DIR"/runner,target=/util/runner/log \

@@ -3,9 +3,3 @@
 # Environment variables are respected.
 # Lines _starting with_ # are ignored.
 ##
-# Uncomment next line(s) and replace any default values to provide
-# a username, username & password, or username & password & databasename.
-##
-# postgres
-# postgres
-# "$DOCKER_USER"
