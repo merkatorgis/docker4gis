@@ -1,11 +1,19 @@
 #!/bin/bash
 
 if [ "$1" = 'cron' ]; then
-	(
+	# Make cron find commands in /usr/local/bin, etc.
+	{
+		echo "PATH=\$PATH:$PATH"
+		crontab -l
+	} | crontab -
+	# Run startup.sh on startup.
+	{
 		sleep 60
 		/startup.sh
-	) &
+	} &
+	# Start syslog to get cron logging cron jobs.
 	rsyslogd -n &
+	# Start cron in the foreground, with max logging.
 	exec cron -fL 15
 fi
 

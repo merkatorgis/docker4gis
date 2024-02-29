@@ -4,10 +4,10 @@ ONBUILD ARG DOCKER_USER
 ONBUILD ENV DOCKER_USER=${DOCKER_USER}
 
 RUN apt update; apt install -y \
-	cron rsyslog \
-	curl wget unzip
+	rsyslog cron
 
-RUN echo '*.* /dev/stdout' > /etc/rsyslog.d/stdout.conf
+RUN apt install -y \
+	curl wget unzip
 
 # Set install time variables for the timezone plugin.
 ONBUILD ARG TZ
@@ -21,16 +21,6 @@ ONBUILD RUN /tmp/timezone/install.sh
 # Install the runner plugin.
 COPY conf/.plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
-
-# Install the cron.sh utility.
-COPY conf/cron.sh /usr/local/bin
-
-RUN echo '#!/bin/bash' >/startup.sh; \
-	chmod +x /startup.sh
-
-COPY conf/entrypoint /
-ENTRYPOINT ["/entrypoint"]
-CMD ["cron"]
 
 # Install the pg plugin.
 COPY conf/.plugins/pg /tmp/pg
@@ -49,6 +39,26 @@ ONBUILD ARG PGUSER
 ONBUILD ENV PGUSER=${PGUSER}
 ONBUILD ARG PGPASSWORD
 ONBUILD ENV PGPASSWORD=${PGPASSWORD}
+
+RUN \
+	# Make syslog write everything to stdout.
+	echo '*.* /dev/stdout' > /etc/rsyslog.d/stdout.conf \
+	# Make pam_env not complain about missing /etc/default/locale.
+	&& touch /etc/default/locale \
+	# Don't let rsyslogd complain about imklog, by commenting out this line in
+	# the conf file.
+	&& sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
+
+# Install the cron.sh utility.
+COPY conf/cron.sh /usr/local/bin
+
+# Create the job that /entrypoint will run at container startup.
+RUN echo '#!/bin/bash' >/startup.sh; \
+	chmod +x /startup.sh
+
+COPY conf/entrypoint /
+ENTRYPOINT ["/entrypoint"]
+CMD ["cron"]
 
 # Make this an extensible docker4gis image.
 COPY conf/.docker4gis /.docker4gis

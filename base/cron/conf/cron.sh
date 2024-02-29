@@ -45,7 +45,7 @@ chmod +x "$job"
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
 	echo "flock -n $lock $job '$script' $*" >>/startup.sh
 
-[ "$schedule" = startup ] || (
+[ "$schedule" = startup ] || {
 	crontab -l 2>/dev/null
 	echo "$schedule flock -n $lock $job '$script' $*"
-) | crontab -
+} | crontab -
