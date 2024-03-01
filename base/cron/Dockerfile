@@ -43,10 +43,7 @@ ONBUILD ENV PGPASSWORD=${PGPASSWORD}
 RUN \
 	# Make syslog write everything to stdout.
 	echo '*.* /dev/stdout' > /etc/rsyslog.d/stdout.conf \
-	# Make pam_env not complain about missing /etc/default/locale.
-	&& touch /etc/default/locale \
-	# Don't let rsyslogd complain about imklog, by commenting out this line in
-	# the conf file.
+	# Comment out imklog in rsyslog.conf.
 	&& sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
 # Install the cron.sh utility.

@@ -15,7 +15,12 @@ if [ "$no_client" != no_client ]; then
 		apk add --no-cache postgresql-client
 	else
 		apt update
-		apt install -y postgresql-client
+		apt install -y postgresql-client locales
+		# Configure locale.
+		(
+			echo 'en_US.UTF-8'
+			echo 'en_US.UTF-8'
+		) | dpkg-reconfigure locales
 	fi
 fi
 

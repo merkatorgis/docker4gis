@@ -1,11 +1,13 @@
 #!/bin/bash
 
 if [ "$1" = 'cron' ]; then
-	# Make cron find commands in /usr/local/bin, etc.
-	{
-		echo "PATH=\$PATH:$PATH"
+	# Make environment variables available from cron scripts.
+	(
+		# Skip empty values, to prevent crontab parse error. Also skip some
+		# non-fixed values.
+		env | grep -P '.+=.+' | grep -Pv '^SHELL=' | grep -Pv '^PWD=' | grep -Pv '^_='
 		crontab -l
-	} | crontab -
+	) | crontab -
 	# Run startup.sh on startup.
 	{
 		sleep 60
