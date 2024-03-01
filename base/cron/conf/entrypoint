@@ -1,22 +1,13 @@
 #!/bin/bash
 
 if [ "$1" = 'cron' ]; then
-	# Make environment variables available from cron scripts.
-	(
-		# Skip empty values, to prevent crontab parse error. Also skip some
-		# non-fixed values.
-		env | grep -P '.+=.+' | grep -Pv '^SHELL=' | grep -Pv '^PWD=' | grep -Pv '^_='
-		crontab -l
-	) | crontab -
 	# Run startup.sh on startup.
-	{
+	(
 		sleep 60
 		/startup.sh
-	} &
-	# Start syslog to get cron logging cron jobs.
-	rsyslogd -n &
-	# Start cron in the foreground, with max logging.
-	exec cron -fL 15
+	) &
+	# Start cron in the foreground, logging verbosely to stdout.
+	exec crond -fl 0 -L /dev/stdout
 fi
 
 exec "$@"

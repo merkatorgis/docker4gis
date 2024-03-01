@@ -5,6 +5,8 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
+FILEPORT=$FILEPORT
+RUNNER=$RUNNER
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -22,8 +24,8 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e XMS="$XMS" \
 	-e XMX="$XMX" \
 	--mount source="$CONTAINER",target=/host \
-	--mount type=bind,source="$DOCKER_BINDS_DIR"/fileport,target=/fileport \
-	--mount type=bind,source="$DOCKER_BINDS_DIR"/runner,target=/util/runner/log \
+	--mount type=bind,source="$FILEPORT",target=/fileport \
+	--mount type=bind,source="$RUNNER",target=/runner \
 	-p "$TOMCAT_PORT":8080 \
 	--network "$DOCKER_USER" \
 	--ip "$IP" \

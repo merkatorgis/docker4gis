@@ -4,10 +4,10 @@ repo=$1
 tag=$2
 shift 2
 
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
-DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
+export DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
 export DOCKER_ENV
 [ "$DOCKER_ENV" = DEVELOPMENT ] &&
     RESTART=no ||
@@ -16,7 +16,10 @@ export RESTART
 
 # create before running any container, to have this owned by the user running
 # the run script (instead of a container's root user)
-mkdir -p "$DOCKER_BINDS_DIR"/fileport/"$DOCKER_USER"
+export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$repo
+mkdir -p "$FILEPORT"
+export RUNNER=$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$repo
+mkdir -p "$RUNNER"
 
 IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 export IMAGE

@@ -8,6 +8,8 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
+FILEPORT=$FILEPORT
+RUNNER=$RUNNER
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -16,6 +18,11 @@ DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 SECRET=$SECRET
 
 POSTGIS_PORT=$(docker4gis/port.sh "${POSTGIS_PORT:-5432}")
+
+# Make directory as the user running the run script, instead of letting the
+# container create it as root.
+CERTIFICATES=$DOCKER_BINDS_DIR/certificates/$DOCKER_USER
+mkdir -p "$CERTIFICATES"
 
 docker volume create "$CONTAINER" >/dev/null
 docker container run --restart "$RESTART" --name "$CONTAINER" \
@@ -26,9 +33,9 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e POSTGRES_LOG_STATEMENT="$POSTGRES_LOG_STATEMENT" \
 	-e "$(docker4gis/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \
 	-e CONTAINER="$CONTAINER" \
-	--mount type=bind,source="$DOCKER_BINDS_DIR"/certificates,target=/certificates \
-	--mount type=bind,source="$DOCKER_BINDS_DIR"/fileport,target=/fileport \
-	--mount type=bind,source="$DOCKER_BINDS_DIR"/runner,target=/util/runner/log \
+	--mount type=bind,source="$CERTIFICATES",target=/certificates \
+	--mount type=bind,source="$FILEPORT",target=/fileport \
+	--mount type=bind,source="$RUNNER",target=/runner \
 	--mount source="$CONTAINER",target=/var/lib/postgresql/data \
 	-p "$POSTGIS_PORT":5432 \
 	--network "$DOCKER_USER" \

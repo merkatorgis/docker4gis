@@ -1,13 +1,10 @@
-FROM debian:bookworm-20240211
+FROM alpine:3.19.1
 
 ONBUILD ARG DOCKER_USER
 ONBUILD ENV DOCKER_USER=${DOCKER_USER}
 
-RUN apt update; apt install -y \
-	rsyslog cron
-
-RUN apt install -y \
-	curl wget unzip
+RUN apk update; apk add --no-cache \
+	bash curl wget unzip grep sed
 
 # Set install time variables for the timezone plugin.
 ONBUILD ARG TZ
@@ -39,12 +36,6 @@ ONBUILD ARG PGUSER
 ONBUILD ENV PGUSER=${PGUSER}
 ONBUILD ARG PGPASSWORD
 ONBUILD ENV PGPASSWORD=${PGPASSWORD}
-
-RUN \
-	# Make syslog write everything to stdout.
-	echo '*.* /dev/stdout' > /etc/rsyslog.d/stdout.conf \
-	# Comment out imklog in rsyslog.conf.
-	&& sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 
 # Install the cron.sh utility.
 COPY conf/cron.sh /usr/local/bin
