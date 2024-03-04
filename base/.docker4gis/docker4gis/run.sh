@@ -65,7 +65,8 @@ iptables() {
                     {{end}}
                 {{end}}
             ' \
-            "$CONTAINER"
+            "$CONTAINER" \
+            2>/dev/null
     )
 
     # Find any ip listed for these ports in iptables.
