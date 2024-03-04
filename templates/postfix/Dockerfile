@@ -1,4 +1,4 @@
-FROM docker4gis/postfix:441
+FROM docker4gis/postfix:latest
 
 ENV DESTINATION=example.com
 # And/or set POSTFIX_DESTINATION at run time

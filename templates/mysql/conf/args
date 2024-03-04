@@ -3,8 +3,3 @@
 # Environment variables are respected.
 # Lines _starting with_ # are ignored.
 ##
-# provide a passowrd, or a password and a database name;
-# both values default to "$DOCKER_USER"
-##
-# password
-# database_name
