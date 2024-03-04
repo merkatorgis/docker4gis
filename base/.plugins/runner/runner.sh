@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # set -x
 
 # In some cases, we're run from an "empty" environment. In that case, a
@@ -6,15 +7,19 @@
 # script.
 DOCKER_USER=${DOCKER_USER:-$(basename "$0")}
 
-script=$(realpath "$1")
+which "$1" >/dev/null || {
+    echo "No executable command: $1"
+    exit 127
+}
+script=$(which "$1")
 shift 1
 
-log="/util/runner/log/${DOCKER_USER}/$(whoami)${script}.$(date -I).log"
-mkdir -p "$(dirname "${log}")"
+log="/runner/$(whoami)$script.$(date -I).log"
+mkdir -p "$(dirname "$log")"
 
-echo "$$ > $(date -Ins)" >>"${log}"
-"${script}" "$$" "$@" >>"${log}" 2>&1
-err="$?"
+echo "$$ > $(date -Ins)" >>"$log"
+"$script" "$@" >>"$log" 2>&1
+err=$?
 
-echo "$$ < $(date -Ins)" >>"${log}"
-exit "${err}"
+echo "$$ < $(date -Ins)" >>"$log"
+exit "$err"

@@ -1,7 +1,13 @@
 FROM mysql:8.0.17
 
 COPY conf/.plugins/mysql /tmp/mysql
-RUN /tmp/mysql/install.sh
+ONBUILD RUN /tmp/mysql/install.sh
+
+# Set run time variables for the mysql plugin.
+ONBUILD ARG MYSQL_DATABASE
+ONBUILD ENV MYSQL_DATABASE=${MYSQL_DATABASE:-mysql}
+ONBUILD ARG MYSQL_ROOT_PASSWORD
+ONBUILD ENV MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-mysql}
 
 COPY conf/.plugins/bats /tmp/bats
 RUN /tmp/bats/install.sh

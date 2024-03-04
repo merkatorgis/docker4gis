@@ -33,8 +33,14 @@ file=${file#*.}
 lock=$dir/$file
 job=$lock.job
 
-echo "#!/bin/sh" >"$job"
-echo "runner.sh '$script' $*" >>"$job"
+echo "#!/bin/bash" >"$job"
+log=$lock.log
+echo "
+	echo >> '$log'
+	echo \$0 \$@ >> '$log'
+	env >> '$log'
+" >>"$job"
+echo "runner.sh '$script' $* >> '$log'" >>"$job"
 chmod +x "$job"
 
 # Use flock to prevent duplicate cron jobs. Each job gets a unique script and
@@ -43,9 +49,9 @@ chmod +x "$job"
 # the crontab so that the user will recognise the cron job.
 
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
-	echo "flock -n $lock $job '$script' $*" >>/util/cron/startup.sh
+	echo "flock -n $lock $job '$script' $*" >>/startup.sh
 
-[ "$schedule" = startup ] || (
+[ "$schedule" = startup ] || {
 	crontab -l 2>/dev/null
 	echo "$schedule flock -n $lock $job '$script' $*"
-) | crontab -
+} | crontab -

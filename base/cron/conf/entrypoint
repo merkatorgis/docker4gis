@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ "$1" = 'cron' ]; then
+	# Run startup.sh on startup.
+	(
+		sleep 60
+		/startup.sh
+	) &
+	# Start cron in the foreground, logging verbosely to stdout.
+	exec crond -fl 0 -L /dev/stdout
+fi
+
+exec "$@"

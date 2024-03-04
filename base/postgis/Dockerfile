@@ -150,16 +150,36 @@ RUN apt install -y lsb-release wget; \
 	apt update; \
 	apt install -y mysql-connector-odbc
 
-# install plugin runner
-COPY conf/.plugins/runner/runner.sh /usr/local/bin
+# Install the runner plugin.
+COPY conf/.plugins/runner /tmp/runner
+RUN /tmp/runner/install.sh
 
 # install plugin mail
 COPY conf/.plugins/mail /tmp/.plugins/mail
 RUN /tmp/.plugins/mail/install.sh
 
-# install plugin pg
-COPY conf/.plugins/pg/pg.sh /usr/local/bin
-COPY conf/.plugins/pg/refresh.sh /usr/local/bin
+# Install the pg plugin (without "re-installing" the postgresql-client package).
+COPY conf/.plugins/pg /tmp/pg
+RUN /tmp/pg/install.sh no_client
+
+# Set run time variables for the pg plugin.
+ONBUILD ARG PGHOST
+ONBUILD ENV PGHOST=${PGHOST}
+ONBUILD ARG PGHOSTADDR
+ONBUILD ENV PGHOSTADDR=${PGHOSTADDR}
+ONBUILD ARG PGPORT
+ONBUILD ENV PGPORT=${PGPORT:-5432}
+ONBUILD ARG PGDATABASE
+ONBUILD ENV PGDATABASE=${PGDATABASE:-postgres}
+ONBUILD ARG PGUSER
+ONBUILD ENV PGUSER=${PGUSER:-postgres}
+ONBUILD ARG PGPASSWORD
+ONBUILD ENV PGPASSWORD=${PGPASSWORD:-postgres}
+
+# See https://hub.docker.com/_/postgres.
+ONBUILD ENV POSTGRES_PASSWORD=${PGPASSWORD}
+ONBUILD ENV POSTGRES_USER=${PGUSER}
+ONBUILD ENV POSTGRES_DB=${PGDATABASE}
 
 # install plugin bats
 COPY conf/.plugins/bats /tmp/.plugins/bats

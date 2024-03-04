@@ -11,51 +11,63 @@ cp "$CONFIG_FILE.template" "$CONFIG_FILE"
 
 [ "$POSTGRES_LOG_STATEMENT" ] && conf log_statement "$POSTGRES_LOG_STATEMENT"
 
-echo "
-	export POSTGIS_USER=${POSTGRES_USER}
-	export POSTGIS_PASSWORD=${POSTGRES_PASSWORD}
-	export POSTGIS_ADDRESS=${CONTAINER}
-	export POSTGIS_DB=${POSTGRES_DB}
-	export POSTGIS_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${CONTAINER}/${POSTGRES_DB}
-" >/secrets/.pg
+# Provision a directory on the Docker volume to store generated certificates for
+# reuse by future containers.
+secrets=/var/lib/postgresql/data/secrets
+mkdir -p "$secrets"
+chmod go-rwx "$secrets"
 
-if [ -f /secrets/postgresql.key -a -f /secrets/postgresql.crt -a -f /secrets/root.key -a -f /secrets/root.crt -a -f /secrets/server.key -a -f /secrets/server.crt ]; then
-	cp /secrets/postgresql.key /secrets/postgresql.crt /secrets/root.key /secrets/root.crt /secrets/server.key /secrets/server.crt /etc/postgresql/
-	cp /secrets/postgresql.key /secrets/postgresql.crt /secrets/root.crt /certificates/
-	chmod og+r /certificates/*
-else
+# Test if all certificate files are available in the volume.
+if ! [ -f "$secrets"/"$POSTGRES_USER".key ] || ! [ -f "$secrets"/"$POSTGRES_USER".crt ] || ! [ -f "$secrets"/root.key ] || ! [ -f "$secrets"/root.crt ] || ! [ -f "$secrets"/server.key ] || ! [ -f "$secrets"/server.crt ]; then
+	# Configure openssl.
 	echo "[ v3_ca ]
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer:always
 basicConstraints = CA:true
 subjectAltName=email:move" >>/etc/ssl/openssl.cnf
 
-	# CA
+	# CA root certificate.
 	openssl req -new -nodes -text -out root.csr \
 		-keyout root.key -subj "/CN=root.merkator.com"
 	openssl x509 -req -in root.csr -text -days 3650 \
 		-extfile /etc/ssl/openssl.cnf -extensions v3_ca \
 		-signkey root.key -out root.crt
 
-	# Client
-	openssl req -new -nodes -text -out postgresql.csr \
-		-keyout postgresql.key -subj "/CN=$POSTGRES_USER"
-	openssl x509 -req -in postgresql.csr -text -days 365 \
+	# Client certificate request.
+	openssl req -new -nodes -text -out "$POSTGRES_USER".csr \
+		-keyout "$POSTGRES_USER".key -subj "/CN=$POSTGRES_USER"
+	# Cliet certificate.
+	openssl x509 -req -in "$POSTGRES_USER".csr -text -days 365 \
 		-CA root.crt -CAkey root.key -CAcreateserial \
-		-out postgresql.crt
+		-out "$POSTGRES_USER".crt
 
-	cp postgresql.key postgresql.crt root.crt /certificates/
+	# Provide the client certificates on a bind-mounted host directory.
+	cp "$POSTGRES_USER".key "$POSTGRES_USER".crt root.crt /certificates/
 
-	# Server
+	# Server certificate request.
 	openssl req -new -nodes -text -out server.csr \
 		-keyout server.key -subj /CN=postgis.merkator.com
+	# Server certificate.
 	openssl x509 -req -in server.csr -text -days 365 \
 		-CA root.crt -CAkey root.key -CAcreateserial \
 		-out server.crt
 
-	mv *.crt *.key /etc/postgresql/
-	cp /etc/postgresql/*.crt /etc/postgresql/*.key /secrets/
+	# Move all certificates to the proper directory in the container.
+	mv -- *.crt *.key /etc/postgresql/
+	# Also save the certificates for reuse to the volume.
+	cp /etc/postgresql/*.crt /etc/postgresql/*.key "$secrets"/
+else
+	# Copy the existing certificates from the volume to the proper directory in
+	# the container.
+	cp "$secrets"/"$POSTGRES_USER".key "$secrets"/"$POSTGRES_USER".crt "$secrets"/root.key "$secrets"/root.crt "$secrets"/server.key "$secrets"/server.crt /etc/postgresql/
+	# Make sure the client certificates on the bind-mounted host directory match
+	# the ones in use by the database.
+	cp "$secrets"/"$POSTGRES_USER".key "$secrets"/"$POSTGRES_USER".crt "$secrets"/root.crt /certificates/
+	# Render the client certificates readable for the client.
+	chmod go+r /certificates/*
 fi
 
-chown -R postgres:postgres /etc/postgresql/ /secrets/*
-chmod og-rwx /etc/postgresql/*.key /secrets/root.key /secrets/server.*
+# Ensure proper ownership.
+chown -R postgres:postgres /etc/postgresql/
+# Ensure properly limited permissions.
+chmod go-rwx /etc/postgresql/*.key

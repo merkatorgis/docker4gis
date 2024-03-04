@@ -1,9 +1,13 @@
 #!/bin/sh
 
-apk update
-apk add --no-cache \
-    coreutils bash
+set -x
 
-HERE=$(dirname "$0")
+if which apk; then
+    apk update
+    apk add --no-cache \
+        coreutils bash
+fi
 
-mv "$HERE/runner.sh" /usr/local/bin
+here=$(dirname "$0")
+
+mv "$here"/runner.sh /usr/local/bin

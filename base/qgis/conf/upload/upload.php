@@ -86,7 +86,7 @@ for ($i = 0; $i < count($file['name']); $i++) {
     $isProject = strcasecmp($path_parts['extension'], 'qgs') === 0;
 
     $base = '/fileport';
-    $dir = "/files/qgis/$project/";
+    $dir = "/$project/";
     $full_dir = $base . $dir;
     $path = $dir . $path_parts['basename'];
     $full_path = $base . $path;

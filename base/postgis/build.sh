@@ -7,7 +7,7 @@ POSTGIS_VERSION=${2:-$POSTGIS_VERSION}
 POSTGIS_VERSION=${POSTGIS_VERSION:-3.4}
 
 PYTHON=${PYTHON:-python3}
-MYSQL_VERSION=${MYSQL_VERSION:-0.8.28-1}
+MYSQL_VERSION=${MYSQL_VERSION:-0.8.29-1}
 ODBC_FDW_VERSION=${ODBC_FDW_VERSION:-0.5.2.3}
 MONGO_FDW_VERSION=${MONGO_FDW_VERSION:-5_5_1}
 PGJWT_VERSION=${PGJWT_VERSION:-f3d82fd}
@@ -29,5 +29,11 @@ docker image build \
     --build-arg PGJWT_VERSION="$PGJWT_VERSION" \
     --build-arg PGXN_VERSION="$PGXN_VERSION" \
     --build-arg PGSAFEUPDATE_VERSION="$PGSAFEUPDATE_VERSION" \
+    --build-arg PGHOST="$PGHOST" \
+    --build-arg PGHOSTADDR="$PGHOSTADDR" \
+    --build-arg PGPORT="$PGPORT" \
+    --build-arg PGDATABASE="$PGDATABASE" \
+    --build-arg PGUSER="$PGUSER" \
+    --build-arg PGPASSWORD="$PGPASSWORD" \
     -t "$IMAGE" .
 rm -rf conf/.plugins conf/.docker4gis

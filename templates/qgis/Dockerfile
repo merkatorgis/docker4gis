@@ -1,1 +1,1 @@
-FROM docker4gis/qgis:441
+FROM docker4gis/qgis:455
