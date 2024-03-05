@@ -1,1 +1,1 @@
-FROM docker4gis/mysql:455
+FROM docker4gis/mysql:456
