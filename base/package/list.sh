@@ -54,12 +54,12 @@ add_repo() {
             temp=\$(mktemp -d)
             dotdocker4gis=$BASE
             dotdocker4gis=\${dotdocker4gis:-\$(dirname \"\$0\")}
-            dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh temp '$image:$tag')
+            dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh \$temp '$image:$tag')
             (
                 cd \"\$dotdocker4gis\"
                 docker4gis/run.sh '$repo' '$tag'
             )
-            rm -rf temp
+            rm -rf \$temp
             echo
         "
     else
