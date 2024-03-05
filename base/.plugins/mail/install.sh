@@ -1,10 +1,5 @@
 #!/bin/sh
 
-if ! which runner.sh; then
-	echo "ERROR: install the runner plugin, required by the mail plugin" >&2
-	exit 1
-fi
-
 if which apk; then # Alpine
 	apk update
 	apk add --no-cache \
