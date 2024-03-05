@@ -48,7 +48,7 @@ run)
 	if [ "$tag" ]; then
 		eval "$(docker container run --rm "$DOCKER_REGISTRY""$DOCKER_USER"/package:"$tag")"
 	else
-		eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh dirty)" && echo &&
+		eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh dirty)" &&
 			docker container ls
 	fi && echo &&
 		this test
@@ -56,10 +56,6 @@ run)
 br)
 	this build "$@" && echo &&
 		this run
-	;;
-latest)
-	eval "$(BASE=$DOCKER_BASE/.docker4gis "$DOCKER_BASE"/package/list.sh latest)" && echo &&
-		docker container ls
 	;;
 push)
 	repo=$1

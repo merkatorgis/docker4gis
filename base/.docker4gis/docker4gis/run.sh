@@ -27,7 +27,6 @@ export IMAGE
     CONTAINER=docker4gis-proxy ||
     CONTAINER=$DOCKER_USER-$repo
 export CONTAINER
-echo
 echo "Starting $CONTAINER from $IMAGE..."
 
 if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$CONTAINER" 2>/dev/null); then
@@ -89,22 +88,14 @@ iptables() {
     echo "$ip"
 }
 
-if
-    dotdocker4gis="$(dirname "$0")"/.docker4gis.sh
-    BASE=$("$dotdocker4gis" "$temp" "$IMAGE")
-then
-    pushd "$BASE" >/dev/null &&
-        docker4gis/network.sh &&
-        IP=$(iptables) &&
-        export IP &&
-        # Execute the (base) image's run script,
-        # passing args read from its args file,
-        # substituting environment variables,
-        # and skipping lines starting with a #.
-        envsubst <args | grep -v "^#" | xargs \
-            ./run.sh "$@"
-    result=$?
-    popd >/dev/null || finish 1
-fi
+docker4gis/network.sh &&
+    IP=$(iptables) &&
+    export IP &&
+    # Execute the (base) image's run script,
+    # passing args read from its args file,
+    # substituting environment variables,
+    # and skipping lines starting with a #.
+    envsubst <args | grep -v "^#" | xargs \
+        ./run.sh "$@"
 
-finish "$result"
+finish "$?"

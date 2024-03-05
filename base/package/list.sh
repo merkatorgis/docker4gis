@@ -7,16 +7,11 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_APP_DIR=${DOCKER_APP_DIR:-.}
 
-# compile a list of commands to run all repos' containers
+# Compile a list of commands to run all repos' containers.
 
-temp=$(mktemp)
-finish() {
-    rm -f "$temp"
-    exit "${1:-0}"
-}
 error() {
     echo "> ERROR: $1" >&2
-    finish 1
+    exit 1
 }
 pick_repo() {
     local item
@@ -37,11 +32,7 @@ add_repo() {
     echo "Fetching $repo..." >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
-    if [ "$directive" = latest ]; then
-        tag=latest
-        docker image pull "$image:latest" >/dev/null ||
-            error "image '$image:latest' not found in registry"
-    elif [ "$directive" = dirty ] && local_image_exists "$image:latest"; then
+    if [ "$directive" = dirty ] && local_image_exists "$image:latest"; then
         # use latest image _if_ it exists locally
         tag=latest
     else
@@ -55,8 +46,22 @@ add_repo() {
             error "image '$image:$tag' not found"
     fi
     if [ "$tag" ]; then
-        echo "$BASE/docker4gis/run.sh $repo $tag" >>"$temp"
         echo "$image:$tag" >&2
+        echo >&2
+        # Use .docker4gis.sh to copy the image's own version of docker4gis out
+        # of the image.
+        echo "
+            temp=\$(mktemp -d)
+            dotdocker4gis=$BASE
+            dotdocker4gis=\${dotdocker4gis:-\$(dirname \"\$0\")}
+            dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh temp '$image:$tag')
+            (
+                cd \"\$dotdocker4gis\"
+                docker4gis/run.sh '$repo' '$tag'
+            )
+            rm -rf temp
+            echo
+        "
     else
         error "no tag for '$image'"
     fi
@@ -80,5 +85,4 @@ for repo_path in "$DOCKER_APP_DIR"/*/; do
     last_repo && add_repo
 done
 
-cat "$temp"
-finish
+exit 0
