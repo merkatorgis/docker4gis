@@ -5,7 +5,7 @@ if [ "$1" = 'postgis' ]; then
 	export PGUSER=${POSTGRES_USER}
 
 	# start the mail sending deamon
-	postfix.sh
+	runner.sh postfix.sh
 
 	# configure postgresql for startup
 	/conf.sh
