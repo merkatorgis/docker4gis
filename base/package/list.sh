@@ -70,7 +70,7 @@ first_repo() {
     pick_repo postgis mysql
 }
 last_repo() {
-    pick_repo proxy
+    pick_repo proxy cron
 }
 for repo_path in "$DOCKER_APP_DIR"/*/; do
     repo=$(basename "$repo_path")
