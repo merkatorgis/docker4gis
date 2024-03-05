@@ -42,6 +42,8 @@ docker volume create "$CONTAINER" >/dev/null &&
 		--ip "$IP" \
 		-d "$IMAGE"
 
+# Provision the PGDATABASE variable.
+eval "$(docker container exec "$CONTAINER" env | grep PGDATABASE)"
 # Wait until all DDL has run.
 sql="alter database $PGDATABASE set app.ddl_done to false"
 docker container exec "$CONTAINER" pg.sh -c "$sql" >/dev/null
