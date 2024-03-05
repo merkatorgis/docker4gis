@@ -1,6 +1,6 @@
 FROM docker4gis/angular:341 as builder
 
-FROM docker4gis/serve:344
+FROM docker4gis/serve:456
 ENV SINGLE=true
 RUN rm -rf /wwwroot
 

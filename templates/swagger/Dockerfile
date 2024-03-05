@@ -1,1 +1,1 @@
-FROM docker4gis/swagger:344
+FROM docker4gis/swagger:456

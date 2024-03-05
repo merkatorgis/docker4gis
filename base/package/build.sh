@@ -19,7 +19,7 @@ if [ "$extension" ]; then
     # shellcheck disable=SC2016
     (
         cd ..
-        BASE='"$(dirname "$0")"' "$here"/list.sh
+        BASE='' "$here"/list.sh
     ) >>conf/run.sh || exit 1
 fi
 

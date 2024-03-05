@@ -53,7 +53,8 @@ OSM_CACHE_MB=$OSM_CACHE_MB
 read -rn 1 -p "Press any key to continue..."
 
 echo "
-Executing $DOCKER_REGISTRY$DOCKER_USER/package:$tag" | tee -a "$log"
+Executing $DOCKER_REGISTRY$DOCKER_USER/package:$tag
+" | tee -a "$log"
 
 temp=$(mktemp -d)
 container=$(docker container create "$DOCKER_REGISTRY$DOCKER_USER/package:$tag")
@@ -62,6 +63,5 @@ docker container rm "$container" >/dev/null
 "$temp"/.docker4gis/run.sh | tee -a "$log"
 rm -rf "$temp"
 
-echo "
-$(docker container ls)" | tee -a "$log"
+echo "$(docker container ls)" | tee -a "$log"
 '
