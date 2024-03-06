@@ -5,8 +5,6 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
-FILEPORT=$FILEPORT
-RUNNER=$RUNNER
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -20,10 +18,11 @@ XMX=${XMX:-2g}
 
 GEOSERVER_PORT=$(docker4gis/port.sh "${GEOSERVER_PORT:-58080}")
 
-# Make directory as the user running the run script, instead of letting the
-# container create it as root.
 GEOSERVER_WEB_CACHE=$DOCKER_BINDS_DIR/gwc/$DOCKER_USER
 mkdir -p "$GEOSERVER_WEB_CACHE"
+
+mkdir -p "$FILEPORT"
+mkdir -p "$RUNNER"
 
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \

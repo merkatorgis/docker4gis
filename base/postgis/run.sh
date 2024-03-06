@@ -8,8 +8,6 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
-FILEPORT=$FILEPORT
-RUNNER=$RUNNER
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -20,10 +18,12 @@ PGDATABASE=$PGDATABASE
 
 POSTGIS_PORT=$(docker4gis/port.sh "${POSTGIS_PORT:-5432}")
 
-# Make directory as the user running the run script, instead of letting the
-# container create it as root.
 CERTIFICATES=$DOCKER_BINDS_DIR/certificates/$DOCKER_USER
 mkdir -p "$CERTIFICATES"
+
+mkdir -p "$FILEPORT"
+mkdir -p "$RUNNER"
+
 docker volume create "$CONTAINER" >/dev/null &&
 	docker container run --restart "$RESTART" --name "$CONTAINER" \
 		--shm-size="$SHM_SIZE" \

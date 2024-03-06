@@ -5,8 +5,6 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
-FILEPORT=$FILEPORT
-RUNNER=$RUNNER
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -15,6 +13,9 @@ DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 gateway=$(docker network inspect "$DOCKER_USER" | grep 'Gateway' | grep -oP '\d+\.\d+\.\d+\.\d+')
 
 MYSQL_PORT=$(docker4gis/port.sh "${MYSQL_PORT:-3306}")
+
+mkdir -p "$FILEPORT"
+mkdir -p "$RUNNER"
 
 docker volume create "$CONTAINER" >/dev/null
 docker container run --restart "$RESTART" --name "$CONTAINER" \
