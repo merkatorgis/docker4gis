@@ -54,6 +54,8 @@ chmod +x "$job"
 # The generated script ignores the arguments it gets; they're only repeated in
 # the crontab so that the user will recognise the cron job.
 
+lock=$lock.lock
+
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
 	echo "flock -n $lock $job '$script' $*" >>/startup.sh
 
