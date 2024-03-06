@@ -34,19 +34,27 @@ lock=$dir/$file
 job=$lock.job
 
 echo "#!/bin/bash" >"$job"
-log=$lock.log
-echo "
-	echo >> '$log'
-	echo \$0 \$@ >> '$log'
-	env >> '$log'
-" >>"$job"
-echo "runner.sh '$script' $* >> '$log'" >>"$job"
+
+if [ "$DEBUG" = true ]; then
+	log=$lock.log
+	echo "
+		echo \$0 \$@ >> '$log'
+		env >> '$log'
+		echo >> '$log'
+	" >>"$job"
+	echo "runner.sh '$script' $* >> '$log'" >>"$job"
+else
+	echo "runner.sh '$script' $*" >>"$job"
+fi
+
 chmod +x "$job"
 
 # Use flock to prevent duplicate cron jobs. Each job gets a unique script and
 # lock file; flock won't start that script if a previous job is still running.
 # The generated script ignores the arguments it gets; they're only repeated in
 # the crontab so that the user will recognise the cron job.
+
+lock=$lock.lock
 
 [ "$schedule" = startup ] || [ "$startup" = startup ] &&
 	echo "flock -n $lock $job '$script' $*" >>/startup.sh
