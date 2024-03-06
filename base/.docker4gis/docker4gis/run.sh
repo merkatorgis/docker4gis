@@ -14,12 +14,8 @@ export DOCKER_ENV
     RESTART=always
 export RESTART
 
-# create before running any container, to have this owned by the user running
-# the run script (instead of a container's root user)
 export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$repo
-mkdir -p "$FILEPORT"
 export RUNNER=$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$repo
-mkdir -p "$RUNNER"
 
 IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 export IMAGE

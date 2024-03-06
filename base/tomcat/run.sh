@@ -5,8 +5,6 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
-FILEPORT=$FILEPORT
-RUNNER=$RUNNER
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -16,6 +14,9 @@ XMS=${XMS:-256m}
 XMX=${XMX:-2g}
 
 TOMCAT_PORT=$(docker4gis/port.sh "${TOMCAT_PORT:-9090}")
+
+mkdir -p "$FILEPORT"
+mkdir -p "$RUNNER"
 
 docker volume create "$CONTAINER" >/dev/null
 docker container run --restart "$RESTART" --name "$CONTAINER" \

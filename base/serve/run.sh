@@ -11,6 +11,7 @@ DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
 # Use fileport/$DOCKER_USER instead of fileport/$DOCKER_USER/$repo.
 FILEPORT=$FILEPORT/..
+mkdir -p "$FILEPORT"
 
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_USER="$DOCKER_USER" \
