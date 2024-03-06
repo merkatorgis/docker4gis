@@ -1,1 +1,1 @@
-FROM docker4gis/tomcat:456
+FROM docker4gis/tomcat:460
