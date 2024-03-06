@@ -34,7 +34,19 @@ lock=$dir/$file
 job=$lock.job
 
 echo "#!/bin/bash" >"$job"
-echo "runner.sh '$script' $*" >>"$job"
+
+if [ "$DEBUG" = true ]; then
+	log=$lock.log
+	echo "
+		echo \$0 \$@ >> '$log'
+		env >> '$log'
+		echo >> '$log'
+	" >>"$job"
+	echo "runner.sh '$script' $* >> '$log'" >>"$job"
+else
+	echo "runner.sh '$script' $*" >>"$job"
+fi
+
 chmod +x "$job"
 
 # Use flock to prevent duplicate cron jobs. Each job gets a unique script and
