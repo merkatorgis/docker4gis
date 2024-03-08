@@ -1,7 +1,7 @@
-FROM tomcat:9.0.86-jre11-temurin-jammy
+FROM tomcat:9.0.86-jre17-temurin-jammy
 
 ENV PATH=/util:$PATH \
-	JAVA_OPTS='-XX:SoftRefLRUPolicyMSPerMB=36000 -XX:NewRatio=2 -XX:+AggressiveOpts'
+	JAVA_OPTS='-XX:SoftRefLRUPolicyMSPerMB=36000 -XX:NewRatio=2'
 
 COPY conf/.plugins/bats /tmp/bats
 RUN /tmp/bats/install.sh
