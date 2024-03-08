@@ -26,6 +26,11 @@ export HOMEDEST=
 
 export TZ=
 
+# Optionally load additional GeoServer extensions; see
+# https://geoserver.org/release/stable/, click on the link "Extensions".
+# Extensions in base image are: 'css printing pyramid'
+export GEOSERVER_EXTRA_EXTENSIONS=
+
 export PGHOST=
 export PGHOSTADDR=
 export PGPORT=
