@@ -1,25 +1,21 @@
 #!/bin/bash
 
-# install any GeoServer extensions
-find /tmp/conf/lib -name "geoserver-${GEOSERVER_VERSION}-*.zip" \
-	-exec unzip -qo {} -d "${CATALINA_HOME}/webapps/geoserver/WEB-INF/lib" \;
-
 # create a default workspace
 workspace=$GEOSERVER_DATA_DIR/workspaces/$DOCKER_USER
 if ! [ -d "$workspace" ]; then
-	mkdir -p "$workspace"
-	echo "<workspace>
+  mkdir -p "$workspace"
+  echo "<workspace>
   <id>WorkspaceInfoImpl--60123e77:176192ba3b5:-7ffd</id>
   <name>$DOCKER_USER</name>
   <isolated>false</isolated>
 </workspace>" >"$workspace"/workspace.xml
-	echo "<namespace>
+  echo "<namespace>
   <id>NamespaceInfoImpl--60123e77:176192ba3b5:-7ffc</id>
   <prefix>$DOCKER_USER</prefix>
   <uri>$DOCKER_USER</uri>
   <isolated>false</isolated>
 </namespace>" >"$workspace"/namespace.xml
-	echo "<settings>
+  echo "<settings>
   <id>SettingsInfoImpl--6bf80400:176198d7ba7:-7fff</id>
   <workspace>
     <id>WorkspaceInfoImpl--60123e77:176192ba3b5:-7ffd</id>

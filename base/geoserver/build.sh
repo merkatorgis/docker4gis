@@ -10,5 +10,6 @@ if [ -d conf/DOCKER_USER ] && [ "$DOCKER_USER" ]; then
 fi
 cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
 docker image build \
+    --build-arg GEOSERVER_EXTRA_EXTENSIONS="$GEOSERVER_EXTRA_EXTENSIONS" \
     -t "$IMAGE" .
 rm -rf conf/.plugins conf/.docker4gis
