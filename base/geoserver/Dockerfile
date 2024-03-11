@@ -1,42 +1,46 @@
-FROM docker4gis/tomcat:464
+ARG GEOSERVER_VERSION
+
+FROM docker.merkator.com/geoserver/bin:$GEOSERVER_VERSION as bin
+
+FROM docker4gis/tomcat:latest
 
 RUN apt update \
 	&& apt install unzip
 
-ENV GEOSERVER_EXTENSIONS='css printing pyramid' \
+ARG GEOSERVER_VERSION
+ARG GEOSERVER_EXTENSIONS
+
+ENV GEOSERVER_VERSION=${GEOSERVER_VERSION} \
+	GEOSERVER_EXTENSIONS=${GEOSERVER_EXTENSIONS} \
+	GEOSERVER_BIN=/geoserver/bin \
 	GEOSERVER_USER=admin \
 	GEOSERVER_PASSWORD=geoserver \
-	GEOSERVER_DATA_DIR="$CATALINA_HOME/webapps/geoserver/data" \
+	GEOSERVER_DATA_DIR=${CATALINA_HOME}/webapps/geoserver/data \
 	GEOWEBCACHE_CACHE_DIR=/geoserver/cache \
 	GWC_SEED_RETRY_COUNT=10
 
-ENV GEOSERVER_VERSION=2.24.2
-# ENV GEOSERVER_VERSION=2.21.0
-# ENV GEOSERVER_VERSION=2.16.0
-# ENV GEOSERVER_VERSION=2.12.1
-
-ENV GEOSERVER_DOWNLOAD_URL=https://sourceforge.net/projects/geoserver/files/GeoServer/${GEOSERVER_VERSION}
+COPY --from=bin ${GEOSERVER_BIN} ${GEOSERVER_BIN}
 
 # The Tomcat image deploys the /tmp/conf/webapps/webapps
-RUN mkdir -p /tmp/conf/webapps/geoserver; \
-	zip=geoserver-${GEOSERVER_VERSION}-war.zip; \
-	wget "${GEOSERVER_DOWNLOAD_URL}/${zip}" ;\
-	unzip -qo "${zip}"; \
-	unzip -qo geoserver.war -d /tmp/conf/webapps/geoserver; \
-	rm -rf /tmp/conf/webapps/geoserver/data/coverages/*; \
-	rm -rf /tmp/conf/webapps/geoserver/data/data/*; \
-	rm -rf /tmp/conf/webapps/geoserver/data/gwc-layers/*; \
-	rm -rf /tmp/conf/webapps/geoserver/data/layergroups/*; \
-	rm -rf /tmp/conf/webapps/geoserver/data/workspaces/*; \
-	mv /tmp/conf/geoserver/global.xml /tmp/conf/webapps/geoserver/data; \
-	mv /tmp/conf/geoserver/logging.xml /tmp/conf/webapps/geoserver/data; \
-	mv /tmp/conf/geoserver/logs /tmp/conf/webapps/geoserver/data
+RUN webapp=/tmp/conf/webapps/geoserver; \
+	mkdir -p "$webapp"; \
+	zip=${GEOSERVER_BIN}/geoserver-${GEOSERVER_VERSION}-war.zip; \
+	unzip -o "$zip" -d "$GEOSERVER_BIN"; \
+	unzip -o "$GEOSERVER_BIN/geoserver.war" -d "$webapp"; \
+	data=${webapp}/data; \
+	rm -rf "$data/coverages"/*; \
+	rm -rf "$data/data"/*; \
+	rm -rf "$data/gwc-layers"/*; \
+	rm -rf "$data/layergroups"/*; \
+	rm -rf "$data/workspaces"/*; \
+	mv /tmp/conf/geoserver/global.xml "$data"; \
+	mv /tmp/conf/geoserver/logging.xml "$data"; \
+	mv /tmp/conf/geoserver/logs "$data"
 
 # Install any GeoServer extensions.
-RUN /tmp/conf/geoserver/extensions.sh ${GEOSERVER_EXTENSIONS}
 ONBUILD ARG GEOSERVER_EXTRA_EXTENSIONS
 ONBUILD ENV GEOSERVER_EXTRA_EXTENSIONS=${GEOSERVER_EXTRA_EXTENSIONS}
-ONBUILD RUN /tmp/conf/geoserver/extensions.sh ${GEOSERVER_EXTRA_EXTENSIONS}
+ONBUILD RUN /tmp/conf/geoserver/extensions.sh
 
 RUN mkdir -p "$GEOWEBCACHE_CACHE_DIR"; \
 	mv /tmp/conf/geoserver/geowebcache.xml "$GEOWEBCACHE_CACHE_DIR"
