@@ -2,7 +2,7 @@ ARG GEOSERVER_VERSION
 
 FROM docker.merkator.com/geoserver/bin:$GEOSERVER_VERSION as bin
 
-FROM docker4gis/tomcat:latest
+FROM docker4gis/tomcat:467
 
 RUN apt update \
 	&& apt install unzip
