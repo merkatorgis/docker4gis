@@ -1,20 +1,19 @@
 #!/bin/bash
 set -e
 
-if [ "$1" = 'tomcat' ]
-then
+if [ "$1" = 'tomcat' ]; then
 
 	# conf just once, on container create
-	if [ -d /tmp/conf ]
-	then
+	if [ -d /tmp/conf ]; then
 		cp -r /tmp/conf/webapps/* \
 			"${CATALINA_HOME}/webapps"
 
 		cp -r /tmp/conf/CATALINA_HOME/* \
 			"${CATALINA_HOME}"
 
-		host_ip=$(ip route show default | awk '/default/ {print $3}')
-		echo "host.ip=${host_ip//\./\\\.}" >> \
+		# The host.ip variable (containing a regex) is used in the generated
+		# /usr/local/tomcat/webapps/manager/META-INF/context.xml.
+		echo "host.ip=.*" >> \
 			"${CATALINA_HOME}/conf/catalina.properties"
 
 		find /tmp/conf -name "conf.sh" -exec /tmp/conf/subconf.sh {} \;
