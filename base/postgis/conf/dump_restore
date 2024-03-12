@@ -19,7 +19,7 @@ for _ in '-n' '-d'; do
     esac
 done
 
-dir=/fileport/$DOCKER_USER/dump/$database
+dir=/fileport/$database
 [ "$schema" ] && dir=$dir/$schema
 mkdir -p "$dir"
 
