@@ -6,7 +6,7 @@
 # echo
 # set -x
 
-# compiles a list of commands to run all repos' containers
+# Compiles a list of commands to run all repos' containers.
 
 # Either empty (we're creating the package image's run.sh script from the
 # build.sh), or 'dirty' (we're running without a package image, from a component
@@ -19,12 +19,10 @@ DOCKER_USER=$DOCKER_USER
 
 temp_components=$(mktemp -d)
 package_dir_container=$(mktemp)
-output=$(mktemp)
 
 finish() {
     rm -rf "$temp_components"
     rm -f "$package_dir_container"
-    rm -f "$output"
     exit "${1:-0}"
 }
 
@@ -137,8 +135,22 @@ add_repo() {
     fi
 
     if [ "$tag" ]; then
-        echo "$DOCKER_BASE/.docker4gis/docker4gis/run.sh $repo $tag" >>"$output"
         echo "$image:$tag" >&2
+        echo >&2
+        # Use .docker4gis.sh to copy the image's own version of docker4gis out
+        # of the image.
+        echo "
+            temp=\$(mktemp -d)
+            dotdocker4gis=$BASE
+            dotdocker4gis=\${dotdocker4gis:-\$(dirname \"\$0\")}
+            dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh \$temp '$image:$tag')
+            (
+                cd \"\$dotdocker4gis\"
+                docker4gis/run.sh '$repo' '$tag'
+            )
+            rm -rf \$temp
+            echo
+        "
     else
         error "no tag for '$image'"
     fi
@@ -160,7 +172,7 @@ first_repo() {
 }
 
 last_repo() {
-    pick_repo proxy
+    pick_repo proxy cron
 }
 
 # Loop through all components and add those that should go first.
@@ -178,9 +190,6 @@ done
 for repo_file in "$components"/*; do
     last_repo && add_repo
 done
-
-# Echo the collected commands to run each component.
-cat "$output"
 
 # Tidy up.
 finish

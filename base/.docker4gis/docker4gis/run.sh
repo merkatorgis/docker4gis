@@ -4,19 +4,17 @@ repo=$1
 tag=$2
 shift 2
 
+DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
-DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
-DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
-export DOCKER_ENV
+export DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
 [ "$DOCKER_ENV" = DEVELOPMENT ] &&
     RESTART=no ||
     RESTART=always
 export RESTART
 
-# create before running any container, to have this owned by the user running
-# the run script (instead of a container's root user)
-mkdir -p "$DOCKER_BINDS_DIR"/fileport/"$DOCKER_USER"
+export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$repo
+export RUNNER=$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$repo
 
 IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:$tag
 export IMAGE
@@ -29,7 +27,6 @@ NETWORK=$DOCKER_USER
 [ "$repo" = proxy ] && NETWORK=$CONTAINER
 export NETWORK
 
-echo
 echo "Starting $CONTAINER from $IMAGE..."
 
 # Pull the image from the registry if we don't have it locally, so that we
@@ -73,7 +70,8 @@ iptables() {
                     {{end}}
                 {{end}}
             ' \
-            "$CONTAINER"
+            "$CONTAINER" \
+            2>/dev/null
     )
 
     # Find any ip listed for these ports in iptables.
@@ -96,26 +94,16 @@ iptables() {
     echo "$ip"
 }
 
-if
-    dotdocker4gis="$(dirname "$0")"/.docker4gis.sh
-    BASE=$("$dotdocker4gis" "$temp" "$IMAGE")
-then
-    pushd "$BASE" >/dev/null || finish 1
-    docker4gis/network.sh "$NETWORK" || finish 2
-    IP=$(iptables) || finish 3
-    export IP
-    export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER
-    mkdir -p "$FILEPORT" || finish 4
-    export VOLUME=$CONTAINER
-    docker volume create "$VOLUME" >/dev/null || finish 5
-    # Execute the (base) image's run script,
-    # passing args read from its args file,
-    # substituting environment variables,
-    # and skipping lines starting with a #.
-    envsubst <args | grep -v "^#" | xargs \
-        ./run.sh "$@"
-    result=$?
-    popd >/dev/null || finish 1
-fi
+docker4gis/network.sh "$NETWORK" || finish 2
+IP=$(iptables) || finish 3
+export IP
+export VOLUME=$CONTAINER
+docker volume create "$VOLUME" >/dev/null || finish 5
+# Execute the (base) image's run script,
+# passing args read from its args file,
+# substituting environment variables,
+# and skipping lines starting with a #.
+envsubst <args | grep -v "^#" | xargs \
+    ./run.sh "$@"
 
-finish "$result"
+finish "$?"
