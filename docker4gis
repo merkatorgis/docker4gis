@@ -207,13 +207,20 @@ DOCKER_REPO=$repo" >>.env
 
     package_json
 
+    suggestion=$(basename "$(realpath "$PWD")")
+    # Without a possible `docker4gis-` prefix.
+    suggestion=${suggestion#docker4gis-}
+    # Up until a possible first `.` character (to support forked repos named
+    # component.name.surname).
+    suggestion=${suggestion%%.*}
+
     [ "$action" = base-component ] && {
         # Creating a generic docker4gis base component.
         repo=$1
         [ "$repo" ] || read -rp \
-            "Enter the base component's name (the \"repository\" in the Docker registry) : " \
+            "Enter the base component's name (the \"repository\" in the Docker registry; default is $suggestion) : " \
             repo
-        [ "$repo" ] || error
+        [ "$repo" ] || repo=$suggestion
         DOCKER4GIS_VERSION=$(version)
         DOCKER_REGISTRY=docker.io
         DOCKER_USER=docker4gis
@@ -249,10 +256,6 @@ DOCKER_REPO=$repo" >>.env
     tag=$3
     template=$4
 
-    suggestion=$(basename "$(realpath "$PWD")")
-    # Up until first `.` character, if any (to support forked repos named
-    # component.name.surname).
-    suggestion=${suggestion%%.*}
     [ "$repo" ] || read -rp \
         "Name the new component (default is $suggestion) : " repo
     [ "$repo" ] || repo=$suggestion
