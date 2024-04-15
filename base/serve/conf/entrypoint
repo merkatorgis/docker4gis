@@ -5,6 +5,7 @@ if [ "$1" = serve ]; then
 	shift 1
 	wwwroot=/wwwroot
 	[ "$DYNAMIC" ] && wwwroot=/fileport
+	[ "$SUB" ] && wwwroot=$wwwroot/$SUB
 	cp /serve.json "$wwwroot"
 	if [ "$SINGLE" ]; then
 		exec serve --listen 80 --single "$wwwroot"

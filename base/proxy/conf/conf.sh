@@ -15,7 +15,7 @@ MAPPROXY="http://${DOCKER_USER}-mapproxy"
 SWAGGER="http://${DOCKER_USER}-swagger:8080"
 OSM="http://${DOCKER_USER}-osm"
 QGIS="http://${DOCKER_USER}-qgis"
-DYNAMIC="http://${DOCKER_USER}-dynamic"
+QGIS_DYNAMIC="http://${DOCKER_USER}-qgis-dynamic"
 
 echo DOCKER_USER="${DOCKER_USER}"
 
@@ -39,7 +39,7 @@ mapproxy=${MAPPROXY}
 osm=${OSM}
 qgis=${QGIS}/qgis/
 qgisupload=${QGIS}/upload/
-files=${DYNAMIC}/files/
+qgisfiles=${QGIS_DYNAMIC}/qgisfiles/
 swagger=${SWAGGER}
 swagger-ui.css.map=${SWAGGER}/swagger-ui.css.map
 swagger-ui-bundle.js.map=${SWAGGER}/swagger-ui-bundle.js.map

@@ -51,7 +51,7 @@ https://localhost:7443/qgis/project/65521-1?service=WMS&request=GetCapabilities.
 
 Note that the [MAP
 parameter](https://docs.qgis.org/3.22/en/docs/server_manual/services/basics.html#services-basics-map)
-should not be given; its set automatically, based on the `$PROJECT_NAME` part of
+should not be given; it's set automatically, based on the `$PROJECT_NAME` part of
 the URL.
 
 ## Authorisation
@@ -60,7 +60,7 @@ The docker4gis proxy automatically provides three paths for QGIS Server:
 
 - `qgis=http://$DOCKER_USER-qgis/qgis/`
 - `qgisupload=http://$DOCKER_USER-qgis/upload/`
-- `files=http://$DOCKER_USER-dynamic/files/`
+- `qgisfiles=http://$DOCKER_USER-qgis-dynamic/qgisfiles/`
 
 And then it works. But. Everything is accessible to everyone. You shouldn't want
 that.
@@ -80,7 +80,7 @@ destinations](https://github.com/merkatorgis/docker4gis/blob/master/docs/proxy.m
 ```
 qgis=authorise,http://$DOCKER_USER-qgis/qgis/
 qgisupload=authorise,http://$DOCKER_USER-qgis/upload/
-files=authorise,http://$DOCKER_USER-dynamic/files/
+qgisfiles=authorise,http://$DOCKER_USER-qgis-dynamic/qgisfiles/
 ```
 
 ### Check
@@ -94,9 +94,6 @@ For instance, you could:
   application.
   - Limit access to specific project paths and/or layers parameter values,
     based on specific roles that the user should have.
-- Limit access to paths starting with `/qgisupload` to logged-in users that are
-  an administrator.
-- For paths starting with `/files`:
-  - Deny access for paths that don't start with `/files/qgis`.
-  - Limit access to: logged-in users that are an administrator (for the
-    directory listing in the `Upload` page).
+- Limit access to paths starting with `/qgisupload` and `/qgisfiles` (the
+  latter for the directory listing in the `Upload` page) to logged-in users that
+  are an administrator.

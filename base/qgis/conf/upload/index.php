@@ -113,7 +113,7 @@
     </div>
 
     <nav>
-      <iframe id="iframe" width="100%" height="100%" src="../files/qgis/<?= $project ?>">
+      <iframe id="iframe" width="100%" height="100%" src="../qgisfiles/<?= $project ?>">
       </iframe>
     </nav>
 
