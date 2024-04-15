@@ -4,7 +4,7 @@ set -e
 if [ "$1" = 'qgis' ]; then
 
 	# Render the files directory writable from Apache.
-	dir=/fileport
+	dir=/fileport/qgisfiles
 	mkdir -p "$dir"
 	chown -R www-data "$dir"
 
