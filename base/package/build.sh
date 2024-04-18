@@ -36,6 +36,8 @@ finish() {
     echo "FROM docker4gis/package:$tag" >Dockerfile
 }
 
+[ "$extension" ] || DOCKER_BASE=$(dirname "$0")/..
+
 cp -r "$DOCKER_BASE"/.docker4gis conf
 docker image build \
     --build-arg DOCKER_USER="$DOCKER_USER" \
