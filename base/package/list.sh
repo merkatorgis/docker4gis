@@ -141,7 +141,7 @@ add_repo() {
         # of the image.
         echo "
             temp=\$(mktemp -d)
-            dotdocker4gis=$BASE
+            dotdocker4gis=${BASE:-$DOCKER_BASE/.docker4gis}
             dotdocker4gis=\${dotdocker4gis:-\$(dirname \"\$0\")}
             dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh \$temp '$image:$tag')
             (
