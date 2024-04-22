@@ -51,52 +51,7 @@ finish() {
     exit "$err_code"
 }
 
-iptables() {
-    # Find the container's ip address in iptables, since it should get that same
-    # address agin then. Note that for the proxy container, the address for the
-    # "docker4gis" network should be used.
-
-    # Skip all this in Development.
-    [ "$DOCKER_ENV" = DEVELOPMENT ] && return
-
-    # Find the container's HostPorts.
-    local ports
-    ports=$(
-        docker container inspect \
-            --format '
-                {{range .HostConfig.PortBindings}}
-                    {{range .}}
-                        {{.HostPort}}
-                    {{end}}
-                {{end}}
-            ' \
-            "$CONTAINER" \
-            2>/dev/null
-    )
-
-    # Find any ip listed for these ports in iptables.
-    local port
-    for port in $ports; do
-        which iptables-save >/dev/null 2>&1 &&
-            ip=$(sudo iptables-save |
-                # Look for lines with this port.
-                grep -P "\s+--dport\s+$port" |
-                # Only search lines in the NAT table.
-                grep MASQUERADE |
-                # Pick the address part from patterns like ' -d 172.18.0.13/32'.
-                grep -Po "\s+-d\s+\K[^/]+") &&
-            # Accept the first match (i.e. prevent overwriting the ip that was
-            # found for one port with the empty result for a following
-            # non-matched port).
-            break
-    done
-
-    echo "$ip"
-}
-
 docker4gis/network.sh "$NETWORK" || finish 2
-IP=$(iptables) || finish 3
-export IP
 export VOLUME=$CONTAINER
 docker volume create "$VOLUME" >/dev/null || finish 5
 # Execute the (base) image's run script,
