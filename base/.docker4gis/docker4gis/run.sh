@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 repo=$1
 tag=$2
 shift 2
