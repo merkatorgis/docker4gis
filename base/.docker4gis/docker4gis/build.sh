@@ -61,6 +61,8 @@ echo "Building $IMAGE"
 # it temporarily with the .docker4gis and .plugins directories.
 mkdir -p conf
 cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
+# Tag the version of docker4gis that ends up inside the image.
+echo "$DOCKER4GIS_VERSION" >conf/.docker4gis/docker4gis/VERSION
 
 # Execute the actual build script,
 # which may or may not execute "$BASE"/build.sh,
