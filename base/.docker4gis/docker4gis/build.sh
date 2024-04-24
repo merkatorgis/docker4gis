@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Uncomment for debugging the commands that are issued:
-# echo
-# echo " -- build.sh $* --"
-# echo
-# set -x
-
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
@@ -58,7 +52,6 @@ if [ "$docker4gis_base_image" ]; then
     export BASE
 fi
 
-[ "$repo" = .package ] && repo=package
 IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
 export IMAGE
 echo
