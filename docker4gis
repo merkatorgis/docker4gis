@@ -420,7 +420,7 @@ alias)
 
 *)
     echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
-    echo "For debugging: set -x; export SHELLOPTS; | $docker4gis COMMAND [ARGUMENT..] |& tee docker4gis.log"
+    echo "For debugging: set -x; export SHELLOPTS; $docker4gis COMMAND [ARGUMENT..] |& tee docker4gis.log"
     echo "To turn debugging off: set +x"
     ;;
 esac
