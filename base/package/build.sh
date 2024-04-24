@@ -26,7 +26,7 @@ finish() {
     # echo 'find .' >>"$runscript"
     chmod +x "$runscript"
     here=$(realpath "$(dirname "$0")")
-    "$here"/list.sh >>"$runscript" || finish 1
+    BASE='' "$here"/list.sh >>"$runscript" || finish 1
     if [ "$DOCKER4GIS_VERSION" = latest ]; then
         # This would just be a debugging/testing situation.
         tag=latest

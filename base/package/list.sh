@@ -13,6 +13,7 @@
 # or package repo in the dev env).
 directive=$1
 
+BASE=$BASE
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
@@ -141,7 +142,7 @@ add_repo() {
         # of the image.
         echo "
             temp=\$(mktemp -d)
-            dotdocker4gis=${BASE:-$DOCKER_BASE/.docker4gis}
+            dotdocker4gis=$BASE
             dotdocker4gis=\${dotdocker4gis:-\$(dirname \"\$0\")}
             dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh \$temp '$image:$tag')
             (
