@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Uncomment for debugging the commands that are issued:
-# echo
-# echo " -- build.sh $* --"
-# echo
-# set -x
-
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
@@ -58,28 +52,17 @@ if [ "$docker4gis_base_image" ]; then
     export BASE
 fi
 
-[ "$repo" = .package ] && repo=package
 IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
 export IMAGE
 echo
 echo "Building $IMAGE"
 
-[ "$DOCKER_USER" = docker4gis ] || {
-    # When building a concrete application's component or package image, as
-    # opposed to a docker4gis base component image, remove any existing
-    # container, so that it gets replaced by a new one, started from the new
-    # image we're going to build now.
-    [ "$repo" = proxy ] &&
-        container=docker4gis-proxy ||
-        container=$DOCKER_USER-$repo
-    docker container stop "$container" >/dev/null 2>&1
-    docker container rm "$container" >/dev/null 2>&1
-}
-
 # Ensure a conf directory for the Dockerfile to ADD or COPY from, and provision
 # it temporarily with the .docker4gis and .plugins directories.
 mkdir -p conf
 cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
+# Tag the version of docker4gis that ends up inside the image.
+echo "$DOCKER4GIS_VERSION" >conf/.docker4gis/docker4gis/VERSION
 
 # Execute the actual build script,
 # which may or may not execute "$BASE"/build.sh,
@@ -89,5 +72,17 @@ result=$?
 
 # Clean up the temporary conf content.
 rm -rf conf/.plugins conf/.docker4gis
+
+[ "$result" = 0 ] && [ "$DOCKER_USER" != docker4gis ] && {
+    # When building a concrete application's component or package image, as
+    # opposed to a docker4gis base component image, remove any existing
+    # container, so that it gets replaced by a new one, started from the new
+    # image we've just built.
+    [ "$repo" = proxy ] &&
+        container=docker4gis-proxy ||
+        container=$DOCKER_USER-$repo
+    docker container stop "$container" >/dev/null 2>&1
+    docker container rm "$container" >/dev/null 2>&1
+}
 
 finish "$result"
