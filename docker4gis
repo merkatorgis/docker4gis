@@ -11,6 +11,8 @@ shift 1
 
 export MSYS_NO_PATHCONV=1
 docker4gis=$(basename "$0")
+default_docker4gis_command="npx --yes $docker4gis@latest"
+docker4gis_command=${ALIAS_NAME:-$default_docker4gis_command}
 
 INSTALLED=
 dg_dir=$(dirname "$0")
@@ -258,7 +260,7 @@ DOCKER_REPO=$repo" >>.env
     done
 
     [ "$inited" ] ||
-        error "Package directory not foud; to create one, run $docker4gis init."
+        error "Package directory not foud; to create one, run $docker4gis_command init."
 
     [ "$1" ] || interactive=true
     repo=$1
@@ -381,8 +383,6 @@ alias)
         exit 0
     }
 
-    command="npx --yes $docker4gis@latest"
-
     test=$1
     [ "$test" = 'TEST' ] && {
         shift 1
@@ -390,7 +390,7 @@ alias)
             exit 0
         else
             answer=
-            read -rp "Create an alias for \`$command\`? [Yn] " answer
+            read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
             [ "$answer" ] || answer=y
             if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
                 exit 0
@@ -413,14 +413,14 @@ alias)
         exit
     }
 
-    echo "alias $name='$command'" >>~/.bashrc
+    echo "alias $name='ALIAS_NAME=$name $default_docker4gis_command'" >>~/.bashrc
     # shellcheck source=/dev/null
     . ~/.bashrc
     ;;
 
 *)
-    echo "Usage: $docker4gis init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
-    echo "For debugging: set -x; export SHELLOPTS; $docker4gis COMMAND [ARGUMENT..] |& tee docker4gis.log"
-    echo "To turn debugging off: set +x"
+    echo "Usage: $docker4gis_command init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
+    echo "For debugging: set -x; export SHELLOPTS; $docker4gis_command COMMAND [ARGUMENT..] |& tee $docker4gis.log"
+    echo "  - to turn debugging off: set +x"
     ;;
 esac
