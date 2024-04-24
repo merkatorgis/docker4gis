@@ -57,18 +57,6 @@ export IMAGE
 echo
 echo "Building $IMAGE"
 
-[ "$DOCKER_USER" = docker4gis ] || {
-    # When building a concrete application's component or package image, as
-    # opposed to a docker4gis base component image, remove any existing
-    # container, so that it gets replaced by a new one, started from the new
-    # image we're going to build now.
-    [ "$repo" = proxy ] &&
-        container=docker4gis-proxy ||
-        container=$DOCKER_USER-$repo
-    docker container stop "$container" >/dev/null 2>&1
-    docker container rm "$container" >/dev/null 2>&1
-}
-
 # Ensure a conf directory for the Dockerfile to ADD or COPY from, and provision
 # it temporarily with the .docker4gis and .plugins directories.
 mkdir -p conf
@@ -82,5 +70,17 @@ result=$?
 
 # Clean up the temporary conf content.
 rm -rf conf/.plugins conf/.docker4gis
+
+[ "$result" = 0 ] && [ "$DOCKER_USER" != docker4gis ] && {
+    # When building a concrete application's component or package image, as
+    # opposed to a docker4gis base component image, remove any existing
+    # container, so that it gets replaced by a new one, started from the new
+    # image we've just built.
+    [ "$repo" = proxy ] &&
+        container=docker4gis-proxy ||
+        container=$DOCKER_USER-$repo
+    docker container stop "$container" >/dev/null 2>&1
+    docker container rm "$container" >/dev/null 2>&1
+}
 
 finish "$result"
