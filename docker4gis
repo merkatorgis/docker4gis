@@ -3,6 +3,7 @@
 export MSYS_NO_PATHCONV=1
 docker4gis=$(basename "$0")
 log_path=$docker4gis.log
+version_development=development
 
 log=/dev/null
 if [ "$1" = trace ]; then
@@ -104,7 +105,11 @@ $steps" >"$file"
     }
 
     version() {
-        node --print "require('$DOCKER_BASE/../package.json').version"
+        if [ "$INSTALLED" ]; then
+            node --print "require('$DOCKER_BASE/../package.json').version"
+        else
+            echo "$version_development"
+        fi
     }
 
     dotenv() {
@@ -367,6 +372,7 @@ DOCKER_REPO=$repo" >>.env
         # expecting. Otherwise, ignore the component's current DOCKER4GIS_VERSION,
         # and use the in-development version to see its effects.
         [ "$INSTALLED" ] && DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
+        [ "$INSTALLED" ] || DOCKER4GIS_VERSION=$version_development
 
         "$DOCKER_BASE/main.sh" . "$action" "$@"
         ;;
