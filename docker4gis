@@ -427,6 +427,8 @@ DOCKER_REPO=$repo" >>.env
         }
 
         echo "alias $name='ALIAS_NAME=$name $default_docker4gis_command'" >>~/.bashrc
+
+        shopt -s expand_aliases
         # shellcheck source=/dev/null
         . ~/.bashrc
         ;;
