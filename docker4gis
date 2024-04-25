@@ -129,22 +129,6 @@ $steps" >"$file"
 
     case "$action" in
 
-    docker4gis)
-        echo docker4gis
-        ;;
-
-    base)
-        echo "$DOCKER_BASE"
-        ;;
-
-    version)
-        version
-        ;;
-
-    bump)
-        echo "DOCKER4GIS_VERSION=$(version)" >>.env
-        ;;
-
     init)
         DOCKER_REGISTRY=$1
         DOCKER_USER=$2
@@ -377,6 +361,18 @@ DOCKER_REPO=$repo" >>.env
         "$DOCKER_BASE/main.sh" . "$action" "$@"
         ;;
 
+    docker4gis)
+        echo docker4gis
+        ;;
+
+    base)
+        echo "$DOCKER_BASE"
+        ;;
+
+    version)
+        version
+        ;;
+
     login)
         password=${1:?"password parameter not set"}
         dotenv
@@ -429,42 +425,31 @@ DOCKER_REPO=$repo" >>.env
         . ~/.bashrc
         ;;
 
-    bump-all)
+    bump)
+        # Write the current version() in .env. Call as bump push to commit the
+        # change and push it to a remote branch, ready to create a pull request.
         push=
         [ "$1" = push ] && push=true
-        new_branch=$docker4gis-bump
-        for dir in ../*; do
-            # shellcheck source=/dev/null
-            [[ "$(basename "$dir")" = "$docker4gis"-* ]] &&
-                [ -e "$dir"/.env ] &&
-                DOCKER4GIS_VERSION= &&
-                source "$dir"/.env &&
-                [ "$DOCKER4GIS_VERSION" ] &&
-                (
-                    cd "$dir" &&
-                        echo &&
-                        realpath "$dir" &&
-                        "$DOCKER_BASE"/check_git_clear.sh &&
-                        current_branch=$(git rev-parse --abbrev-ref HEAD) &&
-                        if [ "$push" ]; then
-                            remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch")
-                            if [ "$remote_branch_info" ]; then
-                                echo "Error: remote branch exists: $new_branch" >&2
-                                false
-                            else
-                                git switch --create "$new_branch"
-                            fi
-                        fi &&
-                        $default_docker4gis_command bump &&
-                        if [ "$push" ]; then
-                            git commit --all --message="$new_branch" &&
-                                git push --set-upstream origin "$new_branch" &&
-                                git switch "$current_branch" &&
-                                git branch --delete "$new_branch" &&
-                                echo "Now create a pull request to merge the remote $new_branch branch."
-                        fi
-                )
-        done
+        if [ "$push" ]; then
+            new_branch=$docker4gis-bump &&
+                "$DOCKER_BASE"/check_git_clear.sh &&
+                remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
+                if [ "$remote_branch_info" ]; then
+                    echo "Error: remote branch exists: $new_branch" >&2
+                    false
+                else
+                    current_branch=$(git rev-parse --abbrev-ref HEAD) &&
+                        git switch --create "$new_branch"
+                fi
+        fi &&
+            # The actual bump action.
+            echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
+            if [ "$push" ]; then
+                git commit --all --message="$new_branch" &&
+                    git push --set-upstream origin "$new_branch" &&
+                    git switch "$current_branch" &&
+                    git branch --delete "$new_branch"
+            fi
         ;;
 
     *)
