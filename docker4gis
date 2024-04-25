@@ -135,9 +135,22 @@ $steps" >"$file"
         "$0" "$@"
     }
 
+    just_help=
+    [ "$1" = help ] && just_help=true
+    help() {
+        [ "$just_help" ] || return 0
+        local help_text=$1
+        echo "$help_text"
+        exit
+    }
+
     case "$action" in
 
     init)
+        help "Initialise a new $docker4gis application in the current directory.
+Do this somewhere where you can later create sibbling directories for the
+application's components (using \`$docker4gis_command component\`)."
+
         DOCKER_REGISTRY=$1
         DOCKER_USER=$2
 
@@ -193,6 +206,20 @@ POSTFIX_DOMAIN=" >>.env
         ;;
 
     component | base-component | template)
+        [ "$action" = component ] && help "Initialise a new $docker4gis application component in the current directory.
+Do this in a sibling directory of your application directory (where you ran
+\`$docker4gis_command init\`)."
+
+        [ "$action" = base-component ] && help "Initialise a new $docker4gis base component in the current directory.
+Base components are the repositories in https://hub.docker.com/u/docker4gis.
+This action will render a skeleton that you can build upon. Get in touch with
+to discuss publication."
+
+        [ "$action" = template ] && help "When developing a $docker4gis base component, scaffold a client application in
+the current directory, so that you can try your new base component. When you're
+happy, you can copy the contents into the 'template' directory of your base
+component."
+
         write_dotenv() {
             echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY
@@ -356,6 +383,7 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     build | run | br | push | test | stop | geoserver)
+        help "TODO"
 
         dotenv export
 
@@ -370,18 +398,26 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     docker4gis)
+        help "TODO"
+
         echo docker4gis
         ;;
 
     base)
+        help "TODO"
+
         echo "$DOCKER_BASE"
         ;;
 
     version)
+        help "TODO"
+
         version
         ;;
 
     login)
+        help "TODO"
+
         password=${1:?"password parameter not set"}
         dotenv
         user=${2:-$DOCKER_USER}
@@ -389,6 +425,8 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     alias)
+        help "TODO"
+
         # https://serverfault.com/a/146747
         [[ $- == *i* ]] && interactive=true
         [ "$interactive" ] || {
@@ -436,6 +474,8 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     bump)
+        help "TODO"
+
         # Write the current version() in .env. Call as bump push to commit the
         # change and push it to a remote branch, ready to create a pull request.
         push=
@@ -463,6 +503,8 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     all)
+        help "TODO"
+
         # Run the given command in all sibling docker4gis component directories,
         # including the current one.
         for dir in ../*; do
@@ -484,6 +526,7 @@ DOCKER_REPO=$repo" >>.env
 
     *)
         echo "Usage: $docker4gis_command init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
+        echo "For help: $docker4gis_command COMMAND help"
         echo "For debugging (tracing all shell commands): $docker4gis_command trace COMMAND [ARGUMENT...]; output is saved in $log_path"
         ;;
     esac
