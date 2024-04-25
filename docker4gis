@@ -245,7 +245,7 @@ DOCKER_REPO=$repo" >>.env
             [ "$repo" ] || repo=$suggestion
             DOCKER4GIS_VERSION=$(version)
             DOCKER_REGISTRY=docker.io
-            DOCKER_USER=docker4gis
+            DOCKER_USER=$docker4gis
 
             cp -r "$DOCKER_BASE"/template/. .
             replace_component
@@ -429,9 +429,47 @@ DOCKER_REPO=$repo" >>.env
         . ~/.bashrc
         ;;
 
+    bump-all)
+        push=
+        [ "$1" = push ] && push=true
+        new_branch=$docker4gis-bump
+        for dir in ../*; do
+            # shellcheck source=/dev/null
+            [[ "$(basename "$dir")" = "$docker4gis"-* ]] &&
+                [ -e "$dir"/.env ] &&
+                DOCKER4GIS_VERSION= &&
+                source "$dir"/.env &&
+                [ "$DOCKER4GIS_VERSION" ] &&
+                (
+                    cd "$dir" &&
+                        echo &&
+                        realpath "$dir" &&
+                        "$DOCKER_BASE"/check_git_clear.sh &&
+                        current_branch=$(git rev-parse --abbrev-ref HEAD) &&
+                        if [ "$push" ]; then
+                            remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch")
+                            if [ "$remote_branch_info" ]; then
+                                echo "Error: remote branch exists: $new_branch" >&2
+                                false
+                            else
+                                git switch --create "$new_branch"
+                            fi
+                        fi &&
+                        $default_docker4gis_command bump &&
+                        if [ "$push" ]; then
+                            git commit --all --message="$new_branch" &&
+                                git push --set-upstream origin "$new_branch" &&
+                                git switch "$current_branch" &&
+                                git branch --delete "$new_branch" &&
+                                echo "Now create a pull request to merge the remote $new_branch branch."
+                        fi
+                )
+        done
+        ;;
+
     *)
         echo "Usage: $docker4gis_command init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
-        echo "For debugging (tracing all shell commands): $docker4gis_command trace COMMAND [ARGUMENT..]; output is saved in $log_path"
+        echo "For debugging (tracing all shell commands): $docker4gis_command trace COMMAND [ARGUMENT...]; output is saved in $log_path"
         ;;
     esac
 } |& tee "$log"
