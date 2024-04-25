@@ -5,12 +5,13 @@ for build_arg in "$@"; do
     suffix=$suffix-$build_arg
 done
 
+DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$DOCKER_REPO
 
 error() {
-    echo "Error: $1"
+    echo "Error: $1" >&2
     exit 1
 }
 
@@ -18,16 +19,9 @@ if ! [ "$DOCKER_REPO" ]; then
     error "DOCKER_REPO variable not set"
 fi
 
-check_git_clear() {
-    git fetch
-    if git status --short --branch | grep behind; then
-        error "git branch is behind; please sync"
-    fi
-    if [ "$(git status --short)" ]; then
-        error "git repo has pending changes"
-    fi
-}
-check_git_clear
+if ! "$DOCKER_BASE"/check_git_clear.sh; then
+    exit 1
+fi
 
 log() {
     echo "• $1..."
@@ -47,8 +41,7 @@ echo "$version"
 
 # Base components have templates with Dockerfiles stating the image's version.
 log "Upgrading any templates"
-here=$(dirname "$0")
-"$here/upgrade_templates.sh" "$version"
+"$DOCKER_BASE"/upgrade_templates.sh "$version"
 
 # (Re)build the image, to include any upgraded templates.
 log "Building the image"
