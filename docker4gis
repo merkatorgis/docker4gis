@@ -7,12 +7,14 @@ version_development=development
 
 log=/dev/null
 if [ "$1" = trace ]; then
+    # Trace all shell commands and activate tee'ing all output to a log file.
     shift 1
     log=$log_path
     set -x
     export SHELLOPTS
 fi
 
+# The whole script is between {} so that all output can bee tee'd.
 {
     action=$1
     shift 1
@@ -85,7 +87,7 @@ $steps" >"$file"
 
         local build_validation=azure-pipeline-build-validation.yml
         write "$build_validation" "- script: |
-    npx --yes docker4gis@latest build
+    $default_docker4gis_command build
   displayName: 'docker4gis build'"
 
         local continuous_integration=azure-pipeline-continuous-integration.yml
@@ -100,7 +102,7 @@ $steps" >"$file"
   displayName: 'git undo detached state'
   
 - script: |
-    npx --yes docker4gis@latest push
+    $default_docker4gis_command push
   displayName: 'docker4gis push'"
     }
 
