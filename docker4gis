@@ -127,6 +127,12 @@ $steps" >"$file"
         }
     }
 
+    # shellcheck disable=SC2317  # It's correct that the function is never called in this script.
+    self() {
+        # Command given to the "all" action may use `self` to run docker4gis actions.
+        "$0" "$@"
+    }
+
     case "$action" in
 
     init)
@@ -450,6 +456,26 @@ DOCKER_REPO=$repo" >>.env
                     git switch "$current_branch" &&
                     git branch --delete "$new_branch"
             fi
+        ;;
+
+    all)
+        # Run the given command in all sibling docker4gis component directories,
+        # including the current one.
+        for dir in ../*; do
+            # shellcheck source=/dev/null
+            [ -e "$dir"/package.json ] &&
+                [ -e "$dir"/.env ] &&
+                DOCKER4GIS_VERSION= &&
+                source "$dir"/.env &&
+                [ "$DOCKER4GIS_VERSION" ] &&
+                (
+                    cd "$dir" || exit
+                    echo
+                    realpath .
+                    # Run the given command.
+                    "$@"
+                )
+        done
         ;;
 
     *)
