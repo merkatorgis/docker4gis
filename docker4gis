@@ -150,6 +150,15 @@ $steps" >"$file"
         exit
     }
 
+    remote_branch_name_available() {
+        local new_branch=$1
+        remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
+            if [ "$remote_branch_info" ]; then
+                echo "Error: remote branch exists: $new_branch" >&2
+                false
+            fi
+    }
+
     case "$action" in
 
     init)
@@ -510,18 +519,31 @@ Without NAME, you'll be asked to type one, or accept the default."
         ;;
 
     git-push)
-        new_branch=${1:-"$docker4gis-changes"}
-        remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
-            if [ "$remote_branch_info" ]; then
-                echo "Error: remote branch exists: $new_branch" >&2
-                false
-            fi &&
+        default_new_branch=$docker4gis-changes
+        help "Commit and push all changes to a remote branch.
+Usage: $docker4gis_command git-push [BRANCH_NAME].
+The default BRANCH_NAME is $default_new_branch.
+All changes are committed in git in a new branch, that is pushed to \`origin\`,
+ready to create a pull request. Locally, the new branch is deleted after
+switching back to the current branch, ready for fetching the remote changes
+after merging the pull request (and running the Continuous Integration
+pipeline, and syncing a forked repo)."
+
+        new_branch=${1:-"$default_new_branch"}
+        remote_branch_name_available "$new_branch" &&
             current_branch=$(git rev-parse --abbrev-ref HEAD) &&
-            git switch --create "$new_branch" &&
+            if [ "$current_branch" != "$new_branch" ]; then
+                # This will fail if a branch with that name already exists.
+                # Which is good, since it'd be acceptable when we're already
+                # _on_ the new_branch, but not when we're on another branch and
+                # the new_branch is just existing.
+                git switch --create "$new_branch"
+            fi &&
             git commit --all --message="$new_branch" &&
             git push --set-upstream origin "$new_branch" &&
             git switch "$current_branch" &&
-            git branch --delete "$new_branch"
+            git branch --delete "$new_branch" &&
+            echo "-> Remote branch $new_branch ready for pull request; the local branch is deleted."
         ;;
 
     bump)
@@ -531,17 +553,19 @@ With \`push\`, the change is committed in git in a new branch, that is pushed
 to \`origin\`, ready to create a pull request. Locally, the new branch is
 deleted after switching back to the current branch, ready for fetching the
 remote changes after merging the pull request (and running the Continuous
-Integration pipeline)."
+Integration pipeline, and syncing a forked repo)."
 
         push=
         [ "$1" = push ] && push=true
         if [ "$push" ]; then
-            "$DOCKER_BASE"/check_git_clear.sh
+            new_branch=$docker4gis-bump
+            "$DOCKER_BASE"/check_git_clear.sh &&
+                remote_branch_name_available "$new_branch"
         fi &&
             # The actual bump action.
             echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
             if [ "$push" ]; then
-                self git-push "$docker4gis-bump"
+                self git-push "$new_branch"
             fi
         ;;
 
