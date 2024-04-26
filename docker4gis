@@ -118,16 +118,21 @@ $steps" >"$file"
     dotenv() {
         local flag=$1
         local file=${2:-.env}
+        local DOCKER4GIS_VERSION=
 
         [ "$flag" = 'export' ] && set -a
         # shellcheck source=/dev/null
-        . "$file"
+        [ -e "$file" ] && source "$file"
         [ "$flag" = 'export' ] && set +a
 
-        [ "$flag" = 'forgiving' ] || [ "$DOCKER4GIS_VERSION" ] || {
-            echo "Current directory not recognised as a $docker4gis package or component."
+        if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
+            true
+        elif [ "$flag" = 'forgiving' ]; then
+            false
+        else
+            echo "Current directory not recognised as a $docker4gis package or component." >&2
             exit 1
-        }
+        fi
     }
 
     # shellcheck disable=SC2317  # It's correct that the function is never called in this script.
@@ -148,6 +153,15 @@ $steps" >"$file"
         local help_text=$1
         echo "$help_text"
         exit
+    }
+
+    remote_branch_name_available() {
+        local new_branch=$1
+        remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
+            if [ "$remote_branch_info" ]; then
+                echo "Error: remote branch exists: $new_branch" >&2
+                false
+            fi
     }
 
     case "$action" in
@@ -445,12 +459,16 @@ container, to the geoserver component repository in the current directory."
         ;;
 
     login)
-        dotenv
-        help "Log into the DOCKER_REGISTRY ($DOCKER_REGISTRY).
+        dotenv forgiving && {
+            DOCKER_REGISTRY=" ($DOCKER_REGISTRY)"
+            DOCKER_USER=" ($DOCKER_USER)"
+        }
+        help "Log into the DOCKER_REGISTRY$DOCKER_REGISTRY.
 Usage: $docker4gis_command login [PASSWORD] [USER].
 Without PASSWORD, you'll be asked to type it.
-Default USER is the DOCKER_USER value ($DOCKER_USER)."
+Default USER is the DOCKER_USER value$DOCKER_USER."
 
+        dotenv
         password=${1:?"password parameter not set"}
         user=${2:-$DOCKER_USER}
         echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
@@ -509,6 +527,34 @@ Without NAME, you'll be asked to type one, or accept the default."
         . ~/.bashrc
         ;;
 
+    git-push)
+        default_new_branch=$docker4gis-changes
+        help "Commit and push all changes to a remote branch.
+Usage: $docker4gis_command git-push [BRANCH_NAME].
+The default BRANCH_NAME is $default_new_branch.
+All changes are committed in git in a new branch, that is pushed to \`origin\`,
+ready to create a pull request. Locally, the new branch is deleted after
+switching back to the current branch, ready for fetching the remote changes
+after merging the pull request (and running the Continuous Integration
+pipeline, and syncing a forked repo)."
+
+        new_branch=${1:-"$default_new_branch"}
+        remote_branch_name_available "$new_branch" &&
+            current_branch=$(git rev-parse --abbrev-ref HEAD) &&
+            if [ "$current_branch" != "$new_branch" ]; then
+                # This will fail if a branch with that name already exists.
+                # Which is good, since it'd be acceptable when we're already
+                # _on_ the new_branch, but not when we're on another branch and
+                # the new_branch is just existing.
+                git switch --create "$new_branch"
+            fi &&
+            git commit --all --message="$new_branch" &&
+            git push --set-upstream origin "$new_branch" &&
+            git switch "$current_branch" &&
+            git branch --delete "$new_branch" &&
+            echo "-> Remote branch $new_branch ready for pull request; the local branch is deleted."
+        ;;
+
     bump)
         help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
 Usage: $docker4gis_command bump [push].
@@ -516,31 +562,19 @@ With \`push\`, the change is committed in git in a new branch, that is pushed
 to \`origin\`, ready to create a pull request. Locally, the new branch is
 deleted after switching back to the current branch, ready for fetching the
 remote changes after merging the pull request (and running the Continuous
-Integration pipeline)."
+Integration pipeline, and syncing a forked repo)."
 
-        # Write the current version() in .env. Call as bump push to commit the
-        # change and push it to a remote branch, ready to create a pull request.
         push=
         [ "$1" = push ] && push=true
         if [ "$push" ]; then
-            new_branch=$docker4gis-bump &&
-                "$DOCKER_BASE"/check_git_clear.sh &&
-                remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
-                if [ "$remote_branch_info" ]; then
-                    echo "Error: remote branch exists: $new_branch" >&2
-                    false
-                else
-                    current_branch=$(git rev-parse --abbrev-ref HEAD) &&
-                        git switch --create "$new_branch"
-                fi
+            new_branch=$docker4gis-bump
+            "$DOCKER_BASE"/check_git_clear.sh &&
+                remote_branch_name_available "$new_branch"
         fi &&
             # The actual bump action.
             echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
             if [ "$push" ]; then
-                git commit --all --message="$new_branch" &&
-                    git push --set-upstream origin "$new_branch" &&
-                    git switch "$current_branch" &&
-                    git branch --delete "$new_branch"
+                self git-push "$new_branch"
             fi
         ;;
 
@@ -553,32 +587,30 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         # Run the given command in all sibling docker4gis component directories,
         # including the current one.
         for dir in ../*; do
-            # shellcheck source=/dev/null
-            [ -e "$dir"/package.json ] &&
-                [ -e "$dir"/.env ] &&
-                DOCKER4GIS_VERSION= &&
-                source "$dir"/.env &&
-                [ "$DOCKER4GIS_VERSION" ] &&
-                (
-                    cd "$dir" || exit
-                    echo
-                    realpath .
-                    # Run the given command.
-                    "$@"
-                )
+            (
+                cd "$dir" || exit
+                dotenv forgiving || exit
+                echo
+                realpath .
+                # Run the given command.
+                "$@"
+            )
         done
         ;;
 
     *)
+        echo "Manage $docker4gis applications and their components and base components."
         echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
         echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
         echo "  base-component | template | alias [NAME] | $docker4gis | base |"
         echo "  login [PASSWORD] [USER] | version | bump [push] |"
         echo "  all EXECUTABLE|self [ARG...]"
-        echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND"
+        echo "Note that build, run, br, push, test, stop, and geoserver run with the"
+        echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
+        echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND."
         echo "For debugging (tracing all shell commands):"
         echo "  $docker4gis_command trace COMMAND [ARG...]"
-        echo "  output is saved in $log_path"
+        echo "  output is saved in $log_path."
         ;;
     esac
 } |& tee "$log"
