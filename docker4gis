@@ -555,7 +555,8 @@ pipeline, and syncing a forked repo)."
                 # the new_branch is just existing.
                 git switch --create "$new_branch"
             fi &&
-            git commit --all --message="$new_branch" &&
+            git add --all &&
+            git commit --message="$new_branch" &&
             git push --set-upstream origin "$new_branch" &&
             git switch "$current_branch" &&
             git branch --delete "$new_branch" &&
