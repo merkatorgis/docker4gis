@@ -573,6 +573,7 @@ Integration pipeline, and syncing a forked repo)."
         fi &&
             # The actual bump action.
             echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
+            version &&
             if [ "$push" ]; then
                 self git-push "$new_branch"
             fi
