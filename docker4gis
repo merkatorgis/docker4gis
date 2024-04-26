@@ -120,17 +120,19 @@ $steps" >"$file"
         local file=${2:-.env}
         local DOCKER4GIS_VERSION=
 
-        [ "$flag" = 'export' ] && set -a
-        # shellcheck source=/dev/null
-        [ -e "$file" ] && source "$file"
-        [ "$flag" = 'export' ] && set +a
+        if [ -e "$file" ]; then
+            [ "$flag" = 'export' ] && set -a
+            # shellcheck source=/dev/null
+            source "$file"
+            [ "$flag" = 'export' ] && set +a
+        fi
 
         if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
             true
         elif [ "$flag" = 'forgiving' ]; then
             false
         else
-            echo "Current directory not recognised as a $docker4gis package or component." >&2
+            echo "Current directory not recognised as a $docker4gis component or application package." >&2
             exit 1
         fi
     }
