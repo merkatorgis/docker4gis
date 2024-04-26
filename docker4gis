@@ -540,6 +540,10 @@ switching back to the current branch, ready for fetching the remote changes
 after merging the pull request (and running the Continuous Integration
 pipeline, and syncing a forked repo)."
 
+        [ "$(git status --short)" ] || {
+            echo "No changes to commit."
+            exit
+        }
         new_branch=${1:-"$default_new_branch"}
         remote_branch_name_available "$new_branch" &&
             current_branch=$(git rev-parse --abbrev-ref HEAD) &&
