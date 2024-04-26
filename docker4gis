@@ -118,16 +118,21 @@ $steps" >"$file"
     dotenv() {
         local flag=$1
         local file=${2:-.env}
+        local DOCKER4GIS_VERSION=
 
         [ "$flag" = 'export' ] && set -a
         # shellcheck source=/dev/null
-        . "$file"
+        [ -e "$file" ] && source "$file"
         [ "$flag" = 'export' ] && set +a
 
-        [ "$flag" = 'forgiving' ] || [ "$DOCKER4GIS_VERSION" ] || {
-            echo "Current directory not recognised as a $docker4gis package or component."
+        if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
+            true
+        elif [ "$flag" = 'forgiving' ]; then
+            false
+        else
+            echo "Current directory not recognised as a $docker4gis package or component." >&2
             exit 1
-        }
+        fi
     }
 
     # shellcheck disable=SC2317  # It's correct that the function is never called in this script.
@@ -454,12 +459,16 @@ container, to the geoserver component repository in the current directory."
         ;;
 
     login)
-        dotenv
-        help "Log into the DOCKER_REGISTRY ($DOCKER_REGISTRY).
+        dotenv forgiving && {
+            DOCKER_REGISTRY=" ($DOCKER_REGISTRY)"
+            DOCKER_USER=" ($DOCKER_USER)"
+        }
+        help "Log into the DOCKER_REGISTRY$DOCKER_REGISTRY.
 Usage: $docker4gis_command login [PASSWORD] [USER].
 Without PASSWORD, you'll be asked to type it.
-Default USER is the DOCKER_USER value ($DOCKER_USER)."
+Default USER is the DOCKER_USER value$DOCKER_USER."
 
+        dotenv
         password=${1:?"password parameter not set"}
         user=${2:-$DOCKER_USER}
         echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
@@ -578,19 +587,14 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         # Run the given command in all sibling docker4gis component directories,
         # including the current one.
         for dir in ../*; do
-            # shellcheck source=/dev/null
-            [ -e "$dir"/package.json ] &&
-                [ -e "$dir"/.env ] &&
-                DOCKER4GIS_VERSION= &&
-                source "$dir"/.env &&
-                [ "$DOCKER4GIS_VERSION" ] &&
-                (
-                    cd "$dir" || exit
-                    echo
-                    realpath .
-                    # Run the given command.
-                    "$@"
-                )
+            (
+                cd "$dir" || exit
+                dotenv forgiving || exit
+                echo
+                realpath .
+                # Run the given command.
+                "$@"
+            )
         done
         ;;
 
