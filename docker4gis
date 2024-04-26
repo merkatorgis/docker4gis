@@ -118,7 +118,8 @@ $steps" >"$file"
     dotenv() {
         local flag=$1
         local file=${2:-.env}
-        local DOCKER4GIS_VERSION=
+
+        DOCKER4GIS_VERSION=
 
         if [ -e "$file" ]; then
             [ "$flag" = 'export' ] && set -a
