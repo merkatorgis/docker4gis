@@ -595,15 +595,18 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         ;;
 
     *)
+        echo "Manage $docker4gis applications and their components and base components."
         echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
         echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
         echo "  base-component | template | alias [NAME] | $docker4gis | base |"
         echo "  login [PASSWORD] [USER] | version | bump [push] |"
         echo "  all EXECUTABLE|self [ARG...]"
-        echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND"
+        echo "Note that build, run, br, push, test, stop, and geoserver run with the"
+        echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
+        echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND."
         echo "For debugging (tracing all shell commands):"
         echo "  $docker4gis_command trace COMMAND [ARG...]"
-        echo "  output is saved in $log_path"
+        echo "  output is saved in $log_path."
         ;;
     esac
 } |& tee "$log"
