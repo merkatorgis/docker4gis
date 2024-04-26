@@ -509,6 +509,21 @@ Without NAME, you'll be asked to type one, or accept the default."
         . ~/.bashrc
         ;;
 
+    git-push)
+        new_branch=${1:-"$docker4gis-changes"}
+        remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
+            if [ "$remote_branch_info" ]; then
+                echo "Error: remote branch exists: $new_branch" >&2
+                false
+            fi &&
+            current_branch=$(git rev-parse --abbrev-ref HEAD) &&
+            git switch --create "$new_branch" &&
+            git commit --all --message="$new_branch" &&
+            git push --set-upstream origin "$new_branch" &&
+            git switch "$current_branch" &&
+            git branch --delete "$new_branch"
+        ;;
+
     bump)
         help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
 Usage: $docker4gis_command bump [push].
@@ -518,29 +533,15 @@ deleted after switching back to the current branch, ready for fetching the
 remote changes after merging the pull request (and running the Continuous
 Integration pipeline)."
 
-        # Write the current version() in .env. Call as bump push to commit the
-        # change and push it to a remote branch, ready to create a pull request.
         push=
         [ "$1" = push ] && push=true
         if [ "$push" ]; then
-            new_branch=$docker4gis-bump &&
-                "$DOCKER_BASE"/check_git_clear.sh &&
-                remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
-                if [ "$remote_branch_info" ]; then
-                    echo "Error: remote branch exists: $new_branch" >&2
-                    false
-                else
-                    current_branch=$(git rev-parse --abbrev-ref HEAD) &&
-                        git switch --create "$new_branch"
-                fi
+            "$DOCKER_BASE"/check_git_clear.sh
         fi &&
             # The actual bump action.
             echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
             if [ "$push" ]; then
-                git commit --all --message="$new_branch" &&
-                    git push --set-upstream origin "$new_branch" &&
-                    git switch "$current_branch" &&
-                    git branch --delete "$new_branch"
+                self git-push "$docker4gis-bump"
             fi
         ;;
 
