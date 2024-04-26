@@ -35,6 +35,7 @@ fi
         [ -f package.json ] || echo '{
   "version": "0.0.0"
 }' >package.json
+        echo '*.log' >>.gitignore
     }
 
     pipeline() {
@@ -88,7 +89,7 @@ $steps" >"$file"
         local build_validation=azure-pipeline-build-validation.yml
         write "$build_validation" "- script: |
     $default_docker4gis_command build
-  displayName: 'docker4gis build'"
+  displayName: '$docker4gis build'"
 
         local continuous_integration=azure-pipeline-continuous-integration.yml
         write "$continuous_integration" "- script: |
@@ -103,7 +104,7 @@ $steps" >"$file"
   
 - script: |
     $default_docker4gis_command push
-  displayName: 'docker4gis push'"
+  displayName: '$docker4gis push'"
     }
 
     version() {
@@ -124,7 +125,7 @@ $steps" >"$file"
         [ "$flag" = 'export' ] && set +a
 
         [ "$flag" = 'forgiving' ] || [ "$DOCKER4GIS_VERSION" ] || {
-            echo "Current directory not recognised as a docker4gis package or component."
+            echo "Current directory not recognised as a $docker4gis package or component."
             exit 1
         }
     }
@@ -137,6 +138,11 @@ $steps" >"$file"
 
     just_help=
     [ "$1" = help ] && just_help=true
+    [ "$action" = help ] && {
+        just_help=true
+        action=$1
+        shift 1
+    }
     help() {
         [ "$just_help" ] || return 0
         local help_text=$1
@@ -211,7 +217,7 @@ Do this in a sibling directory of your application directory (where you ran
 \`$docker4gis_command init\`)."
 
         [ "$action" = base-component ] && help "Initialise a new $docker4gis base component in the current directory.
-Base components are the repositories in https://hub.docker.com/u/docker4gis.
+Base components are the repositories in https://hub.docker.com/u/$docker4gis.
 This action will render a skeleton that you can build upon. Get in touch with
 to discuss publication."
 
@@ -250,7 +256,7 @@ DOCKER_REPO=$repo" >>.env
 
         suggestion=$(basename "$(realpath "$PWD")")
         # Without a possible `docker4gis-` prefix.
-        suggestion=${suggestion#docker4gis-}
+        suggestion=${suggestion#"$docker4gis"-}
         # Up until a possible first `.` character (to support forked repos named
         # component.name.surname).
         suggestion=${suggestion%%.*}
@@ -344,7 +350,7 @@ DOCKER_REPO=$repo" >>.env
         }
         [ "$tag" ] || tag=latest
 
-        image=docker4gis/$component:$tag
+        image=$docker4gis/$component:$tag
         docker image pull "$image" ||
             error "Image not found: $image"
 
@@ -383,7 +389,30 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     build | run | br | push | test | stop | geoserver)
-        help "TODO"
+        [ "$action" = build ] && help "Build a new image for the application component in the current directory.
+Or pass the name of a sibling directory to build that component there."
+
+        [ "$action" = run ] && help "Run the application residing in one of the siblings of the current directory.
+If a newer version of a component is found in a component directory, the
+application directory is updated to run that newer version.
+If a 'latest' version of a component image is found locally, and the version
+in the component's package.json isn't newer than the version the application
+had registered, then that 'latest' component version is run."
+
+        [ "$action" = br ] && help "First build, then run. Can also br [COMPONENT] from a sibling directory."
+
+        [ "$action" = push ] && help "Increment the component's version, build its image, push it to the Docker
+registry, commit and push git changes.
+Note that ideally, this is run by the Continuous Integration pipeline. If
+that's configured, refrain from running \`push\` by hand."
+
+        [ "$action" = test ] && help "Run the component's tests."
+
+        [ "$action" = stop ] && help "Stop the application's containers.
+Except the proxy container, since that may still serve other applications."
+
+        [ "$action" = geoserver ] && help "Copy the GeoServer configuration files out of the running $DOCKER_USER-geoserver
+container, to the geoserver component repository in the current directory."
 
         dotenv export
 
@@ -397,35 +426,40 @@ DOCKER_REPO=$repo" >>.env
         "$DOCKER_BASE/main.sh" . "$action" "$@"
         ;;
 
-    docker4gis)
-        help "TODO"
+    "$docker4gis")
+        help "Just echo '$docker4gis' to indicate that this is that program."
 
-        echo docker4gis
+        echo "$docker4gis"
         ;;
 
     base)
-        help "TODO"
+        help "Echo the value of the DOCKER_BASE variable."
 
         echo "$DOCKER_BASE"
         ;;
 
     version)
-        help "TODO"
+        help "Echo the $docker4gis version."
 
         version
         ;;
 
     login)
-        help "TODO"
+        dotenv
+        help "Log into the DOCKER_REGISTRY ($DOCKER_REGISTRY).
+Usage: $docker4gis_command login [PASSWORD] [USER].
+Without PASSWORD, you'll be asked to type it.
+Default USER is the DOCKER_USER value ($DOCKER_USER)."
 
         password=${1:?"password parameter not set"}
-        dotenv
         user=${2:-$DOCKER_USER}
         echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
         ;;
 
     alias)
-        help "TODO"
+        help "Create a shell alias for \`$default_docker4gis_command\`.
+Usage: $docker4gis_command alias [NAME]
+Without NAME, you'll be asked to type one, or accept the default."
 
         # https://serverfault.com/a/146747
         [[ $- == *i* ]] && interactive=true
@@ -436,10 +470,12 @@ DOCKER_REPO=$repo" >>.env
             exit 0
         }
 
+        dg=dg
+
         test=$1
         [ "$test" = 'TEST' ] && {
             shift 1
-            if [ "$(dg docker4gis 2>/dev/null)" = 'docker4gis' ]; then
+            if [ "$("$dg" "$docker4gis" 2>/dev/null)" = "$docker4gis" ]; then
                 exit 0
             else
                 answer=
@@ -453,11 +489,11 @@ DOCKER_REPO=$repo" >>.env
 
         name=$1
 
-        [ "$name" ] || read -rp "Enter the name for the alias (default is dg) : " name
-        [ "$name" ] || name=dg
+        [ "$name" ] || read -rp "Enter the name for the alias (default is $dg) : " name
+        [ "$name" ] || name=$dg
 
         command_type=$(type -t "$name" 2>/dev/null) && {
-            if [ "$command_type" = "alias" ] && [ "$($name docker4gis)" = 'docker4gis' ]; then
+            if [ "$command_type" = "alias" ] && [ "$($name "$docker4gis")" = "$docker4gis" ]; then
                 : # This name was already an alias for docker4gis; nothing to do.
             else
                 echo "$name is occupied; choose another name"
@@ -474,7 +510,13 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     bump)
-        help "TODO"
+        help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
+Usage: $docker4gis_command bump [push].
+With \`push\`, the change is committed in git in a new branch, that is pushed
+to \`origin\`, ready to create a pull request. Locally, the new branch is
+deleted after switching back to the current branch, ready for fetching the
+remote changes after merging the pull request (and running the Continuous
+Integration pipeline)."
 
         # Write the current version() in .env. Call as bump push to commit the
         # change and push it to a remote branch, ready to create a pull request.
@@ -503,7 +545,10 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     all)
-        help "TODO"
+        help "Run something in each sibling $docker4gis directory.
+Usage: $docker4gis_command all EXECUTABLE [ARG...]
+If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
+\`$docker4gis_command all self bump push\`"
 
         # Run the given command in all sibling docker4gis component directories,
         # including the current one.
@@ -525,9 +570,15 @@ DOCKER_REPO=$repo" >>.env
         ;;
 
     *)
-        echo "Usage: $docker4gis_command init | component | build | run | br | push | test | stop | geoserver | base-component | template | alias | docker4gis | base | login | version | bump"
-        echo "For help: $docker4gis_command COMMAND help"
-        echo "For debugging (tracing all shell commands): $docker4gis_command trace COMMAND [ARGUMENT...]; output is saved in $log_path"
+        echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
+        echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
+        echo "  base-component | template | alias [NAME] | $docker4gis | base |"
+        echo "  login [PASSWORD] [USER] | version | bump [push] |"
+        echo "  all EXECUTABLE|self [ARG...]"
+        echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND"
+        echo "For debugging (tracing all shell commands):"
+        echo "  $docker4gis_command trace COMMAND [ARG...]"
+        echo "  output is saved in $log_path"
         ;;
     esac
 } |& tee "$log"
