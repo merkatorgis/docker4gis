@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -x
+
+if [ "$1" = 'aspdotnet' ]; then
+	deps=$(find . -name "*.deps.json")
+	executable=$(basename "$deps" .deps.json)
+	exec ./"$executable"
+fi
+
+exec "$@"
