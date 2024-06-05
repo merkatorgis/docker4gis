@@ -52,7 +52,6 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 		req.Header.Del("accept-encoding")
 		req.Header.Set("content-type", "application/json")
 		req.Header.Set("accept", "application/json, application/*, text/*")
-		filterCookies(req)
 		if res, errDo := http.DefaultClient.Do(req); errDo != nil {
 			return http.StatusInternalServerError, errDo
 		} else if authorization, errBody := bodyString(res.Body); errBody != nil {

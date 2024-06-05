@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/handlers"
-	"golang.org/x/net/publicsuffix"
 
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -45,7 +44,6 @@ var (
 
 func init() {
 	passThroughProxy = &httputil.ReverseProxy{
-		ModifyResponse: modifyResponse,
 		Director: func(r *http.Request) {
 			target, _ := url.Parse(r.FormValue("url"))
 			query := r.URL.Query()
@@ -53,14 +51,8 @@ func init() {
 			target.RawQuery = query.Encode()
 			r.URL = target
 			r.Host = target.Host
-			filterCookies(r)
 			log.Printf("%s %s Passthrough %v", r.RemoteAddr, r.Method, r.URL)
 		},
-	}
-	if newJar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
-		log.Fatal(err)
-	} else {
-		jar = newJar
 	}
 }
 
@@ -244,23 +236,4 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("%s %s Not Found %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-}
-
-func filterCookies(r *http.Request) {
-	// Prevent forwarding other destinations' cookies:
-	clone := r.Clone(r.Context())
-	r.Header.Del("Cookie")
-	for _, jarred := range jar.Cookies(r.URL) {
-		// repopulate with just those cookies from the request that were
-		// previously jarred for this URL
-		if cloned, err := clone.Cookie(jarred.Name); err == nil {
-			r.AddCookie(cloned)
-		}
-	}
-}
-
-func modifyResponse(r *http.Response) error {
-	// save this destination's cookies in the jar
-	jar.SetCookies(r.Request.URL, r.Cookies())
-	return nil
 }
