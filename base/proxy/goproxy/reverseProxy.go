@@ -106,18 +106,36 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		for _, cookie := range resp.Cookies() {
 			cookie.Domain = ""
 			oldCookiePath := cookie.Path
-			// If cookie.Path starts with /{app}/{"key"} (e.g. /geowep/api),
-			// then it should be good.
-			if !strings.HasPrefix(cookie.Path, "/"+app+strings.TrimSuffix(key, "/")) {
-				if cookie.Path == "" {
-					cookie.Path = "/"
+			// An hardcoded exception: this cookie, when set by the
+			// /signin-wsfed endpoint (that had to be configured as an extra key
+			// in the proxy), has the cookie path set to "/", which we will map
+			// to the proper /{app}/{"key"} path (e.g. /geowep/api), which is
+			// found at the start of the Location response header. When (un)set
+			// by the Login endpoint, no Location header is present.
+			identityExternal := strings.HasPrefix(cookie.Name, "Identity.External")
+			location := resp.Header.Get("Location")
+			if identityExternal && location != "" {
+				split := strings.Split(location, "/")
+				keyPart := split[1]
+				if keyPart == app {
+					keyPart = split[2]
 				}
-				// Map the remote site's root to our proxy key.
-				cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
-				// Prepend with the app name, if it was included in the client's
-				// request.
-				if strings.HasPrefix(r.URL.Path, "/"+app) {
-					cookie.Path = "/" + app + cookie.Path
+				cookie.Path = "/" + app + "/" + keyPart
+				// Another hardcoded exception:
+			} else if !strings.HasPrefix(cookie.Name, ".AspNetCore.Correlation.") {
+				// If cookie.Path starts with /{app}/{"key"} (e.g. /geowep/api),
+				// then it should be good.
+				if !strings.HasPrefix(cookie.Path, "/"+app+strings.TrimSuffix(key, "/")) {
+					if cookie.Path == "" {
+						cookie.Path = "/"
+					}
+					// Map the remote site's root to our proxy key.
+					cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
+					// Prepend with the app name, if it was included in the client's
+					// request.
+					if strings.HasPrefix(r.URL.Path, "/"+app) {
+						cookie.Path = "/" + app + cookie.Path
+					}
 				}
 			}
 			cookies = append(cookies, cookie)
