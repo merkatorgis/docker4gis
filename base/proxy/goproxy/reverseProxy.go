@@ -131,8 +131,8 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 					}
 					// Map the remote site's root to our proxy key.
 					cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
-					// Prepend with the app name, if it was included in the client's
-					// request.
+					// Prepend with the app name, if it was included in the
+					// client's request.
 					if strings.HasPrefix(r.URL.Path, "/"+app) {
 						cookie.Path = "/" + app + cookie.Path
 					}
