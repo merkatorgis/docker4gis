@@ -123,14 +123,15 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 				cookie.Path = "/" + app + "/" + keyPart
 				// Another hardcoded exception:
 			} else if !strings.HasPrefix(cookie.Name, ".AspNetCore.Correlation.") {
-				// If cookie.Path starts with /{app}/{"key"} (e.g. /geowep/api),
+				keyWithoutTrailingSlash := strings.TrimSuffix(key, "/")
+				// If cookie.Path is /{app}{keyWithoutTrailingSlash} (e.g.
+				// /geowep/api) or starts with /{app}{key} (e.g. /geowep/api/),
 				// then it should be good.
-				if !strings.HasPrefix(cookie.Path, "/"+app+strings.TrimSuffix(key, "/")) {
-					if cookie.Path == "" {
-						cookie.Path = "/"
-					}
+				if !(cookie.Path == "/"+app+keyWithoutTrailingSlash || strings.HasPrefix(cookie.Path, "/"+app+key)) {
 					// Map the remote site's root to our proxy key.
-					cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
+					if !(cookie.Path == keyWithoutTrailingSlash || strings.HasPrefix(cookie.Path, key)) {
+						cookie.Path = keyWithoutTrailingSlash + cookie.Path
+					}
 					// Prepend with the app name, if it was included in the
 					// client's request.
 					if strings.HasPrefix(r.URL.Path, "/"+app) {
