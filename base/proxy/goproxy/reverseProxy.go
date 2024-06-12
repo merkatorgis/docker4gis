@@ -20,6 +20,17 @@ func init() {
 
 func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string, config *config, proxy *proxy) *httputil.ReverseProxy {
 
+	keyWithoutTrailingSlash := strings.TrimSuffix(key, "/")
+
+	// Prepend a path (either "" or starting with "/") with the app name, if it
+	// was included in the client's request.
+	appPath := func(path string) string {
+		if r.URL.Path == "/"+app || strings.HasPrefix(r.URL.Path, "/"+app+"/") {
+			path = "/" + app + path
+		}
+		return path
+	}
+
 	director := func(r *http.Request) {
 		basicAuthAccessToken(r, key)
 		if err := validateSecret(r, key, config.secret); err != nil {
@@ -47,8 +58,9 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		forwardedProto := "https" // r.URL.Scheme == ""
 		r.Header.Set("X-Forwarded-Proto", forwardedProto)
 
-		forwardedPath := "/" + app + key
+		forwardedPath := appPath(keyWithoutTrailingSlash)
 		r.Header.Set("X-Forwarded-Path", forwardedPath)
+		r.Header.Set("X-Forwarded-Prefix", forwardedPath)
 		r.Header.Set("X-Script-Name", forwardedPath)
 
 		forwarded := fmt.Sprintf("for=%s;host=%s;proto=%s;path=%s", realIp, forwardedHost, forwardedProto, forwardedPath)
@@ -73,7 +85,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 
 		log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 
-		if debug {
+		if debug && false {
 			curl := fmt.Sprintf("curl '%s' \\\n", r.URL)
 			curl += fmt.Sprintf("  --request %s \\\n", r.Method)
 			for header, values := range r.Header {
@@ -104,41 +116,30 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 		// for the proxy client's perspective
 		var cookies []*http.Cookie
 		for _, cookie := range resp.Cookies() {
+
+			// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#domaindomain-value
 			cookie.Domain = ""
+
 			oldCookiePath := cookie.Path
-			// An hardcoded exception: this cookie, when set by the
-			// /signin-wsfed endpoint (that had to be configured as an extra key
-			// in the proxy), has the cookie path set to "/", which we will map
-			// to the proper /{app}/{"key"} path (e.g. /geowep/api), which is
-			// found at the start of the Location response header. When (un)set
-			// by the Login endpoint, no Location header is present.
-			identityExternal := strings.HasPrefix(cookie.Name, "Identity.External")
-			location := resp.Header.Get("Location")
-			if identityExternal && location != "" {
-				split := strings.Split(location, "/")
-				keyPart := split[1]
-				if keyPart == app {
-					keyPart = split[2]
+
+			if strings.HasPrefix(config.authPath, proxy.target.String()) && (cookie.Path == "" ||
+				cookie.Path == "/" ||
+				cookie.Path == appPath(keyWithoutTrailingSlash) ||
+				cookie.Path == appPath(key)) {
+				// This cookie is probably an authentication token; map it to
+				// the root of the application, so that it will be sent with
+				// requests for other keys (i.e. proxied paths), to render these
+				// requests authenticated when puth through AUTH_PATH.
+				cookie.Path = appPath("/")
+			} else if !(cookie.Path == appPath(keyWithoutTrailingSlash) ||
+				strings.HasPrefix(cookie.Path, appPath(key))) {
+				// Map the remote site's root to our proxy key.
+				if !(cookie.Path == keyWithoutTrailingSlash || strings.HasPrefix(cookie.Path, key)) {
+					cookie.Path = keyWithoutTrailingSlash + cookie.Path
 				}
-				cookie.Path = "/" + app + "/" + keyPart
-				// Another hardcoded exception:
-			} else if !strings.HasPrefix(cookie.Name, ".AspNetCore.Correlation.") {
-				keyWithoutTrailingSlash := strings.TrimSuffix(key, "/")
-				// If cookie.Path is /{app}{keyWithoutTrailingSlash} (e.g.
-				// /geowep/api) or starts with /{app}{key} (e.g. /geowep/api/),
-				// then it should be good.
-				if !(cookie.Path == "/"+app+keyWithoutTrailingSlash || strings.HasPrefix(cookie.Path, "/"+app+key)) {
-					// Map the remote site's root to our proxy key.
-					if !(cookie.Path == keyWithoutTrailingSlash || strings.HasPrefix(cookie.Path, key)) {
-						cookie.Path = keyWithoutTrailingSlash + cookie.Path
-					}
-					// Prepend with the app name, if it was included in the
-					// client's request.
-					if strings.HasPrefix(r.URL.Path, "/"+app) {
-						cookie.Path = "/" + app + cookie.Path
-					}
-				}
+				cookie.Path = appPath(cookie.Path)
 			}
+
 			cookies = append(cookies, cookie)
 			if debug {
 				log.Printf("-- %s cookie %s: path %s -> %s", r.URL, cookie.Name, oldCookiePath, cookie.Path)

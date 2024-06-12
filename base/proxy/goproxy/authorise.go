@@ -93,7 +93,7 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 				r.Body = ioutil.NopCloser(bytes.NewBufferString(body))
 				r.ContentLength = int64(len(body))
 			}
-			if debug {
+			if debug && false {
 				curl := fmt.Sprintf("curl '%s' \\\n", authPath)
 				curl += "  --request POST \\\n"
 				curl += fmt.Sprintf("  --data '%s' \\\n", string(jsonBody))
