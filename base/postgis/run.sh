@@ -13,7 +13,6 @@ DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
 DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
-SECRET=$SECRET
 PGDATABASE=$PGDATABASE
 
 POSTGIS_PORT=$(docker4gis/port.sh "${POSTGIS_PORT:-5432}")
@@ -28,7 +27,6 @@ docker volume create "$CONTAINER" >/dev/null &&
 	docker container run --restart "$RESTART" --name "$CONTAINER" \
 		--shm-size="$SHM_SIZE" \
 		-e DOCKER_USER="$DOCKER_USER" \
-		-e SECRET="$SECRET" \
 		-e DOCKER_ENV="$DOCKER_ENV" \
 		-e POSTGRES_LOG_STATEMENT="$POSTGRES_LOG_STATEMENT" \
 		-e "$(docker4gis/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \

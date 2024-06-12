@@ -6,6 +6,3 @@ ENV API="http://$DOCKER_USER-api:8080/"
 ENV AUTH_PATH="http://$DOCKER_USER-api:8080/rpc/auth_path"
 ENV APP="http://$DOCKER_USER-app/"
 ENV HOMEDEST="/$DOCKER_USER/app/"
-
-# Optionally specify your proper default value for this one:
-# ENV SECRET="default_value"

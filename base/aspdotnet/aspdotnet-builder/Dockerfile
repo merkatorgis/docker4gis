@@ -12,4 +12,5 @@ ONBUILD RUN dotnet restore
 
 # copy everything else and build app
 ONBUILD COPY */. .
+ONBUILD RUN rm -f *.sln
 ONBUILD RUN dotnet publish --no-restore --property:PublishDir=/app
