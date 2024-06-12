@@ -1,0 +1,74 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/wouter/dev.azure.com/merkatordev/GeoWEP.wouter.scherphof/api/api/api.csproj": {}
+  },
+  "projects": {
+    "/home/wouter/dev.azure.com/merkatordev/GeoWEP.wouter.scherphof/api/api/api.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/wouter/dev.azure.com/merkatordev/GeoWEP.wouter.scherphof/api/api/api.csproj",
+        "projectName": "api",
+        "projectPath": "/home/wouter/dev.azure.com/merkatordev/GeoWEP.wouter.scherphof/api/api/api.csproj",
+        "packagesPath": "/home/wouter/.nuget/packages/",
+        "outputPath": "/home/wouter/dev.azure.com/merkatordev/GeoWEP.wouter.scherphof/api/api/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/wouter/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[8.0.5, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.4.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.105/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
