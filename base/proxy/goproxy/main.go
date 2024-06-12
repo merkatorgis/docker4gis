@@ -22,7 +22,6 @@ type proxy struct {
 }
 
 type config struct {
-	secret   string
 	homedest string
 	authPath string
 	proxies  map[string]*proxy
@@ -63,10 +62,7 @@ func main() {
 			split := strings.SplitN(scanner.Text(), "=", 2)
 			if len(split) == 2 {
 				key, value := split[0], split[1]
-				if key == "secret" {
-					configs[app].secret = value
-					log.Printf("%s.secret=%s", app, value)
-				} else if key == "homedest" {
+				if key == "homedest" {
 					configs[app].homedest = value
 					log.Printf("%s.homedest=%s", app, value)
 				} else if key == "authPath" {
