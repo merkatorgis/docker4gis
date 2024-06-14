@@ -11,7 +11,5 @@ docker image build \
     --build-arg PGHOSTADDR="$PGHOSTADDR" \
     --build-arg PGPORT="$PGPORT" \
     --build-arg PGDATABASE="$PGDATABASE" \
-    --build-arg PGUSER="$PGUSER" \
-    --build-arg PGPASSWORD="$PGPASSWORD" \
     -t "$IMAGE" .
 rm -rf conf/.plugins conf/.docker4gis
