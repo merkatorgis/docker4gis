@@ -6,11 +6,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0.203-jammy
 WORKDIR /source
 
+# Expected directory structure:
+# ./<solution name>.sln
+# ./<project_1 name>/<project_1 name>.csproj
+# [./<project_... name>/<project_... name>.csproj]
+# [./<project_n name>/<project_n name>.csproj]
+
 # copy csproj and restore as distinct docker image layers
 ONBUILD COPY */*.csproj .
-ONBUILD RUN dotnet restore
+ONBUILD RUN for csproj in *.csproj; do \
+    dir=$(basename "$csproj" .csproj); \
+    mkdir "$dir"; \
+    mv "$csproj" "$dir"; \
+    dotnet restore "$dir"; \
+    done
 
 # copy everything else and build app
-ONBUILD COPY */. .
-ONBUILD RUN rm -f *.sln
+ONBUILD COPY . .
 ONBUILD RUN dotnet publish --no-restore --property:PublishDir=/app
