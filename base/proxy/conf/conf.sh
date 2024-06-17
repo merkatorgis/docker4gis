@@ -1,7 +1,6 @@
 #!/bin/sh
 
 DOCKER_USER=${DOCKER_USER}
-SECRET=${SECRET}
 HOMEDEST=${HOMEDEST}
 API=${API}
 APP=${APP}
@@ -20,7 +19,6 @@ QGIS_DYNAMIC="http://${DOCKER_USER}-qgis-dynamic"
 echo DOCKER_USER="${DOCKER_USER}"
 
 echo "authPath=${AUTH_PATH}
-secret=${SECRET}
 homedest=${HOMEDEST}
 api=${API}
 app=${APP}

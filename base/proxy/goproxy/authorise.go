@@ -52,7 +52,6 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 		req.Header.Del("accept-encoding")
 		req.Header.Set("content-type", "application/json")
 		req.Header.Set("accept", "application/json, application/*, text/*")
-		filterCookies(req)
 		if res, errDo := http.DefaultClient.Do(req); errDo != nil {
 			return http.StatusInternalServerError, errDo
 		} else if authorization, errBody := bodyString(res.Body); errBody != nil {
@@ -94,7 +93,7 @@ func authorise(r *http.Request, path string, authPath string) (statusCode int, e
 				r.Body = ioutil.NopCloser(bytes.NewBufferString(body))
 				r.ContentLength = int64(len(body))
 			}
-			if debug {
+			if debug && false {
 				curl := fmt.Sprintf("curl '%s' \\\n", authPath)
 				curl += "  --request POST \\\n"
 				curl += fmt.Sprintf("  --data '%s' \\\n", string(jsonBody))

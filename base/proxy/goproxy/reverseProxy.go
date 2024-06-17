@@ -12,44 +12,82 @@ import (
 
 var (
 	transportInsecure *http.Transport = http.DefaultTransport.(*http.Transport)
+	cookieMap                         = make(map[string]*Set)
 )
 
 func init() {
 	transportInsecure.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
-func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string, config *config, proxy *proxy) *httputil.ReverseProxy {
-	director := func(r *http.Request) {
-		basicAuthAccessToken(r, key)
-		if err := validateSecret(r, key, config.secret); err != nil {
-			log.Printf("secret -> unauthorized  %s", path)
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
+func logRequest(r *http.Request) {
+	curl := fmt.Sprintf("curl '%s' \\\n", r.URL)
+	curl += fmt.Sprintf("  --request %s \\\n", r.Method)
+	for header, values := range r.Header {
+		curl += fmt.Sprintf("  -H '%s: ", header)
+		for i, value := range values {
+			if i > 0 {
+				curl += "; "
+			}
+			curl += value
 		}
+		curl += "' \\\n"
+	}
+	if r.Method == "PUT" || r.Method == "POST" {
+		curl += "  --data-raw '__TODO__paste_the_request_body_here' \\\n"
+	}
+	curl += "  --insecure \\\n"
+	curl += "  --include"
+	log.Printf("%s", curl)
+}
+
+func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
+	config *config, proxy *proxy) *httputil.ReverseProxy {
+
+	keyWithoutTrailingSlash := strings.TrimSuffix(key, "/")
+
+	// Prepend the app name to a path (either "" or starting with "/"), if the
+	// app name was included in the client's request.
+	appPath := func(path string) string {
+		if r.URL.Path == "/"+app || strings.HasPrefix(r.URL.Path, "/"+app+"/") {
+			path = "/" + app + path
+		}
+		return path
+	}
+
+	director := func(r *http.Request) {
+
+		basicAuthAccessToken(r, key)
+
 		if proxy.authorise {
+			// Have this request authorised at AUTH_PATH.
 			if statusCode, err := authorise(r, path, config.authPath); err != nil {
 				log.Printf("authorise -> %s", http.StatusText(statusCode))
 				http.Error(w, err.Error(), statusCode)
 				return
 			}
 		}
-		forwardedFor := r.Header.Get("X-Real-Ip")
-		if forwardedFor == "" {
-			forwardedFor = r.Header.Get("X-Forwarded-For")
+
+		realIp := r.Header.Get("X-Real-Ip")
+		if realIp == "" {
+			realIp, _, _ = net.SplitHostPort(r.RemoteAddr)
+			r.Header.Set("X-Real-Ip", realIp)
 		}
-		if forwardedFor == "" {
-			forwardedFor, _, _ = net.SplitHostPort(r.RemoteAddr)
-		}
-		r.Header.Set("X-Forwarded-For", forwardedFor)
+
 		forwardedHost := r.Host
 		r.Header.Set("X-Forwarded-Host", forwardedHost)
+
 		forwardedProto := "https" // r.URL.Scheme == ""
 		r.Header.Set("X-Forwarded-Proto", forwardedProto)
-		forwardedPath := "/" + app + key
+
+		forwardedPath := appPath(keyWithoutTrailingSlash)
 		r.Header.Set("X-Forwarded-Path", forwardedPath)
+		r.Header.Set("X-Forwarded-Prefix", forwardedPath)
 		r.Header.Set("X-Script-Name", forwardedPath)
-		forwarded := fmt.Sprintf("for=%s;host=%s;proto=%s;path=%s", forwardedFor, forwardedHost, forwardedProto, forwardedPath)
+
+		forwarded := fmt.Sprintf("for=%s;host=%s;proto=%s;path=%s",
+			realIp, forwardedHost, forwardedProto, forwardedPath)
 		r.Header.Set("Forwarded", forwarded)
+
 		target := proxy.target
 		r.URL.Scheme = target.Scheme
 		r.URL.Host = target.Host
@@ -66,41 +104,102 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 			// explicitly disable User-Agent so it's not set to default value
 			r.Header.Set("User-Agent", "")
 		}
-		filterCookies(r)
-		log.Printf("%s %s Reverse %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
+
+		// Prevent forwarding other destinations' cookies (specifically: don't
+		// forward internal authentication cookies, that are set with a Path of
+		// "/" or "/{app}", to support the AUTH_PATH functionality). Using the
+		// cookieMap to match a cookie with the proxy path that set it (note
+		// that cookies from a Request do not carry a Path value, like cookies
+		// from a Response do).
+		clonedRequest := r.Clone(r.Context())
+		r.Header.Del("Cookie")
+		// Repopulate with just those cookies from the request that were
+		// previously jarred for this key.
+		if names, ok := cookieMap[key]; ok {
+			for _, name := range names.List() {
+				if cookie, err := clonedRequest.Cookie(name); err == nil {
+					r.AddCookie(cookie)
+				}
+			}
+		}
+
+		if debug && false {
+			logRequest(r)
+		}
+
+		cookieNames := make([]string, 0)
+		for _, cookie := range r.Cookies() {
+			cookieNames = append(cookieNames, cookie.Name)
+		}
+		log.Printf("%s %s Reverse %v %v %s",
+			r.RemoteAddr, r.Method, r.Host, r.URL, cookieNames)
 	}
-	hasApp := strings.HasPrefix(r.URL.Path, "/"+app)
+
 	modifyResponse := func(resp *http.Response) error {
-		if err := modifyResponse(resp); err != nil {
-			return err
-		}
+
 		cors(resp.Header, r)
-		// collect the response's cookies, with  Domain and Path rewritten
-		// for the proxy client's perspective
-		var cookies []*http.Cookie
-		for _, cookie := range resp.Cookies() {
-			cookie.Domain = ""
-			if (key == "/app/" || key == "/api/") && (cookie.Path == "" || cookie.Path == "/") {
-				cookie.Path = "/"
-			} else {
-				cookie.Path = strings.TrimSuffix(key, "/") + cookie.Path
-			}
-			if hasApp {
-				cookie.Path = "/" + app + cookie.Path
-			}
-			cookies = append(cookies, cookie)
+
+		// Rewrite all cookies' Domain and Path to match the proxy client's
+		// perspective.
+		cookieSet := NewSet()
+		if set, ok := cookieMap[key]; ok {
+			cookieSet = set
+		} else {
+			cookieMap[key] = cookieSet
 		}
-		// replace all cookies with the rewritten ones
+		cookies := resp.Cookies()
 		resp.Header.Del("Set-Cookie")
 		for _, cookie := range cookies {
+
+			// Put this cookie in the cookieMap (it's used in the Director to
+			// filter cookies on the request's URL).
+			cookieSet.Add(cookie.Name)
+
+			// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#domaindomain-value
+			cookie.Domain = ""
+
+			oldCookiePath := cookie.Path
+
+			// Though e.g. strings.HasPrefix(config.authPath,
+			// proxy.target.String()) seems smarter than key == "/api/", it
+			// would require that the AUTH_PATH variable is set correctly, even
+			// if there aren't any "authorise" proxy paths configured.
+			if key == "/api/" && (cookie.Path == "" ||
+				cookie.Path == "/" ||
+				cookie.Path == appPath(keyWithoutTrailingSlash) ||
+				cookie.Path == appPath(key)) {
+				// This cookie is probably an authentication token; map it to
+				// the root of the application, so that it will be sent with
+				// requests for other keys (i.e. proxied paths), to render these
+				// requests authenticated when puth through AUTH_PATH.
+				cookie.Path = appPath("/")
+			} else if !(cookie.Path == appPath(keyWithoutTrailingSlash) ||
+				strings.HasPrefix(cookie.Path, appPath(key))) {
+				// Map the remote site's root to our proxy key.
+				if !(cookie.Path == keyWithoutTrailingSlash ||
+					strings.HasPrefix(cookie.Path, key)) {
+					cookie.Path = keyWithoutTrailingSlash + cookie.Path
+				}
+				cookie.Path = appPath(cookie.Path)
+			}
+
+			if debug {
+				log.Printf("-- %s cookie %s: path %s -> %s",
+					r.URL, cookie.Name, oldCookiePath, cookie.Path)
+			}
+
+			// Put the rewritten cookie back in the response's header.
 			resp.Header.Add("Set-Cookie", cookie.String())
 		}
+
 		return nil
 	}
+
 	transport := http.DefaultTransport
 	if proxy.insecure {
 		transport = transportInsecure
 	}
+
 	return &httputil.ReverseProxy{
 		Director:       director,
 		ModifyResponse: modifyResponse,
@@ -120,7 +219,8 @@ func basicAuthAccessToken(r *http.Request, key string) {
 				viewparams = query.Get("VIEWPARAMS")
 			}
 			if strings.Contains(viewparams, username) {
-				log.Printf("access_token provided in viewparams as well as in basic auth; using the viewparams value")
+				log.Printf(
+					"access_token provided in viewparams as well as in basic auth; using the viewparams value")
 			} else {
 				param := username + ":" + password
 				if viewparams == "" {
@@ -133,13 +233,5 @@ func basicAuthAccessToken(r *http.Request, key string) {
 				log.Printf("Basic Auth access_token passed in VIEWPARAMS")
 			}
 		}
-	}
-}
-
-func validateSecret(r *http.Request, key string, secret string) error {
-	if (key == "/geoserver/" || key == "/mapserver/" || key == "/mapproxy/" || key == "/mapfish/") && r.FormValue("secret") != secret {
-		return fmt.Errorf("invalid secret: %s", r.FormValue("secret"))
-	} else {
-		return nil
 	}
 }

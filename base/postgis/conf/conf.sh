@@ -11,13 +11,13 @@ cp "$CONFIG_FILE.template" "$CONFIG_FILE"
 
 [ "$POSTGRES_LOG_STATEMENT" ] && conf log_statement "$POSTGRES_LOG_STATEMENT"
 
-# Provision a directory on the Docker volume to store generated certificates for
+# Provision a directory on the Docker host to store generated certificates for
 # reuse by future containers.
-secrets=/var/lib/postgresql/data/secrets
+secrets=/fileport/secrets
 mkdir -p "$secrets"
 chmod go-rwx "$secrets"
 
-# Test if all certificate files are available in the volume.
+# Test if all certificate files are available on the host.
 if ! [ -f "$secrets"/"$POSTGRES_USER".key ] || ! [ -f "$secrets"/"$POSTGRES_USER".crt ] || ! [ -f "$secrets"/root.key ] || ! [ -f "$secrets"/root.crt ] || ! [ -f "$secrets"/server.key ] || ! [ -f "$secrets"/server.crt ]; then
 	# Configure openssl.
 	echo "[ v3_ca ]

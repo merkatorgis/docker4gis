@@ -11,7 +11,6 @@ export AUTOCERT=$AUTOCERT
 
 export DEBUG=false
 
-export SECRET=$SECRET
 export APP=$APP
 export API=$API
 export HOMEDEST=$HOMEDEST

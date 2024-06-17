@@ -5,14 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/cookiejar"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/gorilla/handlers"
-	"golang.org/x/net/publicsuffix"
 
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -25,31 +22,20 @@ type proxy struct {
 }
 
 type config struct {
-	secret   string
 	homedest string
 	authPath string
 	proxies  map[string]*proxy
 }
 
 var (
-	configs          = make(map[string]*config)
-	proxyHost        = os.Getenv("PROXY_HOST")
-	proxyPort        = os.Getenv("PROXY_PORT")
-	useAutocert      = os.Getenv("AUTOCERT")
-	dockerEnv        = os.Getenv("DOCKER_ENV")
-	dockerUser       = os.Getenv("DOCKER_USER")
-	debug            = os.Getenv("DEBUG") == "true"
-	passThroughProxy *httputil.ReverseProxy
-	jar              *cookiejar.Jar
+	configs     = make(map[string]*config)
+	proxyHost   = os.Getenv("PROXY_HOST")
+	proxyPort   = os.Getenv("PROXY_PORT")
+	useAutocert = os.Getenv("AUTOCERT")
+	dockerEnv   = os.Getenv("DOCKER_ENV")
+	dockerUser  = os.Getenv("DOCKER_USER")
+	debug       = os.Getenv("DEBUG") == "true"
 )
-
-func init() {
-	if newJar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
-		log.Fatal(err)
-	} else {
-		jar = newJar
-	}
-}
 
 func main() {
 	fileInfos, err := ioutil.ReadDir("/config")
@@ -76,10 +62,7 @@ func main() {
 			split := strings.SplitN(scanner.Text(), "=", 2)
 			if len(split) == 2 {
 				key, value := split[0], split[1]
-				if key == "secret" {
-					configs[app].secret = value
-					log.Printf("%s.secret=%s", app, value)
-				} else if key == "homedest" {
+				if key == "homedest" {
 					configs[app].homedest = value
 					log.Printf("%s.homedest=%s", app, value)
 				} else if key == "authPath" {
@@ -221,23 +204,4 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("%s %s Not Found %v %v", r.RemoteAddr, r.Method, r.Host, r.URL)
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-}
-
-func filterCookies(r *http.Request) {
-	// Prevent forwarding other destinations' cookies:
-	clone := r.Clone(r.Context())
-	r.Header.Del("Cookie")
-	for _, jarred := range jar.Cookies(r.URL) {
-		// repopulate with just those cookies from the request that were
-		// previously jarred for this URL
-		if cloned, err := clone.Cookie(jarred.Name); err == nil {
-			r.AddCookie(cloned)
-		}
-	}
-}
-
-func modifyResponse(r *http.Response) error {
-	// save this destination's cookies in the jar
-	jar.SetCookies(r.Request.URL, r.Cookies())
-	return nil
 }
