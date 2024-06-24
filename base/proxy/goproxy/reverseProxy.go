@@ -160,18 +160,15 @@ func reverseProxy(w http.ResponseWriter, r *http.Request, path, app, key string,
 
 			oldCookiePath := cookie.Path
 
-			// Though e.g. strings.HasPrefix(config.authPath,
-			// proxy.target.String()) seems smarter than key == "/api/", it
-			// would require that the AUTH_PATH variable is set correctly, even
-			// if there aren't any "authorise" proxy paths configured.
-			if key == "/api/" && (cookie.Path == "" ||
-				cookie.Path == "/" ||
-				cookie.Path == appPath(keyWithoutTrailingSlash) ||
-				cookie.Path == appPath(key)) {
+			if strings.HasPrefix(config.authPath, proxy.target.String()) &&
+				(cookie.Path == "" ||
+					cookie.Path == "/" ||
+					cookie.Path == appPath(keyWithoutTrailingSlash) ||
+					cookie.Path == appPath(key)) {
 				// This cookie is probably an authentication token; map it to
 				// the root of the application, so that it will be sent with
 				// requests for other keys (i.e. proxied paths), to render these
-				// requests authenticated when puth through AUTH_PATH.
+				// requests authenticated when put through AUTH_PATH.
 				cookie.Path = appPath("/")
 			} else if !(cookie.Path == appPath(keyWithoutTrailingSlash) ||
 				strings.HasPrefix(cookie.Path, appPath(key))) {
