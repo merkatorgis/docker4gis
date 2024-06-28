@@ -19,5 +19,7 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	--mount type=bind,source="$FILEPORT",target=/fileport \
 	--mount type=bind,source="$RUNNER",target=/runner \
 	--network "$DOCKER_USER" \
+	-e PROXY_HOST="${PROXY_HOST:-localhost}" \
+	-e PROXY_PORT="${PROXY_PORT:-443}" \
 	"$@" \
 	-d "$IMAGE"
