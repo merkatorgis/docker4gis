@@ -6,7 +6,7 @@ cores=$(nproc --all)
 jobs=$cores
 
 schema=
-database=$POSTGRES_DB
+database=$PGDATABASE
 
 for _ in '-n' '-d'; do
     case "$1" in

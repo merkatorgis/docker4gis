@@ -50,7 +50,7 @@ time {
 # http://postgrest.org/en/v7.0.0/admin.html?highlight=safeupdate#block-full-table-operations
 # to prevent issues with restoring a dump file, this is deliberately _not_
 # loaded in shared_preload_libraries
-pg.sh -c "alter database $POSTGRES_DB set session_preload_libraries = 'safeupdate'"
+pg.sh -c "alter database $PGDATABASE set session_preload_libraries = 'safeupdate'"
 
 # run.sh waits until this is true
-pg.sh -c "alter database $POSTGRES_DB set app.ddl_done to true"
+pg.sh -c "alter database $PGDATABASE set app.ddl_done to true"
