@@ -5,17 +5,8 @@ docker4gis=$(basename "$0")
 log_path=$docker4gis.log
 version_development=development
 
-INSTALLED=
-dg_dir=$(dirname "$0")
-if [ "$(basename "$dg_dir")" = '.bin' ]; then
-    INSTALLED=true
-    dg_dir="$dg_dir"/../$docker4gis
-fi
-dg_dir=$(realpath "$dg_dir")
-DOCKER_BASE="$dg_dir"/base
-
-log=
-if [ "$1" = trace ] && ! [ "$INSTALLED" ]; then
+log=/dev/null
+if [ "$1" = trace ]; then
     # Trace all shell commands and activate tee'ing all output to a log file.
     shift 1
     log=$log_path
@@ -23,13 +14,22 @@ if [ "$1" = trace ] && ! [ "$INSTALLED" ]; then
     export SHELLOPTS
 fi
 
-# The whole script is between {} so that all output can bee tee'd.
+# The whole script is between {} so that all output can be tee'd.
 {
     action=$1
     shift 1
 
     default_docker4gis_command="npx --yes $docker4gis@latest"
     docker4gis_command=${ALIAS_NAME:-$default_docker4gis_command}
+
+    INSTALLED=
+    dg_dir=$(dirname "$0")
+    if [ "$(basename "$dg_dir")" = '.bin' ]; then
+        INSTALLED=true
+        dg_dir="$dg_dir"/../$docker4gis
+    fi
+    dg_dir=$(realpath "$dg_dir")
+    DOCKER_BASE="$dg_dir"/base
 
     package_json() {
         [ -f package.json ] || echo '{
@@ -436,9 +436,15 @@ container, to the geoserver component repository in the current directory."
 
         # If not running an unpublished, local, in-development version of
         # docker4gis, switch to the version that the component scripts are
-        # expecting. Otherwise, ignore the component's current DOCKER4GIS_VERSION,
-        # and use the in-development version to see its effects.
-        [ "$INSTALLED" ] && DOCKER_BASE=$(npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base)
+        # expecting.
+        [ "$INSTALLED" ] && DOCKER_BASE=$( (
+            # Prevent any trace output.
+            set +x
+            # Output this version's base directory.
+            npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
+        ))
+        # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
+        # the in-development version to see its effects.
         [ "$INSTALLED" ] || DOCKER4GIS_VERSION=$version_development
 
         "$DOCKER_BASE/main.sh" . "$action" "$@"
@@ -618,17 +624,9 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         echo "Note that build, run, br, push, test, stop, and geoserver run with the"
         echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
         echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND."
-        [ "$INSTALLED" ] || {
-            echo "For debugging (tracing all shell commands):"
-            echo "  $docker4gis_command trace COMMAND [ARG...]"
-            echo "  output is saved in $log_path."
-        }
+        echo "For debugging (tracing all shell commands):"
+        echo "  $docker4gis_command trace COMMAND [ARG...]"
+        echo "  output is saved in $log_path."
         ;;
     esac
-} |& {
-    if [ "$log" ]; then
-        tee "$log"
-    else
-        cat
-    fi
-}
+} |& tee "$log"
