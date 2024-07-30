@@ -5,7 +5,7 @@ docker4gis=$(basename "$0")
 log_path=$docker4gis.log
 version_development=development
 
-log=/dev/null
+log=
 if [ "$1" = trace ]; then
     # Trace all shell commands and activate tee'ing all output to a log file.
     shift 1
@@ -623,4 +623,10 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         echo "  output is saved in $log_path."
         ;;
     esac
-} |& tee "$log"
+} |& {
+    if [ "$log" ]; then
+        tee "$log"
+    else
+        cat
+    fi
+}
