@@ -5,8 +5,17 @@ docker4gis=$(basename "$0")
 log_path=$docker4gis.log
 version_development=development
 
+INSTALLED=
+dg_dir=$(dirname "$0")
+if [ "$(basename "$dg_dir")" = '.bin' ]; then
+    INSTALLED=true
+    dg_dir="$dg_dir"/../$docker4gis
+fi
+dg_dir=$(realpath "$dg_dir")
+DOCKER_BASE="$dg_dir"/base
+
 log=
-if [ "$1" = trace ]; then
+if [ "$1" = trace ] && ! [ "$INSTALLED" ]; then
     # Trace all shell commands and activate tee'ing all output to a log file.
     shift 1
     log=$log_path
@@ -21,15 +30,6 @@ fi
 
     default_docker4gis_command="npx --yes $docker4gis@latest"
     docker4gis_command=${ALIAS_NAME:-$default_docker4gis_command}
-
-    INSTALLED=
-    dg_dir=$(dirname "$0")
-    if [ "$(basename "$dg_dir")" = '.bin' ]; then
-        INSTALLED=true
-        dg_dir="$dg_dir"/../$docker4gis
-    fi
-    dg_dir=$(realpath "$dg_dir")
-    DOCKER_BASE="$dg_dir"/base
 
     package_json() {
         [ -f package.json ] || echo '{
@@ -618,9 +618,11 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         echo "Note that build, run, br, push, test, stop, and geoserver run with the"
         echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
         echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND."
-        echo "For debugging (tracing all shell commands):"
-        echo "  $docker4gis_command trace COMMAND [ARG...]"
-        echo "  output is saved in $log_path."
+        [ "$INSTALLED" ] || {
+            echo "For debugging (tracing all shell commands):"
+            echo "  $docker4gis_command trace COMMAND [ARG...]"
+            echo "  output is saved in $log_path."
+        }
         ;;
     esac
 } |& {
