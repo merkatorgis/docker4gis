@@ -108,7 +108,8 @@ $steps" >"$file"
     }
 
     version() {
-        if [ "$INSTALLED" ]; then
+        local pipeline=$1
+        if [ "$INSTALLED" ] || [ "$pipeline" = pipeline ]; then
             node --print "require('$DOCKER_BASE/../package.json').version"
         else
             echo "$version_development"
@@ -458,7 +459,7 @@ container, to the geoserver component repository in the current directory."
     version)
         help "Echo the $docker4gis version."
 
-        version
+        version "$@"
         ;;
 
     login)
