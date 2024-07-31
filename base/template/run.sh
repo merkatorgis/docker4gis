@@ -9,6 +9,8 @@ NETWORK=$NETWORK
 FILEPORT=$FILEPORT
 VOLUME=$VOLUME
 
+mkdir -p "$FILEPORT"
+
 docker container run --restart "$RESTART" --name "$CONTAINER" \
 	-e DOCKER_ENV="$DOCKER_ENV" \
 	--mount type=bind,source="$FILEPORT",target=/fileport \
