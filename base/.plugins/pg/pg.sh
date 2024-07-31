@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # https://www.postgresql.org/docs/current/libpq-envars.html
-[ "$PGHOSTADDR" ] || PGHOST=${PGHOST:-$DOCKER_USER-postgis}
-PGPORT=${PGPORT:5432}
-PGDATABASE=${PGDATABASE:-postgres}
-PGUSER=${PGUSER:-postgres}
-PGPASSWORD=${PGPASSWORD:-postgres}
+[ "$PGHOSTADDR" ] || export PGHOST=${PGHOST:-$DOCKER_USER-postgis}
+export PGPORT=${PGPORT:-5432}
+export PGDATABASE=${PGDATABASE:-postgres}
+export PGUSER=${PGUSER:-postgres}
+export PGPASSWORD=${PGPASSWORD:-postgres}
 
 # Wait until the database is ready.
-while ! psql -c 'select PostGIS_full_version()' >/dev/null 2>&1; do
+while ! psql -c "select PostGIS_full_version()" >/dev/null 2>&1; do
 	sleep 1
 done
 
