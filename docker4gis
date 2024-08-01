@@ -436,7 +436,9 @@ Except the proxy container, since that may still serve other applications."
         [ "$action" = geoserver ] && help "Copy the GeoServer configuration files out of the running $DOCKER_USER-geoserver
 container, to the geoserver component repository in the current directory."
 
-        # Load the package's environment values.
+        # For application components, load the package component's environment
+        # values. For base components (build), there's no package component, and
+        # nothing happens here.
         for env_file in ../*/.env; do
             # Break when there's none.
             [ -f "$env_file" ] || break
@@ -446,11 +448,8 @@ container, to the geoserver component repository in the current directory."
                 break
             fi
         done
-        if ! [ "$DOCKER_REPO" = package ]; then
-            echo "Current directory not recognised as a $docker4gis component or application package." >&2
-            exit 1
-        fi
 
+        # Load the current component's own environment variables.
         dotenv export
 
         # If not running an unpublished, local, in-development version of
