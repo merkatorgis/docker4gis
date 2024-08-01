@@ -313,7 +313,8 @@ DOCKER_REPO=$repo" >>.env
         done
 
         [ "$inited" ] ||
-            error "Package directory not foud; to create one, run $docker4gis_command init."
+            error "Package directory not foud; to create one, run $docker4gis_command init. Or did
+you mean base-component?"
 
         [ "$1" ] || interactive=true
         repo=$1
