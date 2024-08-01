@@ -8,6 +8,7 @@ version_development=development
 log=/dev/null
 if [ "$1" = trace ]; then
     # Trace all shell commands and activate tee'ing all output to a log file.
+    trace=true
     shift 1
     log=$log_path
     set -x
@@ -455,15 +456,19 @@ container, to the geoserver component repository in the current directory."
         # If not running an unpublished, local, in-development version of
         # docker4gis, switch to the version that the component scripts are
         # expecting.
-        [ "$INSTALLED" ] && DOCKER_BASE=$( (
-            # Prevent any trace output.
-            set +x
-            # Output this version's base directory.
-            npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
-        ))
+        if [ "$INSTALLED" ]; then
+            [ "$trace" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
+            DOCKER_BASE=$( (
+                # Prevent any trace output.
+                set +x
+                # Output this version's base directory.
+                npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
+            ))
         # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
-        # the in-development version to see its effects.
-        [ "$INSTALLED" ] || DOCKER4GIS_VERSION=$version_development
+        # the new in-development version to see its effects.
+        else
+            DOCKER4GIS_VERSION=$version_development
+        fi
 
         "$DOCKER_BASE/main.sh" . "$action" "$@"
         ;;
