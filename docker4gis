@@ -200,7 +200,6 @@ DEBUG=false
 PROXY_HOST=
 PROXY_PORT=
 PROXY_PORT_HTTP=
-SECRET=
 API=
 AUTH_PATH=
 APP=
@@ -301,10 +300,14 @@ DOCKER_REPO=$repo" >>.env
 
         # Creating a concrete application's component.
 
-        # Load the package's environment values.
+        # Test if inited by finding package directory.
         for env_file in ../*/.env; do
             # Break when there's none.
             [ -f "$env_file" ] || break
+            DOCKER_REPO=
+            DOCKER4GIS_VERSION=
+            DOCKER_REGISTRY=
+            DOCKER_USER=
             dotenv forgiving "$env_file"
             if [ "$DOCKER_REPO" = package ] && [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
                 inited=true
@@ -432,6 +435,21 @@ Except the proxy container, since that may still serve other applications."
 
         [ "$action" = geoserver ] && help "Copy the GeoServer configuration files out of the running $DOCKER_USER-geoserver
 container, to the geoserver component repository in the current directory."
+
+        # Load the package's environment values.
+        for env_file in ../*/.env; do
+            # Break when there's none.
+            [ -f "$env_file" ] || break
+            dotenv forgiving "$env_file"
+            if [ "$DOCKER_REPO" = package ]; then
+                dotenv export "$env_file"
+                break
+            fi
+        done
+        if ! [ "$DOCKER_REPO" = package ]; then
+            echo "Current directory not recognised as a $docker4gis component or application package." >&2
+            exit 1
+        fi
 
         dotenv export
 
