@@ -19,7 +19,6 @@ export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 
 export DEBUG=$DEBUG
 
-export SECRET=$SECRET
 export APP=$APP
 export API=$API
 export HOMEDEST=$HOMEDEST
