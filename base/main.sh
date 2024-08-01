@@ -79,13 +79,18 @@ dir() {
 					touch "$dir_found"
 					# echo " ! cd to $dir"
 					cd "$dir" || exit 1
-					# Use the .bin-version if it exists, so that docker4gis will
-					# detect that it's an installed version.
-					docker4gis="$DOCKER_BASE"/../../.bin/docker4gis
-					# Otherwise, it should be the case that we're running from a
-					# git clone, where the source script resides in the root
-					# directory, one below the /base directory.
-					[ -x "$docker4gis" ] || docker4gis="$DOCKER_BASE"/../docker4gis
+
+					installed_docker4gis="$DOCKER_BASE"/../../.bin/docker4gis
+					if [ -x "$installed_docker4gis" ]; then
+						# Use the .bin-version if it exists, so that docker4gis
+						# will detect that it's an installed version.
+						docker4gis=$installed_docker4gis
+					else
+						# Otherwise, it should be the case that we're running
+						# from a git clone, where the source script resides in
+						# the root directory, one below the /base directory.
+						docker4gis="$DOCKER_BASE"/../docker4gis
+					fi
 					"$docker4gis" "$action" "$@"
 				fi
 			)
