@@ -19,17 +19,23 @@ if [ "$sh_tests" ]; then
 fi
 
 if [ "$bats_tests" ]; then
-    if command -v bats >/dev/null 2>&1; then
-        bats='bats'
-    else
-        bats='npx bats'
+
+    # We use the bats that gets installed with npm as a dependency of
+    # [bats-helpers](https://www.npmjs.com/package/@drevops/bats-helpers).
+    bats=node_modules/.bin/bats
+
+    # Maybe bats-helpers is in package.json, but the user didn't think of runing
+    # npm install.
+    npm install >/dev/null
+
+    if ! [ -x "$bats" ]; then
+        # Install bats along with bats-helpers, if not already installed.
+        npm install -D bats-helpers@npm:@drevops/bats-helpers || exit 1
     fi
-    if "$bats" -v >/dev/null 2>&1; then
-        cp "$(dirname "$0")"/.plugins/bats/.bats.bash ~
-    else
-        bats_url=https://github.com/bats-core/bats-core
-        echo "> WARNING - cannot test without [bats]($bats_url); continuing without running any tests now."
-        exit 1
-    fi
-    time "$bats" -r "$dir"
+
+    # Install our own bats utilities.
+    "$DOCKER_BASE"/.plugins/bats/install.sh
+
+    # Run all bats tests.
+    time "$bats" --recursive "$dir"
 fi

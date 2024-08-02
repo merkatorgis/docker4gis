@@ -3,7 +3,7 @@
 # Include in a bash command as follows:
 #
 # # shellcheck source=/dev/null
-# source ~/.bats.bash
+# source ~/.bats/plugin.bash
 
 function @sub() {
     _sub 'false' "$@"
@@ -29,7 +29,7 @@ function _sub() {
         return 0
     else
         if [ "$survive" != 'true' ]; then
-            echo "$ID $err $status $output"
+            echo "$PPID $err $status $output"
             exit "$err"
         else
             return "$err"
