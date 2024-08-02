@@ -20,22 +20,17 @@ fi
 
 if [ "$bats_tests" ]; then
 
-    # We use the bats that gets installed with npm as a dependency of
-    # [bats-helpers](https://www.npmjs.com/package/@drevops/bats-helpers).
-    bats=node_modules/.bin/bats
+    # Git clone case.
+    BATS_LIB_PATH=$DOCKER_BASE/../node_modules
+    # Npx case.
+    [ -d "$BATS_LIB_PATH" ] || BATS_LIB_PATH=$DOCKER_BASE/../../../node_modules
+    BATS_LIB_PATH=$(realpath "$BATS_LIB_PATH")
 
-    # Maybe bats-helpers is in package.json, but the user didn't think of runing
-    # npm install.
-    npm install >/dev/null
-
-    if ! [ -x "$bats" ]; then
-        # Install bats along with bats-helpers, if not already installed.
-        npm install -D bats-helpers@npm:@drevops/bats-helpers || exit 1
-    fi
+    export BATS_LIB_PATH
 
     # Install our own bats utilities.
     "$DOCKER_BASE"/.plugins/bats/install.sh
 
     # Run all bats tests.
-    time "$bats" --recursive "$dir"
+    time "$BATS_LIB_PATH/.bin/bats" --recursive "$dir"
 fi
