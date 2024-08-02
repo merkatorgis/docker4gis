@@ -14,5 +14,8 @@
   "bugs": {
     "url": "https://github.com/merkatorgis/docker4gis/issues"
   },
-  "homepage": "https://github.com/merkatorgis/docker4gis#readme"
+  "homepage": "https://github.com/merkatorgis/docker4gis#readme",
+  "dependencies": {
+    "bats-helpers": "npm:@drevops/bats-helpers@^1.3.1"
+  }
 }
