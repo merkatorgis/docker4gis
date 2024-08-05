@@ -20,17 +20,15 @@ fi
 
 if [ "$bats_tests" ]; then
 
-    # Git clone case.
-    BATS_LIB_PATH=$DOCKER_BASE/../node_modules
-    # Npx case.
-    [ -d "$BATS_LIB_PATH" ] || BATS_LIB_PATH=$DOCKER_BASE/../../../node_modules
-    BATS_LIB_PATH=$(realpath "$BATS_LIB_PATH")
-
-    export BATS_LIB_PATH
-
     # Install our own bats utilities.
     "$DOCKER_BASE"/.plugins/bats/install.sh
 
+    # Git clone case.
+    node_modules=$DOCKER_BASE/../node_modules
+    # Npx case.
+    [ -d "$node_modules" ] || node_modules=$DOCKER_BASE/../../../node_modules
+    node_modules=$(realpath "$node_modules")
+
     # Run all bats tests.
-    time "$BATS_LIB_PATH/.bin/bats" --recursive "$dir"
+    time "$node_modules/.bin/bats" --recursive "$dir"
 fi
