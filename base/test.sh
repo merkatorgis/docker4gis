@@ -15,7 +15,13 @@ else
 fi
 
 if [ "$sh_tests" ]; then
-    time find "$dir" -name "test.sh" -exec {} \;
+    # See https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
+    while IFS= read -r -d '' test; do
+        if ! "$test"; then
+            echo "❌ failure: $test"
+            sh_tests_failed=true
+        fi
+    done < <(find "$dir" -name "test.sh" -print0)
 fi
 
 if [ "$bats_tests" ]; then
@@ -30,5 +36,9 @@ if [ "$bats_tests" ]; then
     node_modules=$(realpath "$node_modules")
 
     # Run all bats tests.
-    time "$node_modules/.bin/bats" --recursive "$dir"
+    if ! time "$node_modules/.bin/bats" --recursive "$dir"; then
+        bats_tests_failed=true
+    fi
 fi
+
+! [ "$sh_tests_failed" ] && ! [ "$bats_tests_failed" ]

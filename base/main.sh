@@ -106,8 +106,12 @@ dir() {
 case "$action" in
 build)
 	dir "$@"
-	this test &&
+	if this test; then
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$@"
+	else
+		echo
+		echo "Not starting the build, since one or more tests failed".
+	fi
 	;;
 run)
 	dir package "$@"
