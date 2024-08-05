@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 POSTFIX_DOMAIN=${POSTFIX_DOMAIN:-$HOSTNAME}
 
@@ -16,11 +17,14 @@ echo "address {
 # see: http://www.postfix.org/DEBUG_README.html#logging
 sed -i 's/\(^\w\+\s\+\w\+\s\+\S\s\+\S\s\+\)y\b/\1n/g' /etc/postfix/master.cf
 
+set +x
+
 while true; do
+    echo -n "$PPID $(date -Ins) "
     if ! postfix status; then
         echo "$PPID $(date -Ins) start $myhostname $(
             postfix start
         )"
     fi
     sleep 5
-done
+done &

@@ -21,9 +21,7 @@ mkfifo /var/spool/postfix/public/pickup
 
 here=$(dirname "$0")
 
-cp "${here}/postfix.sh" /usr/local/bin
-cp "${here}/addmailbox.sh" /usr/local/bin
-cp "${here}/mail.sh" /usr/local/bin
+cp "$here"/bin/* /usr/local/bin/
 
 echo 'NOTICE: Run `postfix.sh` on container startup'
 echo 'NOTICE: Run eg `addmailbox.sh user name` on image build or later, eg: 
