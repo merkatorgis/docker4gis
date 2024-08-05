@@ -140,6 +140,10 @@ $steps" >"$file"
         fi
     }
 
+    assert_docker4gis_directory() {
+        dotenv
+    }
+
     # shellcheck disable=SC2317  # It's correct that the function is never called in this script.
     self() {
         # Command given to the "all" action may use `self` to run docker4gis actions.
@@ -602,18 +606,18 @@ deleted after switching back to the current branch, ready for fetching the
 remote changes after merging the pull request (and running the Continuous
 Integration pipeline, and syncing a forked repo)."
 
-        push=
-        [ "$1" = push ] && push=true
-        if [ "$push" ]; then
-            new_branch=$docker4gis-bump
+        assert_docker4gis_directory
+
+        if [ "$1" = push ]; then
+            bump_branch=$docker4gis-bump
             "$DOCKER_BASE"/check_git_clear.sh &&
-                remote_branch_name_available "$new_branch"
+                remote_branch_name_available "$bump_branch"
         fi &&
             # The actual bump action.
             echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
             version &&
-            if [ "$push" ]; then
-                self git-push "$new_branch"
+            if [ "$bump_branch" ]; then
+                self git-push "$bump_branch"
             fi
         ;;
 
