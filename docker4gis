@@ -564,11 +564,13 @@ Without NAME, you'll be asked to type one, or accept the default."
         . ~/.bashrc
         ;;
 
-    git-push)
+    git-push | gp)
         default_new_branch=$docker4gis-changes
         help "Commit and push all changes to a remote branch.
-Usage: $docker4gis_command git-push [BRANCH_NAME].
+Usage: $docker4gis_command $action [BRANCH_NAME].
 The default BRANCH_NAME is $default_new_branch.
+If more than one parameter is supplied, all parameters are joined with hyphens
+(-) to form the BRANCH_NAME.
 All changes are committed in git in a new branch, that is pushed to \`origin\`,
 ready to create a pull request. Locally, the new branch is deleted after
 switching back to the current branch, ready for fetching the remote changes
@@ -579,7 +581,9 @@ pipeline, and syncing a forked repo)."
             echo "No changes to commit."
             exit
         }
-        new_branch=${1:-"$default_new_branch"}
+        new_branch=${*:-"$default_new_branch"}
+        # Replace all spaces with hyphens.
+        new_branch=${new_branch// /-}
         remote_branch_name_available "$new_branch" &&
             current_branch=$(git rev-parse --abbrev-ref HEAD) &&
             if [ "$current_branch" != "$new_branch" ]; then
@@ -646,7 +650,7 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
         echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
         echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
         echo "  base-component | template | alias [NAME] | $docker4gis | base |"
-        echo "  login [PASSWORD] [USER] | version | bump [push] |"
+        echo "  login [PASSWORD] [USER] | version | bump [push] | git-push | gp"
         echo "  all EXECUTABLE|self [ARG...]"
         echo "Note that build, run, br, push, test, stop, and geoserver run with the"
         echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
