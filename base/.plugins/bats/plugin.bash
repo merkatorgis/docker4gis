@@ -40,7 +40,9 @@ function _sub() {
 function error() {
     local key=$1
     local value=$2
-    echo "ERR_INVALID_INPUT" "- $key:" "$value"
+    local message="ERR_INVALID_INPUT - $key"
+    [ "$value" ] && message="$message: $value"
+    echo "$message"
     exit 22 # EINVAL
 }
 
