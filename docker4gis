@@ -603,16 +603,16 @@ pipeline, and syncing a forked repo)."
 
     bump)
         help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
-Usage: $docker4gis_command bump [push].
-With \`push\`, the change is committed in git in a new branch, that is pushed
-to \`origin\`, ready to create a pull request. Locally, the new branch is
-deleted after switching back to the current branch, ready for fetching the
+Usage: $docker4gis_command bump [push|gp].
+With \`push\` (or \`gp\`), the change is committed in git in a new branch, that 
+is pushed to \`origin\`, ready to create a pull request. Locally, the new branch
+is deleted after switching back to the current branch, ready for fetching the
 remote changes after merging the pull request (and running the Continuous
 Integration pipeline, and syncing a forked repo)."
 
         assert_docker4gis_directory
 
-        if [ "$1" = push ]; then
+        if [ "$1" = push ] || [ "$1" = gp ]; then
             bump_branch=$docker4gis-bump
             "$DOCKER_BASE"/check_git_clear.sh &&
                 remote_branch_name_available "$bump_branch"
