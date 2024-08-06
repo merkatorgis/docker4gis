@@ -32,7 +32,7 @@ if [ "$bats_tests" ]; then
     "$DOCKER_BASE"/.plugins/bats/install.sh
 
     # Find bats.
-    bats=$DOCKER_BASE/../../.bin.bats # Npx case.
+    bats=$DOCKER_BASE/../../.bin/bats # Npx case.
     if ! [ -x "$bats" ]; then         # Git clone case.
         bats=$DOCKER_BASE/../node_modules/.bin/bats
         [ -x "$bats" ] || (
