@@ -111,6 +111,7 @@ build)
 	else
 		echo
 		echo "Not starting the build, since one or more tests failed".
+		exit 1
 	fi
 	;;
 run)
