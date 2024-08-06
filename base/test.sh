@@ -17,8 +17,10 @@ fi
 if [ "$sh_tests" ]; then
     # See https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
     while IFS= read -r -d '' test; do
-        if ! "$test"; then
-            echo "❌ failure: $test"
+        if "$test"; then
+            echo "✅ ok  : $test"
+        else
+            echo "❌ nok : $test"
             sh_tests_failed=true
         fi
     done < <(find "$dir" -name "test.sh" -print0)
@@ -29,15 +31,32 @@ if [ "$bats_tests" ]; then
     # Install our own bats utilities.
     "$DOCKER_BASE"/.plugins/bats/install.sh
 
-    # Git clone case.
-    node_modules=$DOCKER_BASE/../node_modules
-    # Npx case.
-    [ -d "$node_modules" ] || node_modules=$DOCKER_BASE/../../../node_modules
-    node_modules=$(realpath "$node_modules")
+    # Find bats.
+    bats=$DOCKER_BASE/../../.bin.bats # Npx case.
+    if ! [ -x "$bats" ]; then         # Git clone case.
+        bats=$DOCKER_BASE/../node_modules/.bin/bats
+        [ -x "$bats" ] || (
+            # Install docker4gis dependencies, including bats.
+            cd "$DOCKER_BASE/.." &&
+                npm install
+        ) || exit 1
+    fi
+
+    # Don't trace bats, since its output is huge.
+    if [ "$DOCKER4GIS_TRACE" ]; then
+        set +x
+        export SHELLOPTS
+    fi
 
     # Run all bats tests.
-    if ! time "$node_modules/.bin/bats" --recursive "$dir"; then
+    if ! time "$bats" --recursive "$dir"; then
         bats_tests_failed=true
+    fi
+
+    # Restore trace.
+    if [ "$DOCKER4GIS_TRACE" ]; then
+        set -x
+        export SHELLOPTS
     fi
 fi
 

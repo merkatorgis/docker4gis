@@ -5,76 +5,75 @@ docker4gis=$(basename "$0")
 log_path=$docker4gis.log
 version_development=development
 
-log=/dev/null
 if [ "$1" = trace ]; then
-    # Trace all shell commands and activate tee'ing all output to a log file.
-    export DOCKER4GIS_TRACE=true
     shift 1
-    log=$log_path
+    export DOCKER4GIS_TRACE=true
+    # Tee all stdout & stderr to a log file (from
+    # https://superuser.com/a/212436/462952).
+    exec > >(tee "$log_path") 2>&1
+    # Trace all shell commands.
     set -x
     export SHELLOPTS
 fi
 
-# The whole script is between {} so that all output can be tee'd.
-{
-    action=$1
-    shift 1
+action=$1
+shift 1
 
-    default_docker4gis_command="npx --yes $docker4gis@latest"
-    docker4gis_command=${ALIAS_NAME:-$default_docker4gis_command}
+default_docker4gis_command="npx --yes $docker4gis@latest"
+docker4gis_command=${ALIAS_NAME:-$default_docker4gis_command}
 
-    INSTALLED=
-    dg_dir=$(dirname "$0")
-    if [ "$(basename "$dg_dir")" = '.bin' ]; then
-        INSTALLED=true
-        dg_dir="$dg_dir"/../$docker4gis
-    fi
-    dg_dir=$(realpath "$dg_dir")
-    DOCKER_BASE="$dg_dir"/base
+INSTALLED=
+dg_dir=$(dirname "$0")
+if [ "$(basename "$dg_dir")" = '.bin' ]; then
+    INSTALLED=true
+    dg_dir="$dg_dir"/../$docker4gis
+fi
+dg_dir=$(realpath "$dg_dir")
+DOCKER_BASE="$dg_dir"/base
 
-    package_json() {
-        [ -f package.json ] || echo '{
+package_json() {
+    [ -f package.json ] || echo '{
   "version": "0.0.0"
 }' >package.json
-        echo '*.log' >>.gitignore
-    }
+    echo '*.log' >>.gitignore
+}
 
-    pipeline() {
-        local main=$1
+pipeline() {
+    local main=$1
 
-        write() {
-            local file=$1
-            local steps=$2
-            local trigger=$main
-            local pr=none
-            [ "$file" = "$build_validation" ] && {
-                trigger=none
-                pr=$main
-            }
+    write() {
+        local file=$1
+        local steps=$2
+        local trigger=$main
+        local pr=none
+        [ "$file" = "$build_validation" ] && {
+            trigger=none
+            pr=$main
+        }
 
-            login() {
-                if [ "$file" = "$continuous_integration" ]; then
-                    echo
-                    if [ "$action" = 'base-component' ]; then
-                        git_repo=$(basename "$(realpath .)")
-                        echo "- script: |"
-                        echo "    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
-                    else
-                        echo "- checkout: self"
-                        echo "  persistCredentials: 'true'"
-                    fi
-                    echo "  displayName: 'git login'"
-                fi
-                if [ "$file" = "$continuous_integration" ] || [ "$action" = 'init' ]; then
-                    echo
+        login() {
+            if [ "$file" = "$continuous_integration" ]; then
+                echo
+                if [ "$action" = 'base-component' ]; then
+                    git_repo=$(basename "$(realpath .)")
                     echo "- script: |"
-                    echo "    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
-                    echo "  displayName: 'docker login'"
-                    echo '#'
+                    echo "    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
+                else
+                    echo "- checkout: self"
+                    echo "  persistCredentials: 'true'"
                 fi
-            }
+                echo "  displayName: 'git login'"
+            fi
+            if [ "$file" = "$continuous_integration" ] || [ "$action" = 'init' ]; then
+                echo
+                echo "- script: |"
+                echo "    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
+                echo "  displayName: 'docker login'"
+                echo '#'
+            fi
+        }
 
-            echo "trigger:
+        echo "trigger:
 - $trigger
 
 pr:
@@ -85,15 +84,15 @@ pool:
 
 steps:$(login)
 $steps" >"$file"
-        }
+    }
 
-        local build_validation=azure-pipeline-build-validation.yml
-        write "$build_validation" "- script: |
+    local build_validation=azure-pipeline-build-validation.yml
+    write "$build_validation" "- script: |
     $default_docker4gis_command build
   displayName: '$docker4gis build'"
 
-        local continuous_integration=azure-pipeline-continuous-integration.yml
-        write "$continuous_integration" "- script: |
+    local continuous_integration=azure-pipeline-continuous-integration.yml
+    write "$continuous_integration" "- script: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
@@ -106,98 +105,98 @@ $steps" >"$file"
 - script: |
     $default_docker4gis_command push
   displayName: '$docker4gis push'"
-    }
+}
 
-    version() {
-        local pipeline=$1
-        if [ "$INSTALLED" ] || [ "$pipeline" = pipeline ]; then
-            node --print "require('$DOCKER_BASE/../package.json').version"
-        else
-            echo "$version_development"
-        fi
-    }
+version() {
+    local pipeline=$1
+    if [ "$INSTALLED" ] || [ "$pipeline" = pipeline ]; then
+        node --print "require('$DOCKER_BASE/../package.json').version"
+    else
+        echo "$version_development"
+    fi
+}
 
-    dotenv() {
-        local flag=$1
-        local file=${2:-.env}
+dotenv() {
+    local flag=$1
+    local file=${2:-.env}
 
-        DOCKER4GIS_VERSION=
+    DOCKER4GIS_VERSION=
 
-        if [ -e "$file" ]; then
-            [ "$flag" = 'export' ] && set -a
-            # shellcheck source=/dev/null
-            source "$file"
-            [ "$flag" = 'export' ] && set +a
-        fi
+    if [ -e "$file" ]; then
+        [ "$flag" = 'export' ] && set -a
+        # shellcheck source=/dev/null
+        source "$file"
+        [ "$flag" = 'export' ] && set +a
+    fi
 
-        if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
-            true
-        elif [ "$flag" = 'forgiving' ]; then
+    if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
+        true
+    elif [ "$flag" = 'forgiving' ]; then
+        false
+    else
+        echo "Current directory not recognised as a $docker4gis component or application package." >&2
+        exit 1
+    fi
+}
+
+assert_docker4gis_directory() {
+    dotenv
+}
+
+# shellcheck disable=SC2317  # It's correct that the function is never called in this script.
+self() {
+    # Command given to the "all" action may use `self` to run docker4gis actions.
+    "$0" "$@"
+}
+
+just_help=
+[ "$1" = help ] && just_help=true
+[ "$action" = help ] && {
+    just_help=true
+    action=$1
+    shift 1
+}
+help() {
+    [ "$just_help" ] || return 0
+    local help_text=$1
+    echo "$help_text"
+    exit
+}
+
+remote_branch_name_available() {
+    local new_branch=$1
+    remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
+        if [ "$remote_branch_info" ]; then
+            echo "Error: remote branch exists: $new_branch" >&2
             false
-        else
-            echo "Current directory not recognised as a $docker4gis component or application package." >&2
-            exit 1
         fi
-    }
+}
 
-    assert_docker4gis_directory() {
-        dotenv
-    }
+case "$action" in
 
-    # shellcheck disable=SC2317  # It's correct that the function is never called in this script.
-    self() {
-        # Command given to the "all" action may use `self` to run docker4gis actions.
-        "$0" "$@"
-    }
-
-    just_help=
-    [ "$1" = help ] && just_help=true
-    [ "$action" = help ] && {
-        just_help=true
-        action=$1
-        shift 1
-    }
-    help() {
-        [ "$just_help" ] || return 0
-        local help_text=$1
-        echo "$help_text"
-        exit
-    }
-
-    remote_branch_name_available() {
-        local new_branch=$1
-        remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
-            if [ "$remote_branch_info" ]; then
-                echo "Error: remote branch exists: $new_branch" >&2
-                false
-            fi
-    }
-
-    case "$action" in
-
-    init)
-        help "Initialise a new $docker4gis application in the current directory.
+init)
+    help "Initialise a new $docker4gis application in the current directory.
 Do this somewhere where you can later create sibbling directories for the
 application's components (using \`$docker4gis_command component\`)."
 
-        DOCKER_REGISTRY=$1
-        DOCKER_USER=$2
+    DOCKER_REGISTRY=$1
+    DOCKER_USER=$2
 
-        [ "$DOCKER_REGISTRY" ] && shift 1
-        [ "$DOCKER_REGISTRY" ] || read -rp \
-            "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " \
-            DOCKER_REGISTRY
-        [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
-        [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
+    [ "$DOCKER_REGISTRY" ] && shift 1
+    [ "$DOCKER_REGISTRY" ] || read -rp \
+        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " \
+        DOCKER_REGISTRY
+    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
+    [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
-        [ "$DOCKER_USER" ] && shift 1
-        suggestion=$(basename "$(realpath ..)")
-        [ "$DOCKER_USER" ] || read -rp \
-            "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " \
-            DOCKER_USER
-        [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
+    [ "$DOCKER_USER" ] && shift 1
+    suggestion=$(basename "$(realpath ..)")
+    [ "$DOCKER_USER" ] || read -rp \
+        "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " \
+        DOCKER_USER
+    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 
-        echo "DOCKER4GIS_VERSION=$(version)
+    echo "DOCKER4GIS_VERSION=$(version)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=package
@@ -225,348 +224,348 @@ MYSQL_ROOT_PASSWORD=
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
-        mkdir -p components
-        echo "$DOCKER_USER".log >>.gitignore
+    mkdir -p components
+    echo "$DOCKER_USER".log >>.gitignore
 
-        package_json
-        pipeline main
-        bash -i "$0" alias TEST
-        ;;
+    package_json
+    pipeline main
+    bash -i "$0" alias TEST
+    ;;
 
-    component | base-component | template)
-        [ "$action" = component ] && help "Initialise a new $docker4gis application component in the current directory.
+component | base-component | template)
+    [ "$action" = component ] && help "Initialise a new $docker4gis application component in the current directory.
 Do this in a sibling directory of your application directory (where you ran
 \`$docker4gis_command init\`)."
 
-        [ "$action" = base-component ] && help "Initialise a new $docker4gis base component in the current directory.
+    [ "$action" = base-component ] && help "Initialise a new $docker4gis base component in the current directory.
 Base components are the repositories in https://hub.docker.com/u/$docker4gis.
 This action will render a skeleton that you can build upon. Get in touch with
 to discuss publication."
 
-        [ "$action" = template ] && help "When developing a $docker4gis base component, scaffold a client application in
+    [ "$action" = template ] && help "When developing a $docker4gis base component, scaffold a client application in
 the current directory, so that you can try your new base component. When you're
 happy, you can copy the contents into the 'template' directory of your base
 component."
 
-        write_dotenv() {
-            echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
+    write_dotenv() {
+        echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=$repo" >>.env
-        }
+    }
 
-        replace_component() {
-            search='{{COMPONENT}}'
-            replace=$repo
-            find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
-        }
+    replace_component() {
+        search='{{COMPONENT}}'
+        replace=$repo
+        find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
+    }
 
-        finish() {
-            local message=${1:-"$action initialised ✅"}
-            local code=${2:-0}
-            echo "$message"
-            exit "$code"
-        }
+    finish() {
+        local message=${1:-"$action initialised ✅"}
+        local code=${2:-0}
+        echo "$message"
+        exit "$code"
+    }
 
-        error() {
-            local message=${1:-error}
-            local code=${2:-1}
-            finish "$message" "$code"
-        }
+    error() {
+        local message=${1:-error}
+        local code=${2:-1}
+        finish "$message" "$code"
+    }
 
-        package_json
+    package_json
 
-        suggestion=$(basename "$(realpath "$PWD")")
-        # Without a possible `docker4gis-` prefix.
-        suggestion=${suggestion#"$docker4gis"-}
-        # Up until a possible first `.` character (to support forked repos named
-        # component.name.surname).
-        suggestion=${suggestion%%.*}
+    suggestion=$(basename "$(realpath "$PWD")")
+    # Without a possible `docker4gis-` prefix.
+    suggestion=${suggestion#"$docker4gis"-}
+    # Up until a possible first `.` character (to support forked repos named
+    # component.name.surname).
+    suggestion=${suggestion%%.*}
 
-        [ "$action" = base-component ] && {
-            # Creating a generic docker4gis base component.
-            repo=$1
-            [ "$repo" ] || read -rp \
-                "Enter the base component's name (the \"repository\" in the Docker registry; default is $suggestion) : " \
-                repo
-            [ "$repo" ] || repo=$suggestion
-            DOCKER4GIS_VERSION=$(version)
-            DOCKER_REGISTRY=docker.io
-            DOCKER_USER=$docker4gis
-
-            cp -r "$DOCKER_BASE"/template/. .
-            replace_component
-
-            write_dotenv
-            pipeline main
-            # And we're done!
-            finish
-        }
-
-        # Creating a concrete application's component.
-
-        # Test if inited by finding package directory.
-        for env_file in ../*/.env; do
-            # Break when there's none.
-            [ -f "$env_file" ] || break
-            DOCKER_REPO=
-            DOCKER4GIS_VERSION=
-            DOCKER_REGISTRY=
-            DOCKER_USER=
-            dotenv forgiving "$env_file"
-            if [ "$DOCKER_REPO" = package ] && [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
-                inited=true
-                break
-            fi
-        done
-
-        [ "$inited" ] ||
-            error "Package directory not foud; to create one, run $docker4gis_command init. Or did
-you mean base-component?"
-
-        [ "$1" ] || interactive=true
+    [ "$action" = base-component ] && {
+        # Creating a generic docker4gis base component.
         repo=$1
-        component=$2
-        tag=$3
-        template=$4
-
         [ "$repo" ] || read -rp \
-            "Name the new component (default is $suggestion) : " repo
+            "Enter the base component's name (the \"repository\" in the Docker registry; default is $suggestion) : " \
+            repo
         [ "$repo" ] || repo=$suggestion
+        DOCKER4GIS_VERSION=$(version)
+        DOCKER_REGISTRY=docker.io
+        DOCKER_USER=$docker4gis
+
+        cp -r "$DOCKER_BASE"/template/. .
+        replace_component
 
         write_dotenv
-
-        suggestion=$repo
-        [ "$repo" = api ] && suggestion=postgrest
-        [ "$repo" = app ] && suggestion=angular
-        [ "$repo" = dynamic ] && suggestion=serve
-        component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $suggestion"
-        [ "$action" = template ] || component_question="$component_question, n for none"
-
-        [ "$component" ] || read -rp \
-            "$component_question) : " \
-            component
-        [ "$component" ] || component=$suggestion
-
-        [ "$action" = template ] && {
-            # Just scaffolding an inital setup for developing a template for a new
-            # base component.
-            cp -r "$DOCKER_BASE"/template/template/. .
-        }
-
-        [ "$component" = n ] && {
-            # Creating a component _not_ extending a docker4gis base component.
-            cp -r "$DOCKER_BASE"/template/. .
-            rm -rf template
-            pipeline main
-        }
-
-        [ "$action" = template ] || [ "$component" = n ] && {
-            replace_component
-            # And we're done!
-            finish
-        }
-
-        # Creating a component extending a docker4gis base component.
-
         pipeline main
-
-        [ "$interactive" ] && {
-            [ "$tag" ] || read -rp \
-                "Which base image tag to use? (default is latest) : " tag
-        }
-        [ "$tag" ] || tag=latest
-
-        image=$docker4gis/$component:$tag
-        docker image pull "$image" ||
-            error "Image not found: $image"
-
-        container=$(docker container create "$image") ||
-            error "Failed to create container from image $image"
-
-        docker container cp "$container":/template . ||
-            error "$image doesn't seem a $docker4gis component"
-
-        docker container rm "$container" >/dev/null
-        if ! [ "$template" ]; then
-            # Test if there are multiple templates, by checking the existence of the
-            # '.default' file.
-            default=./template/.default
-            if [ -f "$default" ]; then
-                default=$(cat "$default")
-                # Override the default template if there's a template named just
-                # like the repo itself.
-                [ -d "./template/$repo" ] && default=$repo
-                template=$default
-                [ "$interactive" ] && {
-                    choices=$(ls ./template)
-                    choices=$(echo "$choices" | xargs)
-                    read -rp \
-                        "Enter the template name (one of: $choices - default is $default) : " \
-                        template
-                    [ "$template" ] || template=$default
-                    ls ./template/"$template" >/dev/null 2>&1 ||
-                        error "Template not found: $template"
-                }
-            fi
-        fi
-        cp -r ./template/"$template"/. .
-        rm -rf ./template
+        # And we're done!
         finish
-        ;;
+    }
 
-    build | run | br | push | test | stop | geoserver)
-        [ "$action" = build ] && help "Build a new image for the application component in the current directory.
+    # Creating a concrete application's component.
+
+    # Test if inited by finding package directory.
+    for env_file in ../*/.env; do
+        # Break when there's none.
+        [ -f "$env_file" ] || break
+        DOCKER_REPO=
+        DOCKER4GIS_VERSION=
+        DOCKER_REGISTRY=
+        DOCKER_USER=
+        dotenv forgiving "$env_file"
+        if [ "$DOCKER_REPO" = package ] && [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
+            inited=true
+            break
+        fi
+    done
+
+    [ "$inited" ] ||
+        error "Package directory not foud; to create one, run $docker4gis_command init. Or did
+you mean base-component?"
+
+    [ "$1" ] || interactive=true
+    repo=$1
+    component=$2
+    tag=$3
+    template=$4
+
+    [ "$repo" ] || read -rp \
+        "Name the new component (default is $suggestion) : " repo
+    [ "$repo" ] || repo=$suggestion
+
+    write_dotenv
+
+    suggestion=$repo
+    [ "$repo" = api ] && suggestion=postgrest
+    [ "$repo" = app ] && suggestion=angular
+    [ "$repo" = dynamic ] && suggestion=serve
+    component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $suggestion"
+    [ "$action" = template ] || component_question="$component_question, n for none"
+
+    [ "$component" ] || read -rp \
+        "$component_question) : " \
+        component
+    [ "$component" ] || component=$suggestion
+
+    [ "$action" = template ] && {
+        # Just scaffolding an inital setup for developing a template for a new
+        # base component.
+        cp -r "$DOCKER_BASE"/template/template/. .
+    }
+
+    [ "$component" = n ] && {
+        # Creating a component _not_ extending a docker4gis base component.
+        cp -r "$DOCKER_BASE"/template/. .
+        rm -rf template
+        pipeline main
+    }
+
+    [ "$action" = template ] || [ "$component" = n ] && {
+        replace_component
+        # And we're done!
+        finish
+    }
+
+    # Creating a component extending a docker4gis base component.
+
+    pipeline main
+
+    [ "$interactive" ] && {
+        [ "$tag" ] || read -rp \
+            "Which base image tag to use? (default is latest) : " tag
+    }
+    [ "$tag" ] || tag=latest
+
+    image=$docker4gis/$component:$tag
+    docker image pull "$image" ||
+        error "Image not found: $image"
+
+    container=$(docker container create "$image") ||
+        error "Failed to create container from image $image"
+
+    docker container cp "$container":/template . ||
+        error "$image doesn't seem a $docker4gis component"
+
+    docker container rm "$container" >/dev/null
+    if ! [ "$template" ]; then
+        # Test if there are multiple templates, by checking the existence of the
+        # '.default' file.
+        default=./template/.default
+        if [ -f "$default" ]; then
+            default=$(cat "$default")
+            # Override the default template if there's a template named just
+            # like the repo itself.
+            [ -d "./template/$repo" ] && default=$repo
+            template=$default
+            [ "$interactive" ] && {
+                choices=$(ls ./template)
+                choices=$(echo "$choices" | xargs)
+                read -rp \
+                    "Enter the template name (one of: $choices - default is $default) : " \
+                    template
+                [ "$template" ] || template=$default
+                ls ./template/"$template" >/dev/null 2>&1 ||
+                    error "Template not found: $template"
+            }
+        fi
+    fi
+    cp -r ./template/"$template"/. .
+    rm -rf ./template
+    finish
+    ;;
+
+build | run | br | push | test | stop | geoserver)
+    [ "$action" = build ] && help "Build a new image for the application component in the current directory.
 Or pass the name of a sibling directory to build that component there."
 
-        [ "$action" = run ] && help "Run the application residing in one of the siblings of the current directory.
+    [ "$action" = run ] && help "Run the application residing in one of the siblings of the current directory.
 If a newer version of a component is found in a component directory, the
 application directory is updated to run that newer version.
 If a 'latest' version of a component image is found locally, and the version
 in the component's package.json isn't newer than the version the application
 had registered, then that 'latest' component version is run."
 
-        [ "$action" = br ] && help "First build, then run. Can also br [COMPONENT] from a sibling directory."
+    [ "$action" = br ] && help "First build, then run. Can also br [COMPONENT] from a sibling directory."
 
-        [ "$action" = push ] && help "Increment the component's version, build its image, push it to the Docker
+    [ "$action" = push ] && help "Increment the component's version, build its image, push it to the Docker
 registry, commit and push git changes.
 Note that ideally, this is run by the Continuous Integration pipeline. If
 that's configured, refrain from running \`push\` by hand."
 
-        [ "$action" = test ] && help "Run the component's tests."
+    [ "$action" = test ] && help "Run the component's tests."
 
-        [ "$action" = stop ] && help "Stop the application's containers.
+    [ "$action" = stop ] && help "Stop the application's containers.
 Except the proxy container, since that may still serve other applications."
 
-        [ "$action" = geoserver ] && help "Copy the GeoServer configuration files out of the running $DOCKER_USER-geoserver
+    [ "$action" = geoserver ] && help "Copy the GeoServer configuration files out of the running $DOCKER_USER-geoserver
 container, to the geoserver component repository in the current directory."
 
-        # For application components, load the package component's environment
-        # values. For base components (build), there's no package component, and
-        # nothing happens here.
-        for env_file in ../*/.env; do
-            # Break when there's none.
-            [ -f "$env_file" ] || break
-            dotenv forgiving "$env_file"
-            if [ "$DOCKER_REPO" = package ]; then
-                dotenv export "$env_file"
-                break
-            fi
-        done
-
-        # Load the current component's own environment variables.
-        dotenv export
-
-        # If not running an unpublished, local, in-development version of
-        # docker4gis, switch to the version that the component scripts are
-        # expecting.
-        if [ "$INSTALLED" ]; then
-            [ "$DOCKER4GIS_TRACE" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
-            DOCKER_BASE=$( (
-                # Prevent any trace output.
-                set +x
-                # Output this version's base directory.
-                npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
-            ))
-        # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
-        # the new in-development version to see its effects.
-        else
-            export DOCKER4GIS_VERSION=$version_development
+    # For application components, load the package component's environment
+    # values. For base components (build), there's no package component, and
+    # nothing happens here.
+    for env_file in ../*/.env; do
+        # Break when there's none.
+        [ -f "$env_file" ] || break
+        dotenv forgiving "$env_file"
+        if [ "$DOCKER_REPO" = package ]; then
+            dotenv export "$env_file"
+            break
         fi
+    done
 
-        "$DOCKER_BASE/main.sh" . "$action" "$@"
-        ;;
+    # Load the current component's own environment variables.
+    dotenv export
 
-    "$docker4gis")
-        help "Just echo '$docker4gis' to indicate that this is that program."
+    # If not running an unpublished, local, in-development version of
+    # docker4gis, switch to the version that the component scripts are
+    # expecting.
+    if [ "$INSTALLED" ]; then
+        [ "$DOCKER4GIS_TRACE" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
+        DOCKER_BASE=$( (
+            # Prevent any trace output.
+            set +x
+            # Output this version's base directory.
+            npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
+        ))
+    # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
+    # the new in-development version to see its effects.
+    else
+        export DOCKER4GIS_VERSION=$version_development
+    fi
 
-        echo "$docker4gis"
-        ;;
+    "$DOCKER_BASE/main.sh" . "$action" "$@"
+    ;;
 
-    base)
-        help "Echo the value of the DOCKER_BASE variable."
+"$docker4gis")
+    help "Just echo '$docker4gis' to indicate that this is that program."
 
-        echo "$DOCKER_BASE"
-        ;;
+    echo "$docker4gis"
+    ;;
 
-    version)
-        help "Echo the $docker4gis version."
+base)
+    help "Echo the value of the DOCKER_BASE variable."
 
-        version "$@"
-        ;;
+    echo "$DOCKER_BASE"
+    ;;
 
-    login)
-        dotenv forgiving && {
-            DOCKER_REGISTRY=" ($DOCKER_REGISTRY)"
-            DOCKER_USER=" ($DOCKER_USER)"
-        }
-        help "Log into the DOCKER_REGISTRY$DOCKER_REGISTRY.
+version)
+    help "Echo the $docker4gis version."
+
+    version "$@"
+    ;;
+
+login)
+    dotenv forgiving && {
+        DOCKER_REGISTRY=" ($DOCKER_REGISTRY)"
+        DOCKER_USER=" ($DOCKER_USER)"
+    }
+    help "Log into the DOCKER_REGISTRY$DOCKER_REGISTRY.
 Usage: $docker4gis_command login [PASSWORD] [USER].
 Without PASSWORD, you'll be asked to type it.
 Default USER is the DOCKER_USER value$DOCKER_USER."
 
-        dotenv
-        password=${1:?"password parameter not set"}
-        user=${2:-$DOCKER_USER}
-        echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
-        ;;
+    dotenv
+    password=${1:?"password parameter not set"}
+    user=${2:-$DOCKER_USER}
+    echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
+    ;;
 
-    alias)
-        help "Create a shell alias for \`$default_docker4gis_command\`.
+alias)
+    help "Create a shell alias for \`$default_docker4gis_command\`.
 Usage: $docker4gis_command alias [NAME]
 Without NAME, you'll be asked to type one, or accept the default."
 
-        # https://serverfault.com/a/146747
-        [[ $- == *i* ]] && interactive=true
-        [ "$interactive" ] || {
-            # rerun this action with bash in interactive mode, so that aliases are
-            # loaded
-            bash -i "$0" alias "$@"
+    # https://serverfault.com/a/146747
+    [[ $- == *i* ]] && interactive=true
+    [ "$interactive" ] || {
+        # rerun this action with bash in interactive mode, so that aliases are
+        # loaded
+        bash -i "$0" alias "$@"
+        exit 0
+    }
+
+    dg=dg
+
+    test=$1
+    [ "$test" = 'TEST' ] && {
+        shift 1
+        if [ "$("$dg" "$docker4gis" 2>/dev/null)" = "$docker4gis" ]; then
             exit 0
-        }
-
-        dg=dg
-
-        test=$1
-        [ "$test" = 'TEST' ] && {
-            shift 1
-            if [ "$("$dg" "$docker4gis" 2>/dev/null)" = "$docker4gis" ]; then
+        else
+            answer=
+            read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
+            [ "$answer" ] || answer=y
+            if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
                 exit 0
-            else
-                answer=
-                read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
-                [ "$answer" ] || answer=y
-                if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
-                    exit 0
-                fi
             fi
-        }
+        fi
+    }
 
-        name=$1
+    name=$1
 
-        [ "$name" ] || read -rp "Enter the name for the alias (default is $dg) : " name
-        [ "$name" ] || name=$dg
+    [ "$name" ] || read -rp "Enter the name for the alias (default is $dg) : " name
+    [ "$name" ] || name=$dg
 
-        command_type=$(type -t "$name" 2>/dev/null) && {
-            if [ "$command_type" = "alias" ] && [ "$($name "$docker4gis")" = "$docker4gis" ]; then
-                : # This name was already an alias for docker4gis; nothing to do.
-            else
-                echo "$name is occupied; choose another name"
-                "$0" alias
-            fi
-            exit
-        }
+    command_type=$(type -t "$name" 2>/dev/null) && {
+        if [ "$command_type" = "alias" ] && [ "$($name "$docker4gis")" = "$docker4gis" ]; then
+            : # This name was already an alias for docker4gis; nothing to do.
+        else
+            echo "$name is occupied; choose another name"
+            "$0" alias
+        fi
+        exit
+    }
 
-        echo "alias $name='ALIAS_NAME=$name $default_docker4gis_command'" >>~/.bashrc
+    echo "alias $name='ALIAS_NAME=$name $default_docker4gis_command'" >>~/.bashrc
 
-        shopt -s expand_aliases
-        # shellcheck source=/dev/null
-        . ~/.bashrc
-        ;;
+    shopt -s expand_aliases
+    # shellcheck source=/dev/null
+    . ~/.bashrc
+    ;;
 
-    git-push | gp)
-        default_new_branch=$docker4gis-changes
-        help "Commit and push all changes to a remote branch.
+git-push | gp)
+    default_new_branch=$docker4gis-changes
+    help "Commit and push all changes to a remote branch.
 Usage: $docker4gis_command $action [BRANCH_NAME].
 The default BRANCH_NAME is $default_new_branch.
 If more than one parameter is supplied, all parameters are joined with hyphens
@@ -577,32 +576,32 @@ switching back to the current branch, ready for fetching the remote changes
 after merging the pull request (and running the Continuous Integration
 pipeline, and syncing a forked repo)."
 
-        [ "$(git status --short)" ] || {
-            echo "No changes to commit."
-            exit
-        }
-        new_branch=${*:-"$default_new_branch"}
-        # Replace all spaces with hyphens.
-        new_branch=${new_branch// /-}
-        remote_branch_name_available "$new_branch" &&
-            current_branch=$(git rev-parse --abbrev-ref HEAD) &&
-            if [ "$current_branch" != "$new_branch" ]; then
-                # This will fail if a branch with that name already exists.
-                # Which is good, since it'd be acceptable when we're already
-                # _on_ the new_branch, but not when we're on another branch and
-                # the new_branch is just existing.
-                git switch --create "$new_branch"
-            fi &&
-            git add --all &&
-            git commit --message="$new_branch" &&
-            git push --set-upstream origin "$new_branch" &&
-            git switch "$current_branch" &&
-            git branch --delete "$new_branch" &&
-            echo "-> Remote branch $new_branch ready for pull request; the local branch is deleted."
-        ;;
+    [ "$(git status --short)" ] || {
+        echo "No changes to commit."
+        exit
+    }
+    new_branch=${*:-"$default_new_branch"}
+    # Replace all spaces with hyphens.
+    new_branch=${new_branch// /-}
+    remote_branch_name_available "$new_branch" &&
+        current_branch=$(git rev-parse --abbrev-ref HEAD) &&
+        if [ "$current_branch" != "$new_branch" ]; then
+            # This will fail if a branch with that name already exists.
+            # Which is good, since it'd be acceptable when we're already
+            # _on_ the new_branch, but not when we're on another branch and
+            # the new_branch is just existing.
+            git switch --create "$new_branch"
+        fi &&
+        git add --all &&
+        git commit --message="$new_branch" &&
+        git push --set-upstream origin "$new_branch" &&
+        git switch "$current_branch" &&
+        git branch --delete "$new_branch" &&
+        echo "-> Remote branch $new_branch ready for pull request; the local branch is deleted."
+    ;;
 
-    bump)
-        help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
+bump)
+    help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
 Usage: $docker4gis_command bump [push|gp].
 With \`push\` (or \`gp\`), the change is committed in git in a new branch, that 
 is pushed to \`origin\`, ready to create a pull request. Locally, the new branch
@@ -610,54 +609,53 @@ is deleted after switching back to the current branch, ready for fetching the
 remote changes after merging the pull request (and running the Continuous
 Integration pipeline, and syncing a forked repo)."
 
-        assert_docker4gis_directory
+    assert_docker4gis_directory
 
-        if [ "$1" = push ] || [ "$1" = gp ]; then
-            bump_branch=$docker4gis-bump
-            "$DOCKER_BASE"/check_git_clear.sh &&
-                remote_branch_name_available "$bump_branch"
-        fi &&
-            # The actual bump action.
-            echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
-            version &&
-            if [ "$bump_branch" ]; then
-                self git-push "$bump_branch"
-            fi
-        ;;
+    if [ "$1" = push ] || [ "$1" = gp ]; then
+        bump_branch=$docker4gis-bump
+        "$DOCKER_BASE"/check_git_clear.sh &&
+            remote_branch_name_available "$bump_branch"
+    fi &&
+        # The actual bump action.
+        echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
+        version &&
+        if [ "$bump_branch" ]; then
+            self git-push "$bump_branch"
+        fi
+    ;;
 
-    all)
-        help "Run something in each sibling $docker4gis directory.
+all)
+    help "Run something in each sibling $docker4gis directory.
 Usage: $docker4gis_command all EXECUTABLE [ARG...]
 If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
 \`$docker4gis_command all self bump push\`"
 
-        # Run the given command in all sibling docker4gis component directories,
-        # including the current one.
-        for dir in ../*; do
-            (
-                cd "$dir" || exit
-                dotenv forgiving || exit
-                echo
-                realpath .
-                # Run the given command.
-                "$@"
-            )
-        done
-        ;;
+    # Run the given command in all sibling docker4gis component directories,
+    # including the current one.
+    for dir in ../*; do
+        (
+            cd "$dir" || exit
+            dotenv forgiving || exit
+            echo
+            realpath .
+            # Run the given command.
+            "$@"
+        )
+    done
+    ;;
 
-    *)
-        echo "Manage $docker4gis applications and their components and base components."
-        echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
-        echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
-        echo "  base-component | template | alias [NAME] | $docker4gis | base |"
-        echo "  login [PASSWORD] [USER] | version | bump [push] | git-push | gp"
-        echo "  all EXECUTABLE|self [ARG...]"
-        echo "Note that build, run, br, push, test, stop, and geoserver run with the"
-        echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
-        echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND."
-        echo "For debugging (tracing all shell commands):"
-        echo "  $docker4gis_command trace COMMAND [ARG...]"
-        echo "  output is saved in $log_path."
-        ;;
-    esac
-} |& tee "$log"
+*)
+    echo "Manage $docker4gis applications and their components and base components."
+    echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
+    echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
+    echo "  base-component | template | alias [NAME] | $docker4gis | base |"
+    echo "  login [PASSWORD] [USER] | version | bump [push] | git-push | gp"
+    echo "  all EXECUTABLE|self [ARG...]"
+    echo "Note that build, run, br, push, test, stop, and geoserver run with the"
+    echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
+    echo "For help: $docker4gis_command COMMAND help, or $docker4gis_command help COMMAND."
+    echo "For debugging (tracing all shell commands):"
+    echo "  $docker4gis_command trace COMMAND [ARG...]"
+    echo "  output is saved in $log_path."
+    ;;
+esac
