@@ -106,7 +106,7 @@ dir() {
 case "$action" in
 build)
 	dir "$@"
-	if this test; then
+	if [ "$DOCKER_REPO" = package ] || this test; then
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$@"
 	else
 		echo
