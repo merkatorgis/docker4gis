@@ -644,12 +644,29 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
     done
     ;;
 
+bats)
+    file=test.bats
+    help "Create a new file '$file' in the current directory, that calls the bats helper file."
+
+    if [ -e "$file" ]; then
+        echo "$file already exists."
+        exit 1
+    fi
+    echo "load ~/.bats/helper.bash
+
+function setup_file() {
+    helper
+}
+
+" >"$file"
+    ;;
+
 *)
     echo "Manage $docker4gis applications and their components and base components."
     echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
     echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
     echo "  base-component | template | alias [NAME] | $docker4gis | base |"
-    echo "  login [PASSWORD] [USER] | version | bump [push] | git-push | gp"
+    echo "  login [PASSWORD] [USER] | version | bump [push] | git-push | gp | bats"
     echo "  all EXECUTABLE|self [ARG...]"
     echo "Note that build, run, br, push, test, stop, and geoserver run with the"
     echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
