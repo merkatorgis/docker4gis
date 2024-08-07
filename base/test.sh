@@ -15,13 +15,19 @@ else
 fi
 
 if [ "$sh_tests" ]; then
+    export FATAL_ERROR=130
     # See https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
     while IFS= read -r -d '' test; do
         if "$test"; then
             echo "✅ ok  : $test"
         else
-            echo "❌ nok : $test"
-            sh_tests_failed=true
+            if [ "$?" = "$FATAL_ERROR" ]; then
+                echo "💣 fatal : $test"
+                exit "$FATAL_ERROR"
+            else
+                echo "❌ nok : $test"
+                sh_tests_failed=true
+            fi
         fi
     done < <(find "$dir" -name "test.sh" -print0)
 fi
