@@ -24,7 +24,7 @@ if [ "$sh_tests" ]; then
             echo "✅ ok  : $test"
         else
             if [ "$?" = "$ABORT" ]; then
-                echo "💣 fatal : $test"
+                echo "💣abort: $test"
                 exit "$ABORT"
             else
                 echo "❌ nok : $test"
