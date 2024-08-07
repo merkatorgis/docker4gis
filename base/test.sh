@@ -15,13 +15,21 @@ else
 fi
 
 if [ "$sh_tests" ]; then
+    # To prevent running any further tests, issue `exit "$ABORT"` from a test
+    # script.
+    export ABORT=130
     # See https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
     while IFS= read -r -d '' test; do
         if "$test"; then
             echo "✅ ok  : $test"
         else
-            echo "❌ nok : $test"
-            sh_tests_failed=true
+            if [ "$?" = "$ABORT" ]; then
+                echo "💣 fatal : $test"
+                exit "$ABORT"
+            else
+                echo "❌ nok : $test"
+                sh_tests_failed=true
+            fi
         fi
     done < <(find "$dir" -name "test.sh" -print0)
 fi
