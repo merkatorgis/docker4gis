@@ -26,14 +26,12 @@ if [ "$sh_tests" ]; then
     while IFS= read -r -d '' test; do
         if "$test"; then
             echo "✓ $test"
+        elif [ "$?" = "$DOCKER4GIS_EXIT_CODE_ABORT" ]; then
+            echo "💣 $test"
+            exit "$DOCKER4GIS_EXIT_CODE_ABORT"
         else
-            if [ "$?" = "$DOCKER4GIS_EXIT_CODE_ABORT" ]; then
-                echo "💣 $test"
-                exit "$DOCKER4GIS_EXIT_CODE_ABORT"
-            else
-                echo "✕ $test"
-                sh_tests_failed=true
-            fi
+            echo "❌ $test"
+            sh_tests_failed=true
         fi
     done < <(find "$dir" -name "test.sh" -print0)
 fi
