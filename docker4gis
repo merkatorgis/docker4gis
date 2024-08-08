@@ -5,6 +5,7 @@ docker4gis=$(basename "$0")
 log_path=$docker4gis.log
 version_development=development
 
+# Trace/debug log.
 if [ "$1" = trace ]; then
     shift 1
     export DOCKER4GIS_TRACE=true
@@ -16,12 +17,14 @@ if [ "$1" = trace ]; then
     export SHELLOPTS
 fi
 
+# Set the action variable.
 action=$1
 shift 1
 
 default_docker4gis_command="npx --yes $docker4gis@latest"
 docker4gis_command=${ALIAS_NAME:-$default_docker4gis_command}
 
+# Set the INSTALLED variable.
 INSTALLED=
 dg_dir=$(dirname "$0")
 if [ "$(basename "$dg_dir")" = '.bin' ]; then
@@ -29,7 +32,30 @@ if [ "$(basename "$dg_dir")" = '.bin' ]; then
     dg_dir="$dg_dir"/../$docker4gis
 fi
 dg_dir=$(realpath "$dg_dir")
+
+# Set the DOCKER_BASE variable (leading to main.sh, amongst others).
 DOCKER_BASE="$dg_dir"/base
+
+# Facilitate running npm dependencies.
+if if [ "$INSTALLED" ]; then
+    node_modules=$dg_dir/..
+else
+    node_modules=$dg_dir/node_modules
+    # Install the git clone if it wasn't already.
+    [ -d "$node_modules" ] || (
+        cd "$dg_dir" &&
+            npm install
+    )
+fi &&
+    node_modules=$(realpath "$node_modules") &&
+    [ -d "$node_modules" ] &&
+    [ "$(basename "$node_modules")" = node_modules ]; then
+    # Export the paths to npm dependencies.
+    export BATS=$node_modules/.bin/bats
+else
+    echo "node_modules directory not found - $node_modules" >&2
+    exit 1
+fi
 
 package_json() {
     [ -f package.json ] || echo '{
@@ -416,14 +442,22 @@ you mean base-component?"
 
 build | run | br | push | test | stop | geoserver)
     [ "$action" = build ] && help "Build a new image for the application component in the current directory.
-Or pass the name of a sibling directory to build that component there."
+Or pass the name of a sibling directory to build that component there.
 
-    [ "$action" = run ] && help "Run the application residing in one of the siblings of the current directory.
-If a newer version of a component is found in a component directory, the
-application directory is updated to run that newer version.
+For components other than the 'package' component, any/all (unit) tests are run
+before the build starts, and the build is cancelled if any test fails (see
+\`$docker4gis_command help test\`.)"
+
+    [ "$action" = run ] && help "Run the application.
+
+If a newer version of a component is found in a sibling component directory, the
+'package' component's directory is updated to run that newer version.
 If a 'latest' version of a component image is found locally, and the version
 in the component's package.json isn't newer than the version the application
-had registered, then that 'latest' component version is run."
+had registered, then that 'latest' component version is run.
+
+After all components' containers are started, any/all (integration) tests are
+run (see \`$docker4gis_command help test\`.)"
 
     [ "$action" = br ] && help "First build, then run. Can also br [COMPONENT] from a sibling directory."
 
@@ -432,7 +466,27 @@ registry, commit and push git changes.
 Note that ideally, this is run by the Continuous Integration pipeline. If
 that's configured, refrain from running \`push\` by hand."
 
-    [ "$action" = test ] && help "Run the component's tests."
+    [ "$action" = test ] && help "Run the component's tests.
+First, any files named 'test.sh' in the component's directory (and below) are
+run. Exit from a test.sh with a non-zero code to indicate failure. Call the
+exported function abort_tests to prevent running any further tests.
+
+Then, any files named '*.bats' in the component's directory (and below) are run
+using the [bash automated testing system](https://www.npmjs.com/package/bats).
+
+On \`$docker4gis_command build\`, all tests (considered to be 'unit tests') are
+run before starting the build. If any test fails, the build is cancelled.
+This is true for pipelines as well. Should a test depend on any external
+package, amend the pipelines to install it, or include it as an [npm]
+(https://www.npmjs.com/) dependency.
+
+An exception is the 'package' component. Here, test are considered 'integration
+tests', and they're not run before the \`$docker4gis_command build\`, but after
+the \`$docker4gis_command run\`. So when these tests run, all the components'
+containers have been started, and you can verify their interacting together.
+Note that \`$docker4gis_command run\` is only done in the development
+environment; not on any server where the application is deployed (though it can
+be imagined as part of some future test-deploy pipeline)."
 
     [ "$action" = stop ] && help "Stop the application's containers.
 Except the proxy container, since that may still serve other applications."
@@ -645,9 +699,13 @@ If \`$docker4gis_command\` should be executed, use \`self\` instead, e.g.
     ;;
 
 bats)
-    file=test.bats
-    help "Create a new file '$file' in the current directory, that calls the bats helper file."
+    default_file=./test.bats
+    help "Create a new file in the current directory, that calls the generic bats helper
+($DOCKER_BASE/.plugins/bats/helper.bash).
+Usage: $docker4gis_command bats [FILE]
+The deault FILE is $default_file."
 
+    file=${1:-$default_file}
     if [ -e "$file" ]; then
         echo "$file already exists."
         exit 1
