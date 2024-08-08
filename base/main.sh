@@ -148,7 +148,7 @@ push)
 
 test)
 	dir "$@"
-	time "$DOCKER_BASE/test.sh"
+	"$DOCKER_BASE/test.sh"
 	;;
 
 stop)
