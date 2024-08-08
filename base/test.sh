@@ -15,6 +15,10 @@ else
 fi
 
 if [ "$sh_tests" ]; then
+    sh_tests_total=$(echo "$sh_tests" | wc --lines)
+    sh_tests_run=0
+    sh_tests_success=0
+
     # To exit from a test script, and prevent running any further tests, call
     # the exported function abort_tests.
     export DOCKER4GIS_EXIT_CODE_ABORT=130
@@ -22,18 +26,34 @@ if [ "$sh_tests" ]; then
         exit "$DOCKER4GIS_EXIT_CODE_ABORT"
     }
     export -f abort_tests
+
     # See https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
     while IFS= read -r -d '' test; do
+        ((sh_tests_run++))
         if "$test"; then
-            echo "✓ $test"
+            ((sh_tests_success++))
+            echo " ✓ $test"
         elif [ "$?" = "$DOCKER4GIS_EXIT_CODE_ABORT" ]; then
-            echo "💣 $test"
-            exit "$DOCKER4GIS_EXIT_CODE_ABORT"
+            echo " 💣 $test"
+            sh_tests_aborted=true
+            break
         else
-            echo "❌ $test"
-            sh_tests_failed=true
+            echo " ❌ $test"
         fi
     done < <(find "$dir" -name "test.sh" -print0)
+
+    icon=✅
+    sh_tests_not_run=$(("$sh_tests_total" - "$sh_tests_run"))
+    sh_tests_failure=$(("$sh_tests_total" - "$sh_tests_success"))
+    if [ "$sh_tests_failure" -ne 0 ] || [ "$sh_tests_not_run" -ne 0 ]; then
+        sh_tests_failed=true
+        icon=❌
+    fi
+    echo -n "$icon $sh_tests_total tests, $sh_tests_failure failures"
+    [ "$sh_tests_not_run" -ne 0 ] && echo -n ", $sh_tests_not_run not run"
+    [ "$sh_tests_aborted" ] && echo -n ", testing aborted"
+    echo
+    [ "$sh_tests_aborted" ] && exit 1
 fi
 
 if [ "$bats_tests" ]; then
@@ -48,7 +68,7 @@ if [ "$bats_tests" ]; then
     fi
 
     # Run all bats tests.
-    if ! time "$BATS" --recursive "$dir"; then
+    if ! "$BATS" --recursive "$dir"; then
         bats_tests_failed=true
     fi
 
