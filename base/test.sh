@@ -15,19 +15,23 @@ else
 fi
 
 if [ "$sh_tests" ]; then
-    # To prevent running any further tests, issue `exit "$ABORT"` from a test
-    # script.
-    export ABORT=130
+    # To exit from a test script, and prevent running any further tests, call
+    # the exported function abort_tests.
+    export DOCKER4GIS_EXIT_CODE_ABORT=130
+    abort_tests() {
+        exit "$DOCKER4GIS_EXIT_CODE_ABORT"
+    }
+    export -f abort_tests
     # See https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
     while IFS= read -r -d '' test; do
         if "$test"; then
-            echo "✅ ok  : $test"
+            echo "✓ $test"
         else
-            if [ "$?" = "$ABORT" ]; then
-                echo "💣abort: $test"
-                exit "$ABORT"
+            if [ "$?" = "$DOCKER4GIS_EXIT_CODE_ABORT" ]; then
+                echo "💣 $test"
+                exit "$DOCKER4GIS_EXIT_CODE_ABORT"
             else
-                echo "❌ nok : $test"
+                echo "✕ $test"
                 sh_tests_failed=true
             fi
         fi
@@ -39,17 +43,6 @@ if [ "$bats_tests" ]; then
     # Install our own bats utilities.
     "$DOCKER_BASE"/.plugins/bats/install.sh
 
-    # Find bats.
-    bats=$DOCKER_BASE/../../.bin/bats # Npx case.
-    if ! [ -x "$bats" ]; then         # Git clone case.
-        bats=$DOCKER_BASE/../node_modules/.bin/bats
-        [ -x "$bats" ] || (
-            # Install docker4gis dependencies, including bats.
-            cd "$DOCKER_BASE/.." &&
-                npm install
-        ) || exit 1
-    fi
-
     # Don't trace bats, since its output is huge.
     if [ "$DOCKER4GIS_TRACE" ]; then
         set +x
@@ -57,7 +50,7 @@ if [ "$bats_tests" ]; then
     fi
 
     # Run all bats tests.
-    if ! time "$bats" --recursive "$dir"; then
+    if ! time "$BATS" --recursive "$dir"; then
         bats_tests_failed=true
     fi
 
