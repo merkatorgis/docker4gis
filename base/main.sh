@@ -104,6 +104,7 @@ dir() {
 }
 
 case "$action" in
+
 build)
 	dir "$@"
 	if [ "$DOCKER_REPO" = package ] || this test; then
@@ -114,6 +115,12 @@ build)
 		exit 1
 	fi
 	;;
+
+unbuild)
+	dir "$@"
+	docker image rm -f "$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO:latest"
+	;;
+
 run)
 	dir package "$@"
 	tag=$1
@@ -128,26 +135,33 @@ run)
 		fi
 	fi && echo && this test
 	;;
+
 br)
 	this build "$@" && echo &&
 		this run
 	;;
+
 push)
 	dir "$@"
 	"$DOCKER_BASE/push.sh" "$@"
 	;;
+
 test)
 	dir "$@"
 	time "$DOCKER_BASE/test.sh"
 	;;
+
 stop)
 	"$DOCKER_BASE/stop.sh"
 	;;
+
 geoserver)
 	container=$DOCKER_USER-$DOCKER_REPO
 	eval "$(docker container exec "$container" dg geoserver)"
 	;;
+
 *)
 	echo "Unknown action: $action"
 	;;
+
 esac

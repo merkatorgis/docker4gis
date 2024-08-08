@@ -440,7 +440,7 @@ you mean base-component?"
     finish
     ;;
 
-build | run | br | push | test | stop | geoserver)
+build | run | br | push | test | unbuild | stop | geoserver)
     [ "$action" = build ] && help "Build a new image for the application component in the current directory.
 Or pass the name of a sibling directory to build that component there.
 
@@ -453,18 +453,20 @@ before the build starts, and the build is cancelled if any test fails (see
 If a newer version of a component is found in a sibling component directory, the
 'package' component's directory is updated to run that newer version.
 If a 'latest' version of a component image is found locally, and the version
-in the component's package.json isn't newer than the version the application
-had registered, then that 'latest' component version is run.
+in the component's package.json isn't newer than the version that is registered
+in the 'package' directory, then that 'latest' component version
+is run.
 
 After all components' containers are started, any/all (integration) tests are
 run (see \`$docker4gis_command help test\`.)"
 
-    [ "$action" = br ] && help "First build, then run. Can also br [COMPONENT] from a sibling directory."
+    [ "$action" = br ] && help "First build, then run.
+Can also \`$docker4gis_command $action [COMPONENT]\` from a sibling directory."
 
     [ "$action" = push ] && help "Increment the component's version, build its image, push it to the Docker
 registry, commit and push git changes.
 Note that ideally, this is run by the Continuous Integration pipeline. If
-that's configured, refrain from running \`push\` by hand."
+that's configured, refrain from running \`$docker4gis_command $action\` by hand."
 
     [ "$action" = test ] && help "Run the component's tests.
 First, any files named 'test.sh' in the component's directory (and below) are
@@ -487,6 +489,9 @@ containers have been started, and you can verify their interacting together.
 Note that \`$docker4gis_command run\` is only done in the development
 environment; not on any server where the application is deployed (though it can
 be imagined as part of some future test-deploy pipeline)."
+
+    [ "$action" = unbuild ] && help "Remove the local 'latest' version of the component's image.
+Can also \`$docker4gis_command $action [COMPONENT]\` from a sibling directory."
 
     [ "$action" = stop ] && help "Stop the application's containers.
 Except the proxy container, since that may still serve other applications."
@@ -722,9 +727,9 @@ function setup_file() {
 *)
     echo "Manage $docker4gis applications and their components and base components."
     echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
-    echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | stop | geoserver |"
-    echo "  base-component | template | alias [NAME] | $docker4gis | base |"
-    echo "  login [PASSWORD] [USER] | version | bump [push] | git-push | gp | bats"
+    echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | unbuild [COMPONENT] |"
+    echo "  stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |"
+    echo "  base | login [PASSWORD] [USER] | version | bump [push] | git-push | gp | bats"
     echo "  all EXECUTABLE|self [ARG...]"
     echo "Note that build, run, br, push, test, stop, and geoserver run with the"
     echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
