@@ -5,16 +5,21 @@ dir=$(realpath .)
 sh_tests=$(find "$dir" -name "test.sh")
 bats_tests=$(find "$dir" -name "*.bats")
 
-if [ "$sh_tests" ] || [ "$bats_tests" ]; then
-    echo "Running tests in $dir..."
-else
-    test_type='unit'
-    [ "$DOCKER_REPO" = package ] && test_type='integration'
+test_type='unit'
+[ "$DOCKER_REPO" = package ] && test_type='integration'
+
+if ! [ "$sh_tests" ] && ! [ "$bats_tests" ]; then
     echo "> WARNING - no $test_type tests found; consider adding some."
     exit 0
 fi
 
+header() {
+    local file_type=$1
+    echo "Running $file_type $test_type tests in $dir..."
+}
+
 if [ "$sh_tests" ]; then
+    header .sh
     sh_tests_total=$(echo "$sh_tests" | wc --lines)
     sh_tests_run=0
     sh_tests_success=0
@@ -42,6 +47,11 @@ if [ "$sh_tests" ]; then
         fi
     done < <(find "$dir" -name "test.sh" -print0)
 
+    s() {
+        local count=$1
+        [ "$count" -gt 1 ] && echo -n s
+    }
+
     icon=✅
     sh_tests_not_run=$(("$sh_tests_total" - "$sh_tests_run"))
     sh_tests_failure=$(("$sh_tests_total" - "$sh_tests_success"))
@@ -49,7 +59,10 @@ if [ "$sh_tests" ]; then
         sh_tests_failed=true
         icon=❌
     fi
-    echo -n "$icon $sh_tests_total tests, $sh_tests_failure failures"
+    echo -n "$icon $sh_tests_total test" &&
+        s "$sh_tests_total"
+    echo -n ", $sh_tests_failure failure" &&
+        s "$sh_tests_failure"
     [ "$sh_tests_not_run" -ne 0 ] && echo -n ", $sh_tests_not_run not run"
     [ "$sh_tests_aborted" ] && echo -n ", testing aborted"
     echo
@@ -57,6 +70,7 @@ if [ "$sh_tests" ]; then
 fi
 
 if [ "$bats_tests" ]; then
+    header .bats
 
     # Install our own bats utilities.
     "$DOCKER_BASE"/.plugins/bats/install.sh
