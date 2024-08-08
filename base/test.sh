@@ -49,7 +49,7 @@ if [ "$sh_tests" ]; then
 
     s() {
         local count=$1
-        [ "$count" -gt 1 ] && echo -n s
+        [ "$count" -ne 1 ] && echo -n s
     }
 
     icon=✅
