@@ -47,9 +47,11 @@ if [ "$sh_tests" ]; then
         fi
     done < <(find "$dir" -name "test.sh" -print0)
 
-    s() {
+    num() {
         local count=$1
-        [ "$count" -ne 1 ] && echo -n s
+        local noun=$2
+        [ "$count" -ne 1 ] && local s=s
+        echo "$count $noun$s"
     }
 
     icon=✅
@@ -59,13 +61,13 @@ if [ "$sh_tests" ]; then
         sh_tests_failed=true
         icon=❌
     fi
-    echo -n "$icon $sh_tests_total test" &&
-        s "$sh_tests_total"
-    echo -n ", $sh_tests_failure failure" &&
-        s "$sh_tests_failure"
+
+    echo -n "$icon $(num "$sh_tests_total" test)"
+    echo -n ", $(num "$sh_tests_failure" failure)"
     [ "$sh_tests_not_run" -ne 0 ] && echo -n ", $sh_tests_not_run not run"
     [ "$sh_tests_aborted" ] && echo -n ", testing aborted"
     echo
+
     [ "$sh_tests_aborted" ] && exit 1
 fi
 
