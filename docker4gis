@@ -364,7 +364,6 @@ you mean base-component?"
     suggestion=$repo
     [ "$repo" = api ] && suggestion=postgrest
     [ "$repo" = app ] && suggestion=angular
-    [ "$repo" = dynamic ] && suggestion=serve
     component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $suggestion"
     [ "$action" = template ] || component_question="$component_question, n for none"
 
@@ -475,6 +474,9 @@ exported function abort_tests to prevent running any further tests.
 
 Then, any files named '*.bats' in the component's directory (and below) are run
 using the [bash automated testing system](https://www.npmjs.com/package/bats).
+
+If run with the optional FILE parameter, only the tests in that file are run. It
+should be a .bats file, or an executable .sh file.
 
 On \`$docker4gis_command build\`, all tests (considered to be 'unit tests') are
 run before starting the build. If any test fails, the build is cancelled.
@@ -727,7 +729,7 @@ function setup_file() {
 *)
     echo "Manage $docker4gis applications and their components and base components."
     echo "Usage: $docker4gis_command init | component | build [COMPONENT] | run |"
-    echo "  br [COMPONENT] | push [COMPONENT] | test [COMPONENT] | unbuild [COMPONENT] |"
+    echo "  br [COMPONENT] | push [COMPONENT] | test [FILE] | unbuild [COMPONENT] |"
     echo "  stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |"
     echo "  base | login [PASSWORD] [USER] | version | bump [push] | git-push | gp | bats"
     echo "  all EXECUTABLE|self [ARG...]"

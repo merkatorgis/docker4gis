@@ -1,10 +1,36 @@
 #!/bin/bash
 
+file=$1
+if [ "$file" ]; then
+    file=$(realpath "$file") || exit 1
+    if [ "$(basename "$file" .sh).sh" = "$(basename "$file")" ]; then
+        file_type='sh'
+    elif [ "$(basename "$file" .bats).bats" = "$(basename "$file")" ]; then
+        file_type='bats'
+    fi
+    [ "$file_type" ] ||
+        message="File must be .sh or .bats - $file"
+    [ -f "$file" ] ||
+        message="File not found - $file"
+    if [ "$file_type" = sh ]; then
+        [ -x "$file" ] ||
+            message=".sh file not executable - $file"
+    fi
+    [ "$message" ] &&
+        echo "$message" &&
+        exit 1
+fi
+
 run() {
     dir=$(realpath .)
 
-    sh_tests=$(find "$dir" -name "test.sh")
-    bats_tests=$(find "$dir" -name "*.bats")
+    if [ "$file" ]; then
+        [ "$file_type" = sh ] && sh_tests=$file
+        [ "$file_type" = bats ] && bats_tests=$file
+    else
+        sh_tests=$(find "$dir" -name "test.sh")
+        bats_tests=$(find "$dir" -name "*.bats")
+    fi
 
     test_type='unit'
     [ "$DOCKER_REPO" = package ] && test_type='integration'
@@ -89,9 +115,12 @@ run_tests() {
         fi
 
         # Run all bats tests.
-        if ! "$BATS" --recursive "$dir"; then
+        if [ "$file" ]; then
+            "$BATS" "$file"
+        else
+            "$BATS" --recursive "$dir"
+        fi ||
             bats_tests_failed=true
-        fi
 
         # Restore trace.
         if [ "$DOCKER4GIS_TRACE" ]; then
