@@ -147,8 +147,7 @@ push)
 	;;
 
 test)
-	dir "$@"
-	"$DOCKER_BASE/test.sh"
+	"$DOCKER_BASE/test.sh" "$@"
 	;;
 
 stop)
