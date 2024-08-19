@@ -45,7 +45,8 @@ log "Upgrading any templates"
 
 # (Re)build the image, to include any upgraded templates.
 log "Building the image"
-"$DOCKER4GIS_COMMAND" build "$@"
+# $DOCKER4GIS_COMMAND without quotes, since it can be a command with parameters.
+$DOCKER4GIS_COMMAND build "$@"
 
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 
