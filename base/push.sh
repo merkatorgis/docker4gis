@@ -45,7 +45,7 @@ log "Upgrading any templates"
 
 # (Re)build the image, to include any upgraded templates.
 log "Building the image"
-"$(dirname "$0")"/../docker4gis build "$@"
+"$DOCKER4GIS_COMMAND" build "$@"
 
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
 
