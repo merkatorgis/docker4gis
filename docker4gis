@@ -135,11 +135,17 @@ $steps" >"$file"
 }
 
 version() {
-    local pipeline=$1
-    if [ "$INSTALLED" ] || [ "$pipeline" = pipeline ]; then
-        node --print "require('$DOCKER_BASE/../package.json').version"
+    local local=$1
+    if [ "$local" = local ]; then
+        dotenv &&
+            echo "$DOCKER4GIS_VERSION"
     else
-        echo "$version_development"
+        local pipeline=$1
+        if [ "$INSTALLED" ] || [ "$pipeline" = pipeline ]; then
+            node --print "require('$DOCKER_BASE/../package.json').version"
+        else
+            echo "$version_development"
+        fi
     fi
 }
 
@@ -440,15 +446,15 @@ you mean base-component?"
     finish
     ;;
 
-build | run | br | push | test | unbuild | stop | geoserver)
-    [ "$action" = build ] && help "Build a new image for the application component in the current directory.
+build | b | run | r | br | push | p | test | t | unbuild | stop | geoserver)
+    [ "$action" = build ] || [ "$action" = b ] && help "Build a new image for the application component in the current directory.
 Or pass the name of a sibling directory to build that component there.
 
 For components other than the 'package' component, any/all (unit) tests are run
 before the build starts, and the build is cancelled if any test fails (see
 \`$DOCKER4GIS_COMMAND help test\`.)"
 
-    [ "$action" = run ] && help "Run the application.
+    [ "$action" = run ] || [ "$action" = r ] && help "Run the application.
 
 If a newer version of a component is found in a sibling component directory, the
 'package' component's directory is updated to run that newer version.
@@ -463,12 +469,12 @@ run (see \`$DOCKER4GIS_COMMAND help test\`.)"
     [ "$action" = br ] && help "First build, then run.
 Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT]\` from a sibling directory."
 
-    [ "$action" = push ] && help "Increment the component's version, build its image, push it to the Docker
+    [ "$action" = push ] || [ "$action" = p ] && help "Increment the component's version, build its image, push it to the Docker
 registry, commit and push git changes.
 Note that ideally, this is run by the Continuous Integration pipeline. If
 that's configured, refrain from running \`$DOCKER4GIS_COMMAND $action\` by hand."
 
-    [ "$action" = test ] && help "Run the component's tests.
+    [ "$action" = test ] || [ "$action" = t ] && help "Run the component's tests.
 First, any files named 'test.sh' in the component's directory (and below) are
 run. Exit from a test.sh with a non-zero code to indicate failure. Call the
 exported function abort_tests to prevent running any further tests.
@@ -550,8 +556,12 @@ base)
     echo "$DOCKER_BASE"
     ;;
 
-version)
-    help "Echo the $docker4gis version."
+version | v)
+    help "Echo the $docker4gis version.
+\`$DOCKER4GIS_COMMAND $action\` gives the version of that $docker4gis command
+itself.
+\`$DOCKER4GIS_COMMAND $action local\` gives the value of the
+\$DOCKER4GIS_VERSION variable in the current $docker4gis component directory."
 
     version "$@"
     ;;
@@ -562,7 +572,7 @@ login)
         DOCKER_USER=" ($DOCKER_USER)"
     }
     help "Log into the DOCKER_REGISTRY$DOCKER_REGISTRY.
-Usage: $DOCKER4GIS_COMMAND login [PASSWORD] [USER].
+Usage: $DOCKER4GIS_COMMAND $action [PASSWORD] [USER].
 Without PASSWORD, you'll be asked to type it.
 Default USER is the DOCKER_USER value$DOCKER_USER."
 
@@ -574,7 +584,7 @@ Default USER is the DOCKER_USER value$DOCKER_USER."
 
 alias)
     help "Create a shell alias for \`$default_docker4gis_command\`.
-Usage: $DOCKER4GIS_COMMAND alias [NAME]
+Usage: $DOCKER4GIS_COMMAND $action [NAME]
 Without NAME, you'll be asked to type one, or accept the default."
 
     # https://serverfault.com/a/146747
@@ -664,7 +674,7 @@ pipeline, and syncing a forked repo)."
 
 bump)
     help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
-Usage: $DOCKER4GIS_COMMAND bump [push|gp].
+Usage: $DOCKER4GIS_COMMAND $action [push|gp].
 With \`push\` (or \`gp\`), the change is committed in git in a new branch, that 
 is pushed to \`origin\`, ready to create a pull request. Locally, the new branch
 is deleted after switching back to the current branch, ready for fetching the
@@ -688,29 +698,40 @@ Integration pipeline, and syncing a forked repo)."
 
 all)
     help "Run something in each sibling $docker4gis directory.
-Usage: $DOCKER4GIS_COMMAND all EXECUTABLE [ARG...]
+Usage: $DOCKER4GIS_COMMAND $action EXECUTABLE [ARG...]
 If \`$DOCKER4GIS_COMMAND\` should be executed, use \`self\` instead, e.g.
-\`$DOCKER4GIS_COMMAND all self bump push\`"
+\`$DOCKER4GIS_COMMAND $action self bump push\`"
 
     # Run the given command in all sibling docker4gis component directories,
     # including the current one.
     for dir in ../*; do
-        (
+        # Test if this is a docker4gis component directory.
+        if (
             cd "$dir" || exit
             dotenv forgiving || exit
             echo
             realpath .
-            # Run the given command.
-            "$@"
-        )
+        ); then
+            # Now run the given command in that docker4gis component directory.
+            (
+                cd "$dir" || exit
+                "$@"
+            ) || error=true
+            # Record that we ran the command for at least one docker4gis
+            # component (note that we couldn't do this assignment from inside a
+            # subshell, which is why we have two steps for "check" and "run").
+            any=true
+        fi
     done
+    # Reflect that we ran something, and that every run was successful.
+    [ "$any" ] && ! [ "$error" ]
     ;;
 
 bats)
     default_file=./test.bats
     help "Create a new file in the current directory, that calls the generic bats helper
 ($DOCKER_BASE/.plugins/bats/helper.bash).
-Usage: $DOCKER4GIS_COMMAND bats [FILE]
+Usage: $DOCKER4GIS_COMMAND $action [FILE]
 The deault FILE is $default_file."
 
     file=${1:-$default_file}
@@ -729,12 +750,12 @@ function setup_file() {
 
 *)
     echo "Manage $docker4gis applications and their components and base components."
-    echo "Usage: $DOCKER4GIS_COMMAND init | component | build [COMPONENT] | run |"
-    echo "  br [COMPONENT] | push [COMPONENT] | test [FILE] | unbuild [COMPONENT] |"
+    echo "Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |"
+    echo "  br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |"
     echo "  stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |"
-    echo "  base | login [PASSWORD] [USER] | version | bump [push] | git-push | gp | bats"
-    echo "  all EXECUTABLE|self [ARG...]"
-    echo "Note that build, run, br, push, test, stop, and geoserver run with the"
+    echo "  base | login [PASSWORD] [USER] | version|v [local] | bump [push] |"
+    echo "  git-push|gp [BRANCH_NAME...] | bats | all EXECUTABLE|self [ARG...]"
+    echo "Note that build, run, br, push, test, stop, unbuild, and geoserver run with the"
     echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
     echo "For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND."
     echo "For debugging (tracing all shell commands):"
