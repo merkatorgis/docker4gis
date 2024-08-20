@@ -541,6 +541,11 @@ container, to the geoserver component repository in the current directory."
         export DOCKER4GIS_VERSION=$version_development
     fi
 
+    [ "$action" = b ] && action=build
+    [ "$action" = r ] && action=run
+    [ "$action" = p ] && action=push
+    [ "$action" = t ] && action='test'
+
     "$DOCKER_BASE/main.sh" . "$action" "$@"
     ;;
 
