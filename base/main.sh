@@ -105,7 +105,7 @@ dir() {
 
 case "$action" in
 
-build | b)
+build)
 	dir "$@"
 	if [ "$DOCKER_REPO" = package ] || this test; then
 		"$DOCKER_BASE/.docker4gis/docker4gis/build.sh" "$@"
@@ -121,7 +121,7 @@ unbuild)
 	docker image rm -f "$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO:latest"
 	;;
 
-run | r)
+run)
 	dir package "$@"
 	tag=$1
 	if [ "$tag" ]; then
@@ -141,12 +141,12 @@ br)
 		this run
 	;;
 
-push | p)
+push)
 	dir "$@"
 	"$DOCKER_BASE/push.sh" "$@"
 	;;
 
-test | t)
+test)
 	"$DOCKER_BASE/test.sh" "$@"
 	;;
 
