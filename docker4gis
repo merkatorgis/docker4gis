@@ -66,39 +66,47 @@ package_json() {
 }
 
 pipeline() {
-    local main=$1
-
+    local main=main
+    local steps
     write() {
         local file=$1
-        local steps=$2
+
         local trigger=$main
         local pr=none
+        local stage=ci_stage
+        local job=ci_job
         [ "$file" = "$build_validation" ] && {
             trigger=none
             pr=$main
+            stage=pr_stage
+            job=pr_job
         }
 
-        login() {
-            if [ "$file" = "$continuous_integration" ]; then
-                echo
-                if [ "$action" = 'base-component' ]; then
-                    git_repo=$(basename "$(realpath .)")
-                    echo "- script: |"
-                    echo "    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
-                else
-                    echo "- checkout: self"
-                    echo "  persistCredentials: 'true'"
-                fi
-                echo "  displayName: 'git login'"
-            fi
-            if [ "$file" = "$continuous_integration" ] || [ "$action" = 'init' ]; then
-                echo
-                echo "- script: |"
-                echo "    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
-                echo "  displayName: 'docker login'"
-                echo '#'
-            fi
+        loginstep() {
+            local git_repo
+            git_repo=$(basename "$(realpath .)")
+            local git_login_step="
+- checkout: self
+  persistCredentials: 'true'"
+            [ "$file" = "$continuous_integration" ] && git_login_step="
+- bash: |
+    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
+            git_login_step+="
+  displayName: 'git login'
+"
+            echo
+            echo "$git_login_step"
+
+            [ "$file" = "$continuous_integration" ] || [ "$action" = 'init' ] &&
+                echo "
+- bash: |
+    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
+  displayName: 'docker login'
+"
         }
+        steps=$(loginstep)$steps
+        # Prepend with the correct number of spaces:
+        steps=$(echo "$steps" | awk '{print "    " $0}')
 
         echo "trigger:
 - $trigger
@@ -106,32 +114,79 @@ pipeline() {
 pr:
 - $pr
 
-pool:
-  vmImage: ubuntu-latest
-
-steps:$(login)
-$steps" >"$file"
+stages:
+- stage: $stage
+  jobs:
+  - job: $job
+    steps:$steps" >"$file"
     }
 
-    local build_validation=azure-pipeline-build-validation.yml
-    write "$build_validation" "- script: |
+    local build_step="
+- bash: |
     $default_docker4gis_command build
-  displayName: '$docker4gis build'"
+  displayName: '$docker4gis build'
+"
+    [ "$action" = 'init' ] && build_step+="
+- bash: |
+    echo '' | $default_docker4gis_command run latest
+  displayName: 'run app and integration tests'
+"
+
+    local build_validation=azure-pipeline-build-validation.yml
+    steps=$build_step
+    write "$build_validation"
+
+    local push_step="
+- bash: |
+    $default_docker4gis_command push
+  displayName: '$docker4gis push'
+"
+    [ "$action" = 'init' ] && push_step=$build_step$push_step && push_step+="
+- bash: |
+    DOCKER4GIS_VERSION=v\$(node --print \"require('./package.json').version\")
+    echo \"##vso[task.setvariable variable=DOCKER4GIS_VERSION;isOutput=true]\$DOCKER4GIS_VERSION\"
+  displayName: 'set DOCKER4GIS_VERSION'
+  name: docker4gis_version_step
+"
 
     local continuous_integration=azure-pipeline-continuous-integration.yml
-    write "$continuous_integration" "- script: |
+    steps="
+- bash: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
 
-- script: |
+- bash: |
     git checkout -b $main
     git push --set-upstream origin $main
   displayName: 'git undo detached state'
-  
-- script: |
-    $default_docker4gis_command push
-  displayName: '$docker4gis push'"
+"$push_step
+    write "$continuous_integration"
+
+    [ "$action" = 'init' ] && echo "
+# - stage: deploy_stage
+#   # Maybe you'll need to set up a custom pool that runs from a location that is
+#   # whitelisted in your target servers' firewalls.
+#   # pool: VPN Agent
+#   jobs:
+#   - deployment: deploy_job
+#     environment: TEST
+#     variables:
+#       DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: SSH@0
+#             inputs:
+#               sshEndpoint: 'TEST'
+#               runOptions: 'inline'
+#               inline: |
+#                 cd /opt/docker4gis/$DOCKER_USER
+#                 echo \"\$(date -Iseconds) \$(DOCKER4GIS_VERSION)\" >> pipeline.log
+#                 echo '' | ./$DOCKER_USER.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1
+#               readyTimeout: '20000'
+" >>"$continuous_integration"
 }
 
 version() {
@@ -217,7 +272,7 @@ application's components (using \`$DOCKER4GIS_COMMAND component\`)."
 
     [ "$DOCKER_REGISTRY" ] && shift 1
     [ "$DOCKER_REGISTRY" ] || read -rp \
-        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " \
+        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com) : " \
         DOCKER_REGISTRY
     [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
     [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
@@ -261,8 +316,8 @@ POSTFIX_DOMAIN=" >>.env
     echo "$DOCKER_USER".log >>.gitignore
 
     package_json
-    pipeline main
-    bash -i "$0" alias TEST
+    pipeline
+    [ "$ALIAS_NAME" ] || bash -i "$0" alias TEST
     ;;
 
 component | base-component | template)
@@ -330,7 +385,7 @@ DOCKER_REPO=$repo" >>.env
         replace_component
 
         write_dotenv
-        pipeline main
+        pipeline
         # And we're done!
         finish
     }
@@ -389,7 +444,7 @@ you mean base-component?"
         # Creating a component _not_ extending a docker4gis base component.
         cp -r "$DOCKER_BASE"/template/. .
         rm -rf template
-        pipeline main
+        pipeline
     }
 
     [ "$action" = template ] || [ "$component" = n ] && {
@@ -400,7 +455,7 @@ you mean base-component?"
 
     # Creating a component extending a docker4gis base component.
 
-    pipeline main
+    pipeline
 
     [ "$interactive" ] && {
         [ "$tag" ] || read -rp \
@@ -605,16 +660,11 @@ Without NAME, you'll be asked to type one, or accept the default."
 
     test=$1
     [ "$test" = 'TEST' ] && {
-        shift 1
-        if [ "$("$dg" "$docker4gis" 2>/dev/null)" = "$docker4gis" ]; then
+        answer=
+        read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
+        [ "$answer" ] || answer=y
+        if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
             exit 0
-        else
-            answer=
-            read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
-            [ "$answer" ] || answer=y
-            if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
-                exit 0
-            fi
         fi
     }
 

@@ -148,8 +148,9 @@ add_repo() {
             (
                 cd \"\$dotdocker4gis\"
                 docker4gis/run.sh '$repo' '$tag'
-            )
+            ) && result=\$?
             rm -rf \$temp
+            [ \"\$result\" = 0 ] || exit \"\$result\"
             echo
         "
     else
