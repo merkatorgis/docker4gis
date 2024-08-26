@@ -69,7 +69,9 @@ pipeline() {
     local main=main
 
     local is_package
-    [ "$action" = 'init' ] && is_package=true
+    [ "$action" = init ] && is_package=true
+
+    local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
 
     local steps
 
@@ -82,30 +84,32 @@ pipeline() {
         local trigger=none
         local pr=$main
         local stage=pr_stage
+        local stage_display_name='Pull Request stage'
         local job=pr_job
+        local job_display_name='Pull Request job'
         local login_steps=""
 
         [ "$file" = "$continuous_integration" ] && {
             trigger=$main
             pr=none
             stage=ci_stage
+            stage_display_name='Continuous Integration stage'
             job=ci_job
-            if [ "$action" = 'base-component' ]; then
+            job_display_name='Continuous Integration job'
+            if [ "$action" = base-component ]; then
                 # We're on GitHub, in a docker4gis base component's repo.
                 local git_repo
                 git_repo=$(basename "$(realpath .)")
-                login_steps="
-- bash: |
+                login_steps="- bash: |
     git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
             else
                 # We're on Azure DevOps, in a concrete application component's
                 # git repo.
-                login_steps="
-- checkout: self
-  persistCredentials: 'true'"
+                login_steps="- checkout: self
+  persistCredentials: true"
             fi
             login_steps+="
-  displayName: 'git login'
+  displayName: Git login
   "
         }
 
@@ -114,10 +118,11 @@ pipeline() {
         # Continuous Integration pipelines need to log into the docker registry
         # for pushing the resulting new image version.
         if [ "$is_package" ] || [ "$file" = "$continuous_integration" ]; then
-            login_steps+="
-- bash: |
-    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY
-  displayName: 'docker login'
+            [ "$login_steps" ] && login_steps+="
+"
+            login_steps+="- bash: |
+    $docker_login_command
+  displayName: Docker login
   "
         fi
 
@@ -140,9 +145,12 @@ pr:
 
 stages:
 - stage: $stage
+  displayName: $stage_display_name
   jobs:
   - job: $job
-    steps:$steps" >"$file"
+    displayName: $job_display_name
+    steps:
+$steps" >"$file"
 
         # write - End of function.
     }
@@ -152,14 +160,14 @@ stages:
     steps="
 - bash: |
     $default_docker4gis_command build
-  displayName: '$docker4gis build'"
+  displayName: $docker4gis build"
 
     # For a package image, also run the application and any integration tests.
     [ "$is_package" ] && steps+="
 
 - bash: |
     echo '' | $default_docker4gis_command run latest
-  displayName: 'run app and integration tests'"
+  displayName: Run app and integration tests"
 
     # Write the file.
     local build_validation=azure-pipeline-build-validation.yml
@@ -174,12 +182,12 @@ stages:
 - bash: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
-  displayName: 'git config'
+  displayName: Git config
 
 - bash: |
     git checkout -b $main
     git push --set-upstream origin $main
-  displayName: 'git undo detached state'
+  displayName: Git undo detached state
 "
 
     # For a package image, build, run, and test as a validation for the push
@@ -191,7 +199,7 @@ stages:
     steps+="
 - bash: |
     $default_docker4gis_command push
-  displayName: '$docker4gis push'"
+  displayName: $docker4gis push"
 
     # For a package image, set the DOCKER4GIS_VERSION variable for use in the
     # deployment stage.
@@ -200,7 +208,7 @@ stages:
 - bash: |
     DOCKER4GIS_VERSION=v\$(node --print \"require('./package.json').version\")
     echo \"##vso[task.setvariable variable=DOCKER4GIS_VERSION;isOutput=true]\$DOCKER4GIS_VERSION\"
-  displayName: 'set DOCKER4GIS_VERSION variable for deploy stage'
+  displayName: Set DOCKER4GIS_VERSION variable for deploy stage
   name: docker4gis_version_step"
 
     # Write the file.
@@ -215,13 +223,15 @@ stages:
 # stage, AND on a Service Connection (of type \"SSH\") named TEST (see the
 # \"sshEndpoint\" attribute) being configured in the Project. Note that the inline
 # script must not write anything to stderr, or the pipeline will fail (hence the
-# \"2>&1\" at the end).
+# \"2>&1\" at the end of certain lines).
 # - stage: deploy_stage
+#   displayName: Deploy stage
 #   # Maybe you need to set up a custom pool, with an agent that runs from a
 #   # location that is whitelisted in your target servers' firewalls.
 #   # pool: VPN Agent
 #   jobs:
 #   - deployment: deploy_job
+#     displayName: Deploy job
 #     environment: TEST
 #     variables:
 #       DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
@@ -231,13 +241,20 @@ stages:
 #           steps:
 #           - task: SSH@0
 #             inputs:
-#               sshEndpoint: 'TEST'
-#               runOptions: 'inline'
+#               sshEndpoint: TEST
+#               runOptions: inline
 #               inline: |
-#                 cd /opt/docker4gis/$DOCKER_USER
-#                 echo \"\$(date -Iseconds) \$(DOCKER4GIS_VERSION)\" >> pipeline.log
-#                 echo '' | ./$DOCKER_USER.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1
-#               readyTimeout: '20000'" >>"$continuous_integration"
+#                 # Log into the Docker registry.
+#                 $docker_login_command 2>&1 &&
+#                     # Go to the application's directory.
+#                     cd /opt/docker4gis/$DOCKER_USER &&
+#                     # Log at what time the pipeline started deploying which version.
+#                     echo -n \"\$(date -Iseconds) \$(DOCKER4GIS_VERSION) \" >> pipeline.log &&
+#                     # Start the new version of the application.
+#                     echo '' | ./$DOCKER_USER.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1 &&
+#                     # Log result code.
+#                     echo \"\$?\" >> pipeline.log
+#               readyTimeout: 20000" >>"$continuous_integration"
     # pipeline - End of function.
 }
 
