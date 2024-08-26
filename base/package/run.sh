@@ -15,6 +15,10 @@ fi
 
 log=$(realpath "$DOCKER_USER".log)
 
+# Tee all stdout & stderr to a log file (from
+# https://superuser.com/a/212436/462952).
+exec > >(tee "$log") 2>&1
+
 echo "
 $(date)
 
@@ -50,20 +54,22 @@ POSTFIX_DOMAIN=$POSTFIX_DOMAIN
 
 OSM_THREADS=$OSM_THREADS
 OSM_CACHE_MB=$OSM_CACHE_MB
-" | tee -a "$log"
+"
 
 read -rn 1 -p "Press any key to continue..."
 
 echo "
 Executing $DOCKER_REGISTRY$DOCKER_USER/package:$tag
-" | tee -a "$log"
+"
 
 temp=$(mktemp -d)
 container=$(docker container create "$DOCKER_REGISTRY/$DOCKER_USER/package:$tag")
 docker container cp "$container":/.docker4gis "$temp"
 docker container rm "$container" >/dev/null
-"$temp"/.docker4gis/run.sh | tee -a "$log"
+"$temp"/.docker4gis/run.sh && result=$?
 rm -rf "$temp"
 
-echo "$(docker container ls)" | tee -a "$log"
+echo "$(docker container ls)"
+
+[ "$result" = 0 ]
 '

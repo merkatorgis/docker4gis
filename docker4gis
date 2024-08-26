@@ -66,39 +66,76 @@ package_json() {
 }
 
 pipeline() {
-    local main=$1
+    local main=main
+
+    local is_package
+    [ "$action" = init ] && is_package=true
+
+    local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
+
+    local steps
 
     write() {
+        # Either $build_validation or $continuous_integration.
         local file=$1
-        local steps=$2
-        local trigger=$main
-        local pr=none
-        [ "$file" = "$build_validation" ] && {
-            trigger=none
-            pr=$main
+
+        # write - 1. Initialise variables.
+
+        local trigger=none
+        local pr=$main
+        local stage=pr_stage
+        local stage_display_name='Pull Request stage'
+        local job=pr_job
+        local job_display_name='Pull Request job'
+        local login_steps=""
+
+        [ "$file" = "$continuous_integration" ] && {
+            trigger=$main
+            pr=none
+            stage=ci_stage
+            stage_display_name='Continuous Integration stage'
+            job=ci_job
+            job_display_name='Continuous Integration job'
+            if [ "$action" = base-component ]; then
+                # We're on GitHub, in a docker4gis base component's repo.
+                local git_repo
+                git_repo=$(basename "$(realpath .)")
+                login_steps="- bash: |
+    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
+            else
+                # We're on Azure DevOps, in a concrete application component's
+                # git repo.
+                login_steps="- checkout: self
+  persistCredentials: true"
+            fi
+            login_steps+="
+  displayName: Git login
+  "
         }
 
-        login() {
-            if [ "$file" = "$continuous_integration" ]; then
-                echo
-                if [ "$action" = 'base-component' ]; then
-                    git_repo=$(basename "$(realpath .)")
-                    echo "- script: |"
-                    echo "    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
-                else
-                    echo "- checkout: self"
-                    echo "  persistCredentials: 'true'"
-                fi
-                echo "  displayName: 'git login'"
-            fi
-            if [ "$file" = "$continuous_integration" ] || [ "$action" = 'init' ]; then
-                echo
-                echo "- script: |"
-                echo "    echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
-                echo "  displayName: 'docker login'"
-                echo '#'
-            fi
-        }
+        # The build of a Package image verifies that all component images are
+        # available at the docker registry, for which it needs to log in. All
+        # Continuous Integration pipelines need to log into the docker registry
+        # for pushing the resulting new image version.
+        if [ "$is_package" ] || [ "$file" = "$continuous_integration" ]; then
+            [ "$login_steps" ] && login_steps+="
+"
+            login_steps+="- bash: |
+    $docker_login_command
+  displayName: Docker login
+  "
+        fi
+
+        # write - 2. Collect and format the steps.
+
+        # Prepend global steps with login_steps.
+        local steps=$login_steps$steps
+
+        # Prepend (local) steps with the correct number of spaces:
+        steps=$(echo "$steps" | awk '{print "    " $0}')
+
+        # write - 3. Write the pipeline file, with the formatted steps in a
+        # first job of a first stage.
 
         echo "trigger:
 - $trigger
@@ -106,32 +143,119 @@ pipeline() {
 pr:
 - $pr
 
-pool:
-  vmImage: ubuntu-latest
-
-steps:$(login)
+stages:
+- stage: $stage
+  displayName: $stage_display_name
+  jobs:
+  - job: $job
+    displayName: $job_display_name
+    steps:
 $steps" >"$file"
+
+        # write - End of function.
     }
 
-    local build_validation=azure-pipeline-build-validation.yml
-    write "$build_validation" "- script: |
-    $default_docker4gis_command build
-  displayName: '$docker4gis build'"
+    # pipeline - 1. Write the Build Validation pipeline.
 
-    local continuous_integration=azure-pipeline-continuous-integration.yml
-    write "$continuous_integration" "- script: |
+    steps="
+- bash: |
+    $default_docker4gis_command build
+  displayName: $docker4gis build"
+
+    # For a package image, also run the application and any integration tests.
+    [ "$is_package" ] && steps+="
+
+- bash: |
+    echo '' | $default_docker4gis_command run latest
+  displayName: Run app and integration tests"
+
+    # Write the file.
+    local build_validation=azure-pipeline-build-validation.yml
+    write "$build_validation"
+
+    # pipeline - 2. Write the Continuous Integration pipeline.
+
+    # Save the current steps.
+    local build_steps=$steps
+
+    steps="
+- bash: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
-  displayName: 'git config'
+  displayName: Git config
 
-- script: |
+- bash: |
     git checkout -b $main
     git push --set-upstream origin $main
-  displayName: 'git undo detached state'
-  
-- script: |
+  displayName: Git undo detached state
+"
+
+    # For a package image, build, run, and test as a validation for the push
+    # action.
+    [ "$is_package" ] && steps+="$build_steps
+"
+
+    # Bump, build, push, tag, and commit the new version.
+    steps+="
+- bash: |
     $default_docker4gis_command push
-  displayName: '$docker4gis push'"
+  displayName: $docker4gis push"
+
+    # For a package image, set the DOCKER4GIS_VERSION variable for use in the
+    # deployment stage.
+    [ "$is_package" ] && steps+="
+
+- bash: |
+    DOCKER4GIS_VERSION=v\$(node --print \"require('./package.json').version\")
+    echo \"##vso[task.setvariable variable=DOCKER4GIS_VERSION;isOutput=true]\$DOCKER4GIS_VERSION\"
+  displayName: Set DOCKER4GIS_VERSION variable for deploy stage
+  name: docker4gis_version_step"
+
+    # Write the file.
+    local continuous_integration=azure-pipeline-continuous-integration.yml
+    write "$continuous_integration"
+
+    # For a package image, append a (commented-out) stage with a job deploying
+    # the new version to the TEST environment.
+    [ "$is_package" ] && echo "
+# Uncomment the deploy_stage to have the pipeline deploy automatically to the
+# TEST environment. This depends on docker4gis_version_step in the preceding
+# stage, AND on a Service Connection (of type \"SSH\") named TEST (see the
+# \"sshEndpoint\" attribute) being configured in the Project. Note that the inline
+# script must not write anything to stderr, or the pipeline will fail (hence the
+# \"2>&1\" at the end of certain lines).
+# - stage: deploy_stage
+#   displayName: Deploy stage
+#   # Maybe you need to set up a custom pool, with an agent that runs from a
+#   # location that is whitelisted in your target servers' firewalls.
+#   # pool: VPN Agent
+#   jobs:
+#   - deployment: deploy_job
+#     displayName: Deploy job
+#     environment: TEST
+#     variables:
+#       DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: SSH@0
+#             inputs:
+#               sshEndpoint: TEST
+#               runOptions: inline
+#               inline: |
+#                 # Log into the Docker registry.
+#                 $docker_login_command 2>&1 &&
+#                     # Go to the application's directory.
+#                     cd /opt/docker4gis/$DOCKER_USER &&
+#                     # Log at what time the pipeline started deploying which version.
+#                     echo -n \"\$(date -Iseconds) \$(DOCKER4GIS_VERSION) \" >> pipeline.log &&
+#                     # Start the new version of the application.
+#                     echo '' | ./$DOCKER_USER.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1 &&
+#                     # Log result code.
+#                     echo \"\$?\" >> pipeline.log
+#               readyTimeout: 20000" >>"$continuous_integration"
+    # pipeline - End of function.
 }
 
 version() {
@@ -217,7 +341,7 @@ application's components (using \`$DOCKER4GIS_COMMAND component\`)."
 
     [ "$DOCKER_REGISTRY" ] && shift 1
     [ "$DOCKER_REGISTRY" ] || read -rp \
-        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com : " \
+        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com) : " \
         DOCKER_REGISTRY
     [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
     [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
@@ -261,8 +385,8 @@ POSTFIX_DOMAIN=" >>.env
     echo "$DOCKER_USER".log >>.gitignore
 
     package_json
-    pipeline main
-    bash -i "$0" alias TEST
+    pipeline
+    [ "$ALIAS_NAME" ] || bash -i "$0" alias TEST
     ;;
 
 component | base-component | template)
@@ -330,7 +454,7 @@ DOCKER_REPO=$repo" >>.env
         replace_component
 
         write_dotenv
-        pipeline main
+        pipeline
         # And we're done!
         finish
     }
@@ -389,7 +513,7 @@ you mean base-component?"
         # Creating a component _not_ extending a docker4gis base component.
         cp -r "$DOCKER_BASE"/template/. .
         rm -rf template
-        pipeline main
+        pipeline
     }
 
     [ "$action" = template ] || [ "$component" = n ] && {
@@ -400,7 +524,7 @@ you mean base-component?"
 
     # Creating a component extending a docker4gis base component.
 
-    pipeline main
+    pipeline
 
     [ "$interactive" ] && {
         [ "$tag" ] || read -rp \
@@ -605,16 +729,11 @@ Without NAME, you'll be asked to type one, or accept the default."
 
     test=$1
     [ "$test" = 'TEST' ] && {
-        shift 1
-        if [ "$("$dg" "$docker4gis" 2>/dev/null)" = "$docker4gis" ]; then
+        answer=
+        read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
+        [ "$answer" ] || answer=y
+        if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
             exit 0
-        else
-            answer=
-            read -rp "Create an alias for \`$default_docker4gis_command\`? [Yn] " answer
-            [ "$answer" ] || answer=y
-            if ! [ "$answer" = 'y' ] && ! [ "$answer" = 'Y' ]; then
-                exit 0
-            fi
         fi
     }
 
