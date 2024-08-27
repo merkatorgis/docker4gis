@@ -100,17 +100,20 @@ pipeline() {
                 # We're on GitHub, in a docker4gis base component's repo.
                 local git_repo
                 git_repo=$(basename "$(realpath .)")
-                login_steps="- bash: |
-    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git"
+                login_steps="
+- bash: |
+    git remote set-url origin https://merkatorgis:\$(GITHUB_PASSWORD)@github.com/merkatorgis/$git_repo.git
+"
             else
                 # We're on Azure DevOps, in a concrete application component's
                 # git repo.
-                login_steps="- checkout: self
-  persistCredentials: true"
+                login_steps="
+- checkout: self
+  persistCredentials: true
+"
             fi
-            login_steps+="
-  displayName: Git login
-  "
+            login_steps+="  displayName: Git login
+"
         }
 
         # The build of a Package image verifies that all component images are
@@ -118,18 +121,20 @@ pipeline() {
         # Continuous Integration pipelines need to log into the docker registry
         # for pushing the resulting new image version.
         if [ "$is_package" ] || [ "$file" = "$continuous_integration" ]; then
-            [ "$login_steps" ] && login_steps+="
-"
-            login_steps+="- bash: |
+            login_steps+="
+- bash: |
     $docker_login_command
   displayName: Docker login
-  "
+"
         fi
 
         # write - 2. Collect and format the steps.
 
         # Prepend global steps with login_steps.
         local steps=$login_steps$steps
+
+        # Trim the leading newline.
+        steps=${steps#$'\n'}
 
         # Prepend (local) steps with the correct number of spaces:
         steps=$(echo "$steps" | awk '{print "    " $0}')
