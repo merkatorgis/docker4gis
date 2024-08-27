@@ -219,9 +219,9 @@ $steps" >"$file"
     # the new version to the TEST environment.
     [ "$is_package" ] && echo "
 # Uncomment the deploy_stage to have the pipeline deploy automatically to the
-# TEST environment. This depends on docker4gis_version_step in the preceding
+# TEST environment. This depends on the docker4gis_version_step in the preceding
 # stage, AND on a Service Connection (of type \"SSH\") named TEST (see the
-# \"sshEndpoint\" attribute) being configured in the Project. Note that the inline
+# \"sshEndpoint\" attribute) configured in the Project. Note that the inline
 # script must not write anything to stderr, or the pipeline will fail (hence the
 # \"2>&1\" at the end of certain lines).
 # - stage: deploy_stage
