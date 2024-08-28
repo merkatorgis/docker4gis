@@ -402,7 +402,6 @@ POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
     mkdir -p components
-    echo "$DOCKER_USER".log >>.gitignore
 
     package_json
     pipeline
@@ -893,11 +892,15 @@ function setup_file() {
     ;;
 
 rename)
-    help "Change the value of DOCKER_USER in each component's \`.env\` file.
-Specifically useful when starting from a docker4gis-template project."
+    help "Change the value of DOCKER_USER in each file in each component.
+Particularly useful when starting from a docker4gis-template project."
+
+    dotenv
+    old_docker_user=$DOCKER_USER
 
     set_docker_user "$1"
-    self all sed -i "s|\bDOCKER_USER=.*|DOCKER_USER=$DOCKER_USER|g" .env
+    self all find . -type f \
+        -exec sed -i "s|\b$old_docker_user\b|$DOCKER_USER|g" {} \;
     ;;
 
 *)
