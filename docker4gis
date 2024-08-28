@@ -339,6 +339,20 @@ remote_branch_name_available() {
         fi
 }
 
+set_docker_user() {
+    DOCKER_USER=$1
+    [ "$DOCKER_USER" ] && return
+
+    local suggestion
+    suggestion=$(basename "$(realpath ..)")
+
+    local prompt="Enter the application's name (the \"user\" in the Docker "
+    prompt+="registry; default is $suggestion)"
+
+    read -rp "$prompt : " DOCKER_USER
+    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
+}
+
 case "$action" in
 
 init)
@@ -357,11 +371,7 @@ application's components (using \`$DOCKER4GIS_COMMAND component\`)."
     [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
     [ "$DOCKER_USER" ] && shift 1
-    suggestion=$(basename "$(realpath ..)")
-    [ "$DOCKER_USER" ] || read -rp \
-        "Enter the application's name (the \"user\" in the Docker registry; default is $suggestion) : " \
-        DOCKER_USER
-    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
+    set_docker_user "$DOCKER_USER"
 
     echo "DOCKER4GIS_VERSION=$(version)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
@@ -882,18 +892,27 @@ function setup_file() {
 " >"$file"
     ;;
 
+rename)
+    help "Change the value of DOCKER_USER in each component's \`.env\` file.
+Specifically useful when starting from a docker4gis-template project."
+
+    set_docker_user "$1"
+    self all sed -i "s|\bDOCKER_USER=.*|DOCKER_USER=$DOCKER_USER|g" .env
+    ;;
+
 *)
-    echo "Manage $docker4gis applications and their components and base components."
-    echo "Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |"
-    echo "  br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |"
-    echo "  stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |"
-    echo "  base | login [PASSWORD] [USER] | version|v [local] | bump [push] |"
-    echo "  git-push|gp [BRANCH_NAME...] | bats | all EXECUTABLE|self [ARG...]"
-    echo "Note that build, run, br, push, test, stop, unbuild, and geoserver run with the"
-    echo "  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env."
-    echo "For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND."
-    echo "For debugging (tracing all shell commands):"
-    echo "  $DOCKER4GIS_COMMAND trace COMMAND [ARG...]"
-    echo "  output is saved in $log_path."
+    echo "Manage $docker4gis applications and their components and base components.
+Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |
+  br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |
+  stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |
+  base | login [PASSWORD] [USER] | version|v [local] | bump [push] |
+  git-push|gp [BRANCH_NAME...] | bats | rename [NAME] |
+  all EXECUTABLE|self [ARG...]
+Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
+  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
+For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
+For debugging (tracing all shell commands):
+  $DOCKER4GIS_COMMAND trace COMMAND [ARG...]
+  output is saved in $log_path."
     ;;
 esac
