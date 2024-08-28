@@ -899,7 +899,8 @@ Particularly useful when starting from a docker4gis-template project."
     old_docker_user=$DOCKER_USER
 
     set_docker_user "$1"
-    self all find . -type f \
+    # Exclude any `.git` directory; https://stackoverflow.com/a/4210072/2389922.
+    self all find . -type d -name .git -prune -false -o -type f \
         -exec sed -i "s|\b$old_docker_user\b|$DOCKER_USER|g" {} \;
     ;;
 
