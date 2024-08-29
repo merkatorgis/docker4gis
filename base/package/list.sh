@@ -97,7 +97,10 @@ if ls "$temp_components"/* >/dev/null 2>&1; then
 fi
 mkdir -p "$components"
 
-ls "$components"/* >/dev/null 2>&1 || error "nothing to run"
+if ! ls "$components"/* >/dev/null 2>&1; then
+    echo "Zero components." >&2
+    finish 127
+fi
 
 local_image_exists() {
     docker image tag "$1" "$1" >/dev/null 2>&1
