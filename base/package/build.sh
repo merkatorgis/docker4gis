@@ -11,9 +11,13 @@ DOCKER_USER=$DOCKER_USER
 mkdir -p conf
 
 finish() {
+    local exit_code=${1:-0}
+    [ "$exit_code" = 127 ] && exit_code=0
+
     rm -rf conf
     [ "$extension" ] && [ -f Dockerfile ] && rm Dockerfile
-    exit "${1:-0}"
+
+    exit "$exit_code"
 }
 
 [ "$extension" ] && {
@@ -26,7 +30,7 @@ finish() {
     # echo 'find .' >>"$runscript"
     chmod +x "$runscript"
     here=$(realpath "$(dirname "$0")")
-    BASE='' "$here"/list.sh >>"$runscript" || finish 1
+    BASE='' "$here"/list.sh >>"$runscript" || finish "$?"
     if [ "$DOCKER4GIS_VERSION" = latest ]; then
         # This would just be a debugging/testing situation.
         tag=latest
