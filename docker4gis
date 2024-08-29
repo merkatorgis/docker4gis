@@ -353,6 +353,32 @@ set_docker_user() {
     [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 }
 
+rename() {
+    old_docker_user=$1
+    new_docker_user=$2
+
+    find_no_git() {
+        # Use -prune to to exclude any `.git` directory;
+        # https://stackoverflow.com/a/4210072/2389922.
+        dir=$1
+        shift 1
+        find "$dir" -type d -name .git -prune -false -o "$@"
+    }
+
+    for old_docker_user in "$old_docker_user" '{{DOCKER_USER}}'; do
+        # Replace text in files.
+        find_no_git . -type f \
+            -exec sed -i "s|\b$old_docker_user\b|$new_docker_user|g" {} \;
+
+        # Rename files and directories. See
+        # https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
+        while IFS= read -r -d '' file; do
+            file=$(realpath "$file")
+            mv "$file" "$(dirname "$file")/$new_docker_user"
+        done < <(find_no_git . -name "$old_docker_user" -print0)
+    done
+}
+
 case "$action" in
 
 init)
@@ -586,6 +612,7 @@ you mean base-component?"
     fi
     cp -r ./template/"$template"/. .
     rm -rf ./template
+    rename '{{DOCKER_USER}}' "$DOCKER_USER"
     finish
     ;;
 
@@ -895,13 +922,18 @@ rename)
     help "Change the value of DOCKER_USER in each file in each component.
 Particularly useful when starting from a docker4gis-template project."
 
-    dotenv
-    old_docker_user=$DOCKER_USER
+    local=----local----
 
-    set_docker_user "$1"
-    # Exclude any `.git` directory; https://stackoverflow.com/a/4210072/2389922.
-    self all find . -type d -name .git -prune -false -o -type f \
-        -exec sed -i "s|\b$old_docker_user\b|$DOCKER_USER|g" {} \;
+    if [ "$1" = "$local" ]; then
+        rename "$2" "$3"
+    else
+        dotenv
+        old_docker_user=$DOCKER_USER
+
+        set_docker_user "$1"
+
+        self all "$0" rename "$local" "$old_docker_user" "$DOCKER_USER"
+    fi
     ;;
 
 *)
