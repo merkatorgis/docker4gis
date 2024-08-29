@@ -477,20 +477,15 @@ DOCKER_REPO=$repo" >>.env
 
     package_json
 
-    suggestion=$(basename "$(realpath "$PWD")")
+    repo=$(basename "$(realpath "$PWD")")
     # Without a possible `docker4gis-` prefix.
-    suggestion=${suggestion#"$docker4gis"-}
+    repo=${repo#"$docker4gis"-}
     # Up until a possible first `.` character (to support forked repos named
     # component.name.surname).
-    suggestion=${suggestion%%.*}
+    repo=${repo%%.*}
 
     [ "$action" = base-component ] && {
         # Creating a generic docker4gis base component.
-        repo=$1
-        [ "$repo" ] || read -rp \
-            "Enter the base component's name (the \"repository\" in the Docker registry; default is $suggestion) : " \
-            repo
-        [ "$repo" ] || repo=$suggestion
         DOCKER4GIS_VERSION=$(version)
         DOCKER_REGISTRY=docker.io
         DOCKER_USER=$docker4gis
@@ -525,28 +520,51 @@ DOCKER_REPO=$repo" >>.env
         error "Package directory not foud; to create one, run $DOCKER4GIS_COMMAND init. Or did
 you mean base-component?"
 
-    [ "$1" ] || interactive=true
-    repo=$1
-    component=$2
-    tag=$3
-    template=$4
-
-    [ "$repo" ] || read -rp \
-        "Name the new component (default is $suggestion) : " repo
-    [ "$repo" ] || repo=$suggestion
-
     write_dotenv
 
-    suggestion=$repo
-    [ "$repo" = api ] && suggestion=postgrest
-    [ "$repo" = app ] && suggestion=angular
-    component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis (default is $suggestion"
-    [ "$action" = template ] || component_question="$component_question, n for none"
+    pull() {
+        local component=$1
+        local stderr=$2
 
-    [ "$component" ] || read -rp \
-        "$component_question) : " \
-        component
-    [ "$component" ] || component=$suggestion
+        image=$docker4gis/$component:latest
+
+        local cmd="docker image pull $image"
+        if [ "$stderr" = stderr ]; then
+            $cmd
+        else
+            $cmd 2>/dev/null
+        fi
+    }
+
+    [ "$1" ] || interactive=true
+    component=$1
+    template=$2
+
+    if ! [ "$component" ]; then
+        [ "$repo" = api ] && suggestion=postgrest
+        [ "$repo" = app ] && suggestion=angular
+    fi
+    if ! [ "$suggestion" ]; then
+        pull "$repo" && component=$repo
+    fi
+    while ! [ "$component" ]; do
+        if [ "$suggestion" ] || ! [ "$action" = template ]; then
+            hints=true
+        fi
+        component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis"
+        [ "$hints" ] && component_question+=' ('
+        [ "$suggestion" ] && component_question+="default is $suggestion"
+        [ "$suggestion" ] && [ "$action" != template ] && component_question+=", "
+        [ "$action" = template ] || component_question+="n for none"
+        [ "$hints" ] && component_question+=')'
+
+        read -rp \
+            "$component_question : " \
+            component
+        [ "$component" ] || component=$suggestion
+        [ "$component" = n ] && [ "$action" != template ] && break
+        pull "$component" stderr || component=
+    done
 
     [ "$action" = template ] && {
         # Just scaffolding an inital setup for developing a template for a new
@@ -570,16 +588,6 @@ you mean base-component?"
     # Creating a component extending a docker4gis base component.
 
     pipeline
-
-    [ "$interactive" ] && {
-        [ "$tag" ] || read -rp \
-            "Which base image tag to use? (default is latest) : " tag
-    }
-    [ "$tag" ] || tag=latest
-
-    image=$docker4gis/$component:$tag
-    docker image pull "$image" ||
-        error "Image not found: $image"
 
     container=$(docker container create "$image") ||
         error "Failed to create container from image $image"
