@@ -944,24 +944,24 @@ Particularly useful when starting from a docker4gis-template project."
     fi
     ;;
 
-template-project)
+project-template)
     instruction() {
-        cat "$DOCKER_BASE"/../azure-pipeline-project-template.instruction.yml
+        cat "$DOCKER_BASE"/../azure-pipeline-project-template.txt
     }
     help "Write the pipeline that creates a $docker4gis template project in a fresh.
 Azure DevOps project.
 
 $(instruction)"
 
-    [ "$TF_BUILD" ] ||
+    [ "$TF_BUILD" ] || {
         echo "Follow these instruction to provision a $docker4gis template in a fresh
 Azure DevOps project.
 
 $(instruction)"
+        exit
+    }
 
     set -x
-
-    pipeline_file=azure-pipelines.yml
 
     # Replace string to insert the \"\$PAT@\" value between the (https):// and
     # the host name in the URI (e.g. https://dev.azure.com/merkatordev/).
@@ -970,6 +970,7 @@ $(instruction)"
     git_uri+="$SYSTEM_TEAMPROJECT/_git/$SYSTEM_TEAMPROJECT"
     main=main
     origin=$docker4gis
+    pipeline_file=azure-pipelines.yml
 
     git config --global user.email 'pipeline@azure.com' &&
         git config --global user.name 'Azure Pipeline' &&
