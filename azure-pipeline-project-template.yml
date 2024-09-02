@@ -1,0 +1,125 @@
+# Note: to provision this project with all the needed repositories, code, policies, pipelines, etc,
+# the pipeline needs to run (once) with the credentials of a project administrator.
+
+# 1. Create a new DevOps project.
+
+# 2. Initialise the new project's default repo:
+# Click Repos (center left), then click Initialize (bottom right).
+
+# 3. Create a Personal Access Token (PAT):
+# As an Administrator of this DevOps Project, create a PAT with scope "full access".
+# See for instructions: https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
+
+# 4. Create the pipeline:
+# Click Pipelines (center left) | Create pipeline | Azure Repos Git | {this project's default repo} | Starter pipeline
+# Delete the starter pipline content, replacing it with the contents of the file you're reading now.
+# Click Variables (top right) | New variable -> Name: PAT, Value: {the PAT you created}, check Keep this value secret
+# Clik OK | Save to save the new variable.
+
+# 5. Save and Run the pipeline:
+# Click Save and run, accept the defaults by again clicking Save and Run, and the pipeline will run.
+# Click on the "Provision docker4gis template" job to see what's happening.
+
+# 6. Remove the initial repo & pipeline:
+# Click Project settings (bottom left) | Repositories (scroll down to find it).
+# Click the repository with the same name as the project.
+# Click the three dots (top right), and click Delete.
+# Type the repository's name to confirm, and click Delete.
+# Now click Pipelines (center left), and follow the same steps to delete this pipeline,
+# which will also delete the PAT variable(!).
+
+
+# Only run manually.
+trigger:
+- none
+
+jobs:
+- job: template_job
+  displayName: Provision docker4gis template
+  steps:
+
+  # We don't need the code from the repo where this pipeline resides.
+  - checkout: none
+
+  - bash: |
+        set -x
+
+        # Configure git identity.
+        git config --global user.email 'pipeline@azure.com'
+        git config --global user.name 'Azure Pipeline'
+
+        # Set Azure CLI defaults for organization and project.
+        az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+        az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
+
+        tool() {
+            local name=$1
+            local file=~/$name
+            local code=$2
+
+            echo "#!/bin/bash" > "$file"
+            chmod +x "$file"
+            echo "$code" >> "$file"
+        }
+
+        # Create tool ~/az.
+        tool az "
+            export AZURE_DEVOPS_EXT_PAT=$PAT
+            az \"\$@\"
+        "
+
+        # Create tool ~/git_origin (depending on environment variable REPOSITORY).
+        tool git_origin "
+            # Replace string to insert the \"\$PAT@\" value between the (https):// and
+            # the host name in the URI (e.g. https://dev.azure.com/merkatordev/).
+            authorised_collection_uri=\${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
+
+            echo \"\$authorised_collection_uri\$SYSTEM_TEAMPROJECT/_git/\$REPOSITORY\"
+        "
+
+        # Create tool ~/each_repository running a command for each REPOSITORY.
+        tool each_repository "
+            set -x
+
+            # Loop over a fixed list of REPOSITORY's. 
+            for REPOSITORY in ^package cron; do
+                # Export the REPOSITORY variable to have it available in tools depending upon it.
+                export REPOSITORY
+
+                # Run the given command, with it's optional parameters.
+                \"\$@\" || exit
+            done
+        "
+    displayName: 'Configure tools'
+    env:
+      # Secret variables have to be mapped explicitly.
+      PAT: $(PAT)
+
+  - bash: |
+        set -x
+
+        create_repository() {
+            # Check if the repo exists, and skip if it does.
+            ~/az repos show --repository="$REPOSITORY" 2>&1 &&
+                return 0
+
+            # Create the new repo.
+            ~/az repos create --name "$REPOSITORY" &&
+                # Initialise the new repo.
+                (
+                    temp=$(mktemp --directory)
+                    cd "$temp" || exit
+                    git init &&
+                        git commit --allow-empty -m "initialise repository" &&
+                        git branch -m main &&
+                        git remote add origin "$(~/git_origin)" &&
+                        git push origin main
+                ) &&
+                # Set the repo's default branch to "main".
+                ~/az repos update --repository="$REPOSITORY" \
+                    --default-branch main
+        }
+        export -f create_repository
+
+        ~/each_repository create_repository
+    displayName: 'Create repositories'
