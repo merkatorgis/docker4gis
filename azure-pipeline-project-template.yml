@@ -85,3 +85,20 @@ jobs:
 
         ~/each_repository create_repository
     displayName: 'Create repositories'
+
+  - bash: |
+        set -x
+
+        # Query the id of the repo to delete.
+        id=$(~/az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
+            # Strip surroiuding "".
+            eval "id=$id" &&
+            [ "$id" ] &&
+            # Delete the repo by id.
+            ~/az repos delete --id="$id" --yes &&
+            # Query the id of the pipeline to delete.
+            id=$(~/az pipelines show --name="$SYSTEM_TEAMPROJECT" --query=id) &&
+            [ "$id" ] &&
+            # Delete the pipeline by id.
+            ~/az pipelines delete --id="$id" --yes
+    displayName: 'Delete template resources'
