@@ -8,6 +8,8 @@ __header__() {
     echo '---------------------------------------------------------------------'
     echo "$@"
     echo '---------------------------------------------------------------------'
+    # Prevent next commands echoing sooner.
+    sleep 1
     set -x
 }
 
@@ -47,8 +49,10 @@ create_repository() {
     __header__ "Create repository $REPOSITORY"
 
     # Check if the repo exists, and skip if it does.
-    az repos show --repository="$REPOSITORY" 2>&1 &&
+    az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
+        echo "Skipping this repository, since it already exists."
         return 0
+    }
 
     # Create the new repo.
     az repos create --name "$REPOSITORY" &&
