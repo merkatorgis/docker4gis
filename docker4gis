@@ -326,8 +326,12 @@ just_help=
 help() {
     [ "$just_help" ] || return 0
     local help_text=$1
-    echo "$help_text"
+    echo "$help_text" | less
     exit
+}
+just_help() {
+    just_help=true
+    help "$@"
 }
 
 remote_branch_name_available() {
@@ -925,20 +929,13 @@ function setup_file() {
     ;;
 
 project-template)
-    instruction() {
-        cat "$DOCKER_BASE/$action/doc.txt"
-    }
-    help "Creates a $docker4gis template project in a fresh Azure DevOps project.
+    help_text="Follow these instructions to provision a $docker4gis template in a fresh
+Azure DevOps project:
 
-$(instruction)"
+$(cat "$DOCKER_BASE/$action/doc.txt")"
+    help "$help_text"
 
-    [ "$TF_BUILD" ] || {
-        echo "Follow these instructions to provision a $docker4gis template in a fresh
-Azure DevOps project."
-        echo
-        instruction
-        exit
-    }
+    [ "$TF_BUILD" ] || just_help "$help_text"
 
     "$DOCKER_BASE/$action/run.sh"
     ;;
