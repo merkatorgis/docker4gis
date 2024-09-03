@@ -6,7 +6,7 @@ _=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
 __header__() {
     set +x
     echo '---------------------------------------------------------------------'
-    echo "$1"
+    echo "$@"
     echo '---------------------------------------------------------------------'
     set -x
 }
@@ -42,8 +42,6 @@ git_origin() {
     echo "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
 }
 
-__header__ Execution
-
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
     __header__ "Create repository $REPOSITORY"
@@ -72,7 +70,7 @@ create_repository() {
 # Execute the create_repository function for each repository.
 each_repository create_repository
 
-__header__ Teardown
+__header__ Delete project template repository
 
 # Query the id of the repo to delete.
 id=$(az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
@@ -82,6 +80,8 @@ id=$(az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
 
 # Delete the repo by id.
 az repos delete --id="$id" --yes
+
+__header__ Delete project template pipeline
 
 # Query the id of the pipeline to delete.
 id=$(az pipelines show --name="$SYSTEM_TEAMPROJECT" --query=id) &&
