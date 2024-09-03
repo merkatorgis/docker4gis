@@ -30,32 +30,26 @@ steps:
 7. Save and Run the pipeline:
 - Click Save and run (top right), and Save and run (bottom right) again, to run
 the pipeline.
-- Click on the Job to see when it's done.
-The pipeline replaces itself with the code that actually provisions the template
-content.
-
-8. Run the (replaced) pipeline once more:
-- Click the Back button (←) to get from the Job back to the "build".
-- Click Run new (top right), and Run (bottom right), to rerun the pipeline.
-- Click on the "Provision docker4gis template" job to see what's happening.
+- Click on the Job to watch te progress.
 
 On completion, the pipeline deletes the project's default repository (keeping
 the new repositories created by the pipeline), and also deletes the pipeline
-itself, including the PAT variable and its value. When the log in the end says
-"##[error]The build was canceled", that's allright; it's because of the pipeline
-deletion.
+itself, including the PAT variable and its value.
+
+When the log in the end says "##[error]The build was canceled", that's allright;
+it's because of the pipeline deletion.
 
 The result should be several repositories (one "^package", and a number of
 components), each with a branch policy set on the "main" branch, and each with a
 Build Validation pipeline (which runs automatically on each new or modified Pull
 Request, and wich has to succeed before the PR can be Completed), and a
 Continuous Integration pipeline, which runs automatically on each PR
-merge/completion. The "main" branch doesn't allow direct commits, only PR
+merge/completion. The "main" branches don't allow direct commits, only PR
 merges.
 
 Remove any repositories from the project that you won't be using. Also, rename
-some, specifically rename one to "app", and one to "api", so that they will be
-picked op by the "proxy" component automatically.
+some, specifically rename one to "app", and one to "api", so that those
+containers will be found by the "proxy" component automatically.
 
 Lastly, a "TEST" Environment is created, along with a template "TEST" Service
 Connection. Edit the Service connection details, before uncommenting the Deploy
