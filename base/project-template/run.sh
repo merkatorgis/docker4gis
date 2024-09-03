@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Stop if we're not a pipeline.
+_=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
+
 __header__() {
     set +x
     echo '---------------------------------------------------------------------'
