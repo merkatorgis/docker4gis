@@ -3,7 +3,7 @@
 # Stop if we're not a pipeline.
 _=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
 
-__header__() {
+log() {
     set +x
     echo '---------------------------------------------------------------------'
     echo "$@"
@@ -15,7 +15,7 @@ __header__() {
 
 set -x
 
-__header__ Setup
+log Setup
 
 # Set Azure CLI authentication.
 export AZURE_DEVOPS_EXT_PAT=$PAT
@@ -46,17 +46,16 @@ git_origin() {
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
-    __header__ "Create repository $REPOSITORY"
 
-    # Check if the repo exists, and skip if it does.
+    log "Repository $REPOSITORY"
     az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
         echo "Skipping this repository, since it already exists."
         return 0
     }
 
-    # Create the new repo.
+    log "Create repository $REPOSITORY"
     az repos create --name "$REPOSITORY" &&
-        # Initialise the new repo.
+        log "Initialise repository $REPOSITORY" &&
         (
             temp=$(mktemp --directory)
             cd "$temp" || exit
@@ -66,7 +65,7 @@ create_repository() {
                 git remote add origin "$(git_origin)" &&
                 git push origin main
         ) &&
-        # Set the repo's default branch to "main".
+        log "Update repository $REPOSITORY: set default branch to 'main'" &&
         az repos update --repository="$REPOSITORY" \
             --default-branch main
 }
@@ -74,7 +73,7 @@ create_repository() {
 # Execute the create_repository function for each repository.
 each_repository create_repository
 
-__header__ Delete project template repository
+log Delete project template repository
 
 # Query the id of the repo to delete.
 id=$(az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
@@ -85,7 +84,7 @@ id=$(az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
 # Delete the repo by id.
 az repos delete --id="$id" --yes
 
-__header__ Delete project template pipeline
+log Delete project template pipeline
 
 # Query the id of the pipeline to delete.
 id=$(az pipelines show --name="$SYSTEM_TEAMPROJECT" --query=id) &&

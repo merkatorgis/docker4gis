@@ -19,13 +19,16 @@ https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-person
 
 5. Store the PAT in a pipeline variable:
 - Click Variables (top right) | New variable
-    -> Name: PAT, Value: {the PAT you created}, DON'T Keep this value secret
+    -> Name: PAT, Value: {the PAT you created}, tick Keep this value secret
 - Clik OK | Save to save the new variable.
 
-6. Edit (or replace) the pipeline code, to exactly this:
+6. Replace the pipeline code with exactly this (note that the leading whitespace
+matters):
 
 steps:
-- script: npx docker4gis project-template
+- bash: npx docker4gis project-template
+  env:
+    PAT: $(PAT)
 
 7. Save and Run the pipeline:
 - Click Save and run (top right), and Save and run (bottom right) again, to run
