@@ -953,7 +953,7 @@ project-template)
 $(instruction)"
 
     [ "$TF_BUILD" ] || {
-        echo "Follow these instruction to provision a $docker4gis template in a fresh
+        echo "Follow these instructions to provision a $docker4gis template in a fresh
 Azure DevOps project."
         echo
         instruction
