@@ -353,9 +353,9 @@ set_docker_user() {
     [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
 }
 
-rename() {
-    old_docker_user=$1
-    new_docker_user=$2
+rename_replace() {
+    old_value=$1
+    new_value=$2
 
     find_no_git() {
         # Use -prune to to exclude any `.git` directory;
@@ -365,18 +365,16 @@ rename() {
         find "$dir" -type d -name .git -prune -false -o "$@"
     }
 
-    for old_docker_user in "$old_docker_user" '{{DOCKER_USER}}'; do
-        # Replace text in files.
-        find_no_git . -type f \
-            -exec sed -i "s|\b$old_docker_user\b|$new_docker_user|g" {} \;
+    # Replace text in files.
+    find_no_git . -type f \
+        -exec sed -i "s|\b$old_value\b|$new_value|g" {} \;
 
-        # Rename files and directories. See
-        # https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
-        while IFS= read -r -d '' file; do
-            file=$(realpath "$file")
-            mv "$file" "$(dirname "$file")/$new_docker_user"
-        done < <(find_no_git . -name "$old_docker_user" -print0)
-    done
+    # Rename files and directories. See
+    # https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
+    while IFS= read -r -d '' file; do
+        file=$(realpath "$file")
+        mv "$file" "$(dirname "$file")/$new_value"
+    done < <(find_no_git . -name "$old_value" -print0)
 }
 
 case "$action" in
@@ -620,7 +618,7 @@ you mean base-component?"
     fi
     cp -r ./template/"$template"/. .
     rm -rf ./template
-    rename '{{DOCKER_USER}}' "$DOCKER_USER"
+    rename_replace '{{DOCKER_USER}}' "$DOCKER_USER"
     finish
     ;;
 
@@ -926,24 +924,6 @@ function setup_file() {
 " >"$file"
     ;;
 
-rename)
-    help "Change the value of DOCKER_USER in each file in each component.
-Particularly useful when starting from a docker4gis-template project."
-
-    local=----local----
-
-    if [ "$1" = "$local" ]; then
-        rename "$2" "$3"
-    else
-        dotenv
-        old_docker_user=$DOCKER_USER
-
-        set_docker_user "$1"
-
-        self all "$0" rename "$local" "$old_docker_user" "$DOCKER_USER"
-    fi
-    ;;
-
 project-template)
     instruction() {
         cat "$DOCKER_BASE/$action/doc.txt"
@@ -953,7 +933,7 @@ project-template)
 $(instruction)"
 
     [ "$TF_BUILD" ] || {
-        echo "Follow these instruction to provision a $docker4gis template in a fresh
+        echo "Follow these instructions to provision a $docker4gis template in a fresh
 Azure DevOps project."
         echo
         instruction
@@ -969,7 +949,7 @@ Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |
   br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |
   stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |
   base | login [PASSWORD] [USER] | version|v [local] | bump [push] |
-  git-push|gp [BRANCH_NAME...] | bats | rename [NAME] |
+  git-push|gp [BRANCH_NAME...] | bats | project-template |
   all EXECUTABLE|self [ARG...]
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
