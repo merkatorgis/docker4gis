@@ -325,17 +325,8 @@ just_help=
 }
 help() {
     [ "$just_help" ] || return 0
-
-    local less=$1
-    [ "$less" = less ] && shift 1
-
     local help_text=$1
-    if [ "$less" = less ]; then
-        echo "$help_text" | less
-    else
-        echo "$help_text"
-    fi
-
+    echo "$help_text" | less --quit-if-one-screen
     exit
 }
 just_help() {
@@ -942,9 +933,9 @@ project-template)
 Azure DevOps project:
 
 $(cat "$DOCKER_BASE/$action/doc.txt")"
-    help less "$help_text"
+    help "$help_text"
 
-    [ "$TF_BUILD" ] || just_help less "$help_text"
+    [ "$TF_BUILD" ] || just_help "$help_text"
 
     "$DOCKER_BASE/$action/run.sh"
     ;;
