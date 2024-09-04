@@ -360,8 +360,8 @@ set_docker_user() {
 }
 
 rename_replace() {
-    old_value=$1
-    new_value=$2
+    local old_value=$1
+    local new_value=$2
 
     find_no_git() {
         # Use -prune to to exclude any `.git` directory;
@@ -371,11 +371,11 @@ rename_replace() {
         find "$dir" -type d -name .git -prune -false -o "$@"
     }
 
-    # Replace text in files.
+    # 1. Replace text in files.
     find_no_git . -type f \
         -exec sed -i "s|\b$old_value\b|$new_value|g" {} \;
 
-    # Rename files and directories. See
+    # 2. Rename files and directories. See
     # https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
     while IFS= read -r -d '' file; do
         file=$(realpath "$file")
