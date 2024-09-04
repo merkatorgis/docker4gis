@@ -45,6 +45,7 @@ for dotenv in ../*/.env; do
         DOCKER_REPO=
         # shellcheck source=/dev/null
         . "$dotenv"
+        [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath "$(dirname "$dotenv")")")
         # If this is a docker4gis repo directory, it must have these variables
         # set. Otherwise, exit the subshell (which happens to be the last thing
         # in the for loop).
