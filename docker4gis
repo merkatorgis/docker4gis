@@ -288,11 +288,13 @@ dotenv() {
     local file=${2:-.env}
 
     DOCKER4GIS_VERSION=
+    DOCKER_REPO=
 
     if [ -e "$file" ]; then
         [ "$flag" = 'export' ] && set -a
         # shellcheck source=/dev/null
         source "$file"
+        [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath .)")
         [ "$flag" = 'export' ] && set +a
     fi
 
@@ -454,8 +456,7 @@ component."
     write_dotenv() {
         echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$repo" >>.env
+DOCKER_USER=$DOCKER_USER" >>.env
     }
 
     replace_component() {
