@@ -44,6 +44,10 @@ time {
     # see last.sh
     # shellcheck disable=SC1091
     source /last
+
+    echo
+    echo "Available ODBC drivers:"
+    odbcinst -q -d
 }
 
 # https://github.com/eradman/pg-safeupdate
