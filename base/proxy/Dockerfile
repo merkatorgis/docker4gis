@@ -1,4 +1,4 @@
-FROM golang:1.16.2 as builder
+FROM golang:1.23.1 AS builder
 COPY goproxy /goproxy
 WORKDIR /goproxy
 RUN CGO_ENABLED=0 GOOS=linux go build -v -a -tags netgo -ldflags -w .

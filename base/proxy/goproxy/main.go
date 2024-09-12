@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -99,17 +100,32 @@ func main() {
 		key := "/certificates/" + proxyHost + ".key"
 		log.Fatal(http.ListenAndServeTLS(":443", crt, key, handlers.CompressHandler(http.HandlerFunc(handler))))
 	} else {
-		m := &autocert.Manager{
+		manager := &autocert.Manager{
 			Cache:      autocert.DirCache("/config/autocert"),
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(proxyHost),
 		}
-		s := &http.Server{
+
+		// Configure TLSConfig following recommendations from
+		// https://www.ssllabs.com/ssltest.
+		tlsConfig := manager.TLSConfig()
+		tlsConfig.MinVersion = tls.VersionTLS12
+		tlsConfig.CipherSuites = []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+		}
+
+		server := &http.Server{
 			Addr:      ":https",
-			TLSConfig: m.TLSConfig(),
+			TLSConfig: tlsConfig,
 			Handler:   handlers.CompressHandler(http.HandlerFunc(handler)),
 		}
-		log.Fatal(s.ListenAndServeTLS("", ""))
+
+		log.Fatal(server.ListenAndServeTLS("", ""))
 	}
 
 }
