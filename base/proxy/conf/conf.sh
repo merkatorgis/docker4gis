@@ -18,17 +18,12 @@ QGIS_DYNAMIC="http://${DOCKER_USER}-qgis-dynamic"
 
 echo DOCKER_USER="${DOCKER_USER}"
 
+conf_file=/config/$DOCKER_USER
+
 echo "authPath=${AUTH_PATH}
 homedest=${HOMEDEST}
 api=${API}
 app=${APP}
-static=${APP}static/
-favicon.ico=${APP}favicon.ico
-manifest.json=${APP}manifest.json
-service-worker.js=${APP}service-worker.js
-index.html=${APP}index.html
-index=${APP}index
-html=${APP}html/
 geoserver=${GEOSERVER}
 mapfish=${MAPFISH}
 resources=${RESOURCES}
@@ -42,8 +37,20 @@ swagger=${SWAGGER}
 swagger-ui.css.map=${SWAGGER}/swagger-ui.css.map
 swagger-ui-bundle.js.map=${SWAGGER}/swagger-ui-bundle.js.map
 swagger-ui-standalone-preset.js.map=${SWAGGER}/swagger-ui-standalone-preset.js.map
-" >"/config/${DOCKER_USER}"
+" >"$conf_file"
 
-for proxy in ${@}; do
+# These were to make an Elm app work, but they cause trouble when APP = e.g.
+# http://host.docker.internal:3000.
+[ "$APP" = "http://$DOCKER_USER-app/" ] && echo "
+static=${APP}static/
+favicon.ico=${APP}favicon.ico
+manifest.json=${APP}manifest.json
+service-worker.js=${APP}service-worker.js
+index.html=${APP}index.html
+index=${APP}index
+html=${APP}html/
+" >>"$conf_file"
+
+for proxy in "$@"; do
     echo "${proxy}" >>"/config/${DOCKER_USER}"
 done
