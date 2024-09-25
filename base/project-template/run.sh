@@ -73,6 +73,49 @@ create_repository() {
 # Execute the create_repository function for each repository.
 each_repository create_repository
 
+# Create a project directory
+mkdir -p ~/project
+
+git_clone() {
+    log "Clone $REPOSITORY"
+    cd ~/project &&
+        git clone "$(git_origin)"
+}
+
+# Execute the git_clone function for each repository.
+each_repository git_clone
+
+dg() {
+    npx docker4gis "$@"
+}
+
+dg_component() {
+    local action='init|component'
+    cd ~/project/"$REPOSITORY" &&
+        log "dg $action $REPOSITORY" &&
+        if [ "$REPOSITORY" = ^package ]; then
+            echo n | dg init docker.merkator.com project
+        else
+            dg component
+        fi &&
+        log "Save $REPOSITORY changes" &&
+        git add . &&
+        git commit -m "docker4gis $action" &&
+        git push origin
+}
+
+# Execute the dg_component function for each repository.
+each_repository dg_component
+
+# Create a cross-repo main-branch policy to require resolution of all pull
+# request comments.
+az devops invoke \
+    --route-parameters project="$SYSTEM_TEAMPROJECT" \
+    --area policy \
+    --resource configurations \
+    --http-method POST \
+    --in-file "$(dirname "$0")"/comment_requirements_policy.json
+
 log Delete project template repository
 
 # Query the id of the repo to delete.

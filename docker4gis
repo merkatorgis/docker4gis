@@ -295,6 +295,7 @@ dotenv() {
         # shellcheck source=/dev/null
         source "$file"
         [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath .)")
+        [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(realpath ..)")
         [ "$flag" = 'export' ] && set +a
     fi
 
@@ -345,20 +346,6 @@ remote_branch_name_available() {
         fi
 }
 
-set_docker_user() {
-    DOCKER_USER=$1
-    [ "$DOCKER_USER" ] && return
-
-    local suggestion
-    suggestion=$(basename "$(realpath ..)")
-
-    local prompt="Enter the application's name (the \"user\" in the Docker "
-    prompt+="registry; default is $suggestion)"
-
-    read -rp "$prompt : " DOCKER_USER
-    [ "$DOCKER_USER" ] || DOCKER_USER="$suggestion"
-}
-
 rename_replace() {
     local old_value=$1
     local new_value=$2
@@ -387,11 +374,12 @@ case "$action" in
 
 init)
     help "Initialise a new $docker4gis application in the current directory.
-Do this somewhere where you can later create sibbling directories for the
-application's components (using \`$DOCKER4GIS_COMMAND component\`)."
+Do this in a directory where you can later create sibbling directories for the
+application's components (using \`$DOCKER4GIS_COMMAND component\`). The name of
+the components'parent directory will be used as the application name."
 
     DOCKER_REGISTRY=$1
-    DOCKER_USER=$2
+    DOCKER_USER=$(basename "$(realpath ..)")
 
     [ "$DOCKER_REGISTRY" ] && shift 1
     [ "$DOCKER_REGISTRY" ] || read -rp \
@@ -400,12 +388,8 @@ application's components (using \`$DOCKER4GIS_COMMAND component\`)."
     [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
     [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
-    [ "$DOCKER_USER" ] && shift 1
-    set_docker_user "$DOCKER_USER"
-
     echo "DOCKER4GIS_VERSION=$(version)
 DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
 DOCKER_REPO=package
 DEBUG=false
 PROXY_HOST=
@@ -454,9 +438,10 @@ happy, you can copy the contents into the 'template' directory of your base
 component."
 
     write_dotenv() {
+        local docker_user=$1
         echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER" >>.env
+DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
+        [ "$docker_user" ] && echo "DOCKER_USER=$DOCKER_USER" >>.env
     }
 
     replace_component() {
@@ -496,7 +481,7 @@ DOCKER_USER=$DOCKER_USER" >>.env
         cp -r "$DOCKER_BASE"/template/. .
         replace_component
 
-        write_dotenv
+        write_dotenv "$DOCKER_USER"
         pipeline
         # And we're done!
         finish
