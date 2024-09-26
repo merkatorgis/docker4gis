@@ -81,7 +81,8 @@ create_repository() {
 # Clone the repo $REPOSITORY.
 git_clone() {
     log "Clone $REPOSITORY"
-    cd ~/project &&
+    mkdir -p ~/project &&
+        cd ~/project &&
         git clone "$(git_origin)"
 }
 
@@ -92,7 +93,6 @@ dg_component() {
         action=init
         local registry=docker.merkator.com
     fi
-    mkdir -p ~/project
     cd ~/project/"$REPOSITORY" &&
         log "dg $action $REPOSITORY" &&
         echo n | dg "$action" "$registry" &&
@@ -100,6 +100,71 @@ dg_component() {
         git add . &&
         git commit -m "docker4gis $action" &&
         git push origin
+}
+
+# Create the pipelines for the repo $REPOSITORY.
+create_pipelines() {
+
+    # Create variable group if not exists.
+    [ "$variable_group_id" ] || {
+        log Create variable group
+        variable_group_id=$(az pipelines variable-group create \
+            --name "docker4gis" \
+            --authorize true \
+            --variables "DOCKER_PASSWORD=secret" \
+            --query=id)
+
+        log Make variable DOCKER_PASSWORD secret
+        az pipelines variable-group variable update \
+            --group-id "$variable_group_id" \
+            --name DOCKER_PASSWORD \
+            --secret true
+    }
+
+    pipeline() {
+        local name=$1
+        local yaml=$2
+
+        log Create pipeline "$name"
+
+        # Create the pipeline, a.k.a. build definition.
+        build_definition_id=$(az pipelines create --name "$name" \
+            --skip-first-run \
+            --repository "$REPOSITORY" \
+            --repository-type tfsgit \
+            --branch main \
+            --yaml-path "$yaml" \
+            --query=id)
+
+        # Link the build definition to the variable group.
+        curl --silent -X PUT \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECTID/_apis/build/definitions/$build_definition_id?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+                \"id\": $build_definition_id,
+                \"name\": \"$name\",
+                \"process\": {
+                    \"yamlFilename\": \"$yaml\"
+                },
+                \"repository\": {
+                    \"name\": \"$name\",
+                    \"type\": \"TfsGit\",
+                },	
+                \"revision\": 1,
+                \"variableGroups\": [
+                    {
+                        \"id\": $variable_group_id
+                    }
+                ]
+            }"
+    }
+
+    pipeline "$REPOSITORY" \
+        azure-pipeline-continuous-integration.yml
+
+    pipeline "$REPOSITORY PR" \
+        azure-pipeline-build-validation.yml
 }
 
 # Execute the create_repository function for each repository.
@@ -110,6 +175,9 @@ each_repository git_clone
 
 # Execute the dg_component function for each repository.
 each_repository dg_component
+
+# Execute the create_pipeline function for each repository.
+each_repository create_pipelines
 
 log Create a project-wide policy to require resolution of all comments in a pull request
 
