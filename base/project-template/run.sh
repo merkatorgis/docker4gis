@@ -24,6 +24,9 @@ export AZURE_DEVOPS_EXT_PAT=$PAT
 # the host name in the URI (e.g. https://dev.azure.com/merkatordev/).
 authorised_collection_uri=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 
+# Replace the dev host name with the vssps.dev host name.
+authorised_collection_uri_vssps=${authorised_collection_uri/@dev./@vssps.dev.}
+
 # Configure git identity.
 git config --global user.email 'pipeline@azure.com'
 git config --global user.name 'Azure Pipeline'
@@ -43,6 +46,58 @@ each_repository() {
 git_origin() {
     echo "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
 }
+
+# Invoke the REST api to create a cross-repo main-branch policy to require
+# resolution of all pull request comments.
+az devops invoke \
+    --route-parameters project="$SYSTEM_TEAMPROJECT" \
+    --area policy \
+    --resource configurations \
+    --http-method POST \
+    --in-file "$(dirname "$0")"/comment_requirements_policy.json
+
+# Invoke the REST api manually to get the identity descriptor of the project
+# build service, which we want to assign some permissions.
+
+curl --silent -X GET \
+    "${authorised_collection_uri_vssps}_apis/identities?api-version=7.1&searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID" \
+    -H 'Accept: application/json' \
+    >./project_build_service_identity.json
+
+project_build_service_descriptor=$(
+    node --print "require('./project_build_service_identity.json').value[0].descriptor"
+)
+
+security_namespace_git_repositories=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
+
+# az devops security permission namespace show \
+#     --namespace-id $security_namespace_git_repositories \
+#     --output table
+# Name                     Permission Description                                  Permission Bit
+# -----------------------  ------------------------------------------------------  ----------------
+# GenericRead              Read                                                    2
+# GenericContribute        Contribute                                              4
+# CreateTag                Create tag                                              32
+# PolicyExempt             Bypass policies when pushing                            128
+# 2 + 4 + 32 + 128 = 166
+
+# Invoke the REST api manually to allow the GenericRead, GenericContribute,
+# CreateTag, PolicyExemptproject permissions to the project build service.
+
+curl --silent -X POST \
+    "${authorised_collection_uri}_apis/AccessControlEntries/$security_namespace_git_repositories?api-version=7.1" \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{
+        \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
+        \"merge\": true,
+        \"accessControlEntries\": [
+            {
+                \"descriptor\": \"$project_build_service_descriptor\",
+                \"allow\": 166
+            }
+        ]
+    }"
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
@@ -106,15 +161,6 @@ dg_component() {
 
 # Execute the dg_component function for each repository.
 each_repository dg_component
-
-# Create a cross-repo main-branch policy to require resolution of all pull
-# request comments.
-az devops invoke \
-    --route-parameters project="$SYSTEM_TEAMPROJECT" \
-    --area policy \
-    --resource configurations \
-    --http-method POST \
-    --in-file "$(dirname "$0")"/comment_requirements_policy.json
 
 log Delete project template repository
 
