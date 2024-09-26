@@ -42,6 +42,11 @@ dg() {
 # Run a command for each of a fixed list of REPOSITORY's.
 each_repository() {
     for REPOSITORY in ^package cron; do
+
+        REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
+        # Trim surrouding "".
+        eval "REPOSITORY_ID=$REPOSITORY_ID"
+
         "$@" || exit
     done
 }
@@ -125,6 +130,9 @@ create_pipelines() {
         local name=$1
         local yaml=$2
 
+        [ "$yaml" = azure-pipeline-build-validation.yml ] &&
+            local PR=true
+
         log Create pipeline "$name"
 
         # Create the pipeline, a.k.a. build definition.
@@ -135,6 +143,11 @@ create_pipelines() {
             --branch main \
             --yaml-path "$yaml" \
             --query=id)
+
+        # Disable continuous integration for the PR pipeline. But this doesn't
+        # work...
+        [ "$PR" ] &&
+            local triggers='"triggers": [],'
 
         # Link the build definition to the variable group.
         curl --silent -X PUT \
@@ -148,16 +161,31 @@ create_pipelines() {
                     \"yamlFilename\": \"$yaml\"
                 },
                 \"repository\": {
-                    \"name\": \"$name\",
+                    \"name\": \"$REPOSITORY\",
                     \"type\": \"TfsGit\",
                 },	
                 \"revision\": 1,
+                $triggers
                 \"variableGroups\": [
                     {
                         \"id\": $variable_group_id
                     }
                 ]
             }"
+
+        # Newline after curl output.
+        echo
+
+        # Create a policy to require a successful build before merging.
+        [ "$PR" ] && az repos policy build create --blocking true \
+            --build-definition-id "$build_definition_id" \
+            --repository-id "$REPOSITORY_ID" \
+            --branch main \
+            --display-name "$name" \
+            --enabled true \
+            --manual-queue-only false \
+            --queue-on-source-update-only false \
+            --valid-duration 0
     }
 
     pipeline "$REPOSITORY" \
