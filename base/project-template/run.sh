@@ -35,6 +35,10 @@ git config --global user.name 'Azure Pipeline'
 az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 
+dg() {
+    npx docker4gis "$@"
+}
+
 # Run a command for each of a fixed list of REPOSITORY's.
 each_repository() {
     for REPOSITORY in ^package cron; do
@@ -47,6 +51,68 @@ git_origin() {
     echo "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
 }
 
+# Steps to create a repo named $REPOSITORY.
+create_repository() {
+
+    log "Repository $REPOSITORY"
+    az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
+        echo "Skipping this repository, since it already exists."
+        sleep 1
+        return 0
+    }
+
+    log "Create repository $REPOSITORY"
+    az repos create --name "$REPOSITORY" &&
+        log "Initialise repository $REPOSITORY" &&
+        (
+            temp=$(mktemp --directory)
+            cd "$temp" || exit
+            git init &&
+                git commit --allow-empty -m "initialise repository" &&
+                git branch -m main &&
+                git remote add origin "$(git_origin)" &&
+                git push origin main
+        ) &&
+        log "Update repository $REPOSITORY: set default branch to 'main'" &&
+        az repos update --repository="$REPOSITORY" \
+            --default-branch main
+}
+
+# Clone the repo $REPOSITORY.
+git_clone() {
+    log "Clone $REPOSITORY"
+    cd ~/project &&
+        git clone "$(git_origin)"
+}
+
+# Create a docker4gis component for the repo $REPOSITORY.
+dg_component() {
+    local action=component
+    if [ "$REPOSITORY" = ^package ]; then
+        action=init
+        local registry=docker.merkator.com
+    fi
+    mkdir -p ~/project
+    cd ~/project/"$REPOSITORY" &&
+        log "dg $action $REPOSITORY" &&
+        echo n | dg "$action" "$registry" &&
+        log "Save $REPOSITORY changes" &&
+        git add . &&
+        git commit -m "docker4gis $action" &&
+        git push origin
+}
+
+# Execute the create_repository function for each repository.
+each_repository create_repository
+
+# Execute the git_clone function for each repository.
+each_repository git_clone
+
+# Execute the dg_component function for each repository.
+each_repository dg_component
+
+log Create a project-wide policy to require resolution of all comments in a pull request
+
 # Invoke the REST api to create a cross-repo main-branch policy to require
 # resolution of all pull request comments.
 az devops invoke \
@@ -55,6 +121,8 @@ az devops invoke \
     --resource configurations \
     --http-method POST \
     --in-file "$(dirname "$0")"/comment_requirements_policy.json
+
+log Set permissions for the project build service
 
 # Invoke the REST api manually to get the identity descriptor of the project
 # build service, which we want to assign some permissions.
@@ -98,69 +166,6 @@ curl --silent -X POST \
             }
         ]
     }"
-
-# Steps to create a repo named $REPOSITORY.
-create_repository() {
-
-    log "Repository $REPOSITORY"
-    az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
-        echo "Skipping this repository, since it already exists."
-        return 0
-    }
-
-    log "Create repository $REPOSITORY"
-    az repos create --name "$REPOSITORY" &&
-        log "Initialise repository $REPOSITORY" &&
-        (
-            temp=$(mktemp --directory)
-            cd "$temp" || exit
-            git init &&
-                git commit --allow-empty -m "initialise repository" &&
-                git branch -m main &&
-                git remote add origin "$(git_origin)" &&
-                git push origin main
-        ) &&
-        log "Update repository $REPOSITORY: set default branch to 'main'" &&
-        az repos update --repository="$REPOSITORY" \
-            --default-branch main
-}
-
-# Execute the create_repository function for each repository.
-each_repository create_repository
-
-# Create a project directory
-mkdir -p ~/project
-
-git_clone() {
-    log "Clone $REPOSITORY"
-    cd ~/project &&
-        git clone "$(git_origin)"
-}
-
-# Execute the git_clone function for each repository.
-each_repository git_clone
-
-dg() {
-    npx docker4gis "$@"
-}
-
-dg_component() {
-    local action='init|component'
-    cd ~/project/"$REPOSITORY" &&
-        log "dg $action $REPOSITORY" &&
-        if [ "$REPOSITORY" = ^package ]; then
-            echo n | dg init docker.merkator.com project
-        else
-            dg component
-        fi &&
-        log "Save $REPOSITORY changes" &&
-        git add . &&
-        git commit -m "docker4gis $action" &&
-        git push origin
-}
-
-# Execute the dg_component function for each repository.
-each_repository dg_component
 
 log Delete project template repository
 
