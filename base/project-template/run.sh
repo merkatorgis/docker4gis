@@ -58,14 +58,6 @@ git_origin() {
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
-
-    log "Repository $REPOSITORY"
-    az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
-        echo "Skipping this repository, since it already exists."
-        sleep 1
-        return 0
-    }
-
     log "Create repository $REPOSITORY"
     az repos create --name "$REPOSITORY" &&
         log "Initialise repository $REPOSITORY" &&
@@ -266,7 +258,7 @@ curl --silent -X POST \
 log Create pipeline Environment TEST
 
 curl --silent -X POST \
-    "POST $authorised_collection_uri/$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+    "${authorised_collection_uri}$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
@@ -275,7 +267,7 @@ curl --silent -X POST \
 
 log Create SSH Service Connection TEST
 
-az devops service-endpoint ssh create \
+az devops service-endpoint create \
     --service-endpoint-configuration "$(dirname "$0")"/ssh_service_endpoint.json
 
 log Delete project template repository
