@@ -1,45 +1,50 @@
-Note: to provision the project with all the needed repositories, code, policies,
-pipelines, etc, the pipeline needs to run (once) with the credentials of a
-project administrator.
+1. Create a Docker Registry account for this application/project (needed for the
+componets' pipelines when they push the images they build to the Docker registry
+- if you don't have it right now, you can later configure the DOCKER_PASSWORD
+variable manually via Pipelines | Library | Variable Groups).
 
-1. Create a Personal Access Token (PAT):
+2. Create a Personal Access Token (PAT) for DevOps (needed by the
+project-template pipeline that will run once to create the different DevOps
+objects _as a Project Administrator_):
 - Create a PAT with scope "full access". See for instructions:
 https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
 
-2. Create a new DevOps project.
+3. Create a new DevOps project (with the same account you created the PAT for).
 
-3. Initialise the new project's default repo:
+4. Initialise the new project's default repo (since we need it as a container
+for the project-template pipeline):
 - Click Repos (center left).
 - Click Initialize (bottom right).
 
-4. Create a new pipeline:
-- Click Pipelines (center left) | Create pipeline (center) | Azure Repos Git |
-    {this project's default repo} | Starter pipeline
+5. Create and run the project-template pipeline:
+    5.1 Create a new pipeline:
+    - Click Pipelines (center left) | Create pipeline (center) | Azure Repos Git
+        | {this project's default repo} | Starter pipeline
 
-5. Replace the pipeline code with exactly this (note that the leading whitespace
-matters):
-
+    5.2. Replace the starter pipeline code with exactly these two lines:
 steps:
 - bash: npx docker4gis project-template
-  env:
-    PAT: $(PAT)
 
-6. Store the Personal Access Token as a pipeline variable:
-- Click Variables (top right) | New variable
-    -> Name: PAT, Value: {the PAT you created}, tick Keep this value secret
-- Clik OK, then Save.
+    5.3. Create the pipeline's variables (they'll be removed when the pipeline
+    run completes):
+    - Click Variables (top right) | New variable
+        -> Name: PAT, Value: {the PAT you created}, DON'T Keep this value secret
+    - Clik OK.
+    - Click "+" (top right) to add another variable.
+        -> Name: DOCKER_PASSWORD, Value: {your project's Docker registry
+            password}, DON'T Keep this value secret
+    - Click OK, then Save.
 
-7. Now run the pipeline:
-- Click Save and run (top right), then Save and run (bottom right) again.
-- Click on the Job to watch the progress.
+    5.4. Now run the pipeline:
+    - Click Save and run (top right) | Save and run (bottom right).
+    - Click on the Job to watch the progress.
 
 On completion, the pipeline deletes the project's default repository (keeping
 the new repositories created by the pipeline), and also deletes the pipeline
-itself (including the PAT variable).
+itself (including the variables created above).
 
-When the log in the end says "##[error]The build was canceled", that's allright;
-it's because of the pipeline eventually deleting itself while "building" the
-project.
+When the log ends with "##[error]The build was canceled", that's allright; it's
+a side effect of the pipeline deleting itself after it "built" the project.
 
 The result should be several repositories (one "^package", and a number of
 components), each with a branch policy set on the "main" branch, and each with a
@@ -50,9 +55,9 @@ merge/completion. The "main" branches don't allow direct commits, only PR
 merges.
 
 Remove any repositories from the project that you won't be using. Also, rename
-some, specifically rename one to "app", and one to "api", so that those
+some - specifically rename one to "app", and one to "api", so that those
 containers will be found by the "proxy" component automatically.
 
 Lastly, a "TEST" Environment is created, along with a template "TEST" Service
 Connection. Edit the Service connection details, before uncommenting the Deploy
-Job in the ^package's Continuous Integration pipeline.
+Job in the Continuous Integration pipeline created in the ^package repo.

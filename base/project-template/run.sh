@@ -35,9 +35,18 @@ git config --global user.name 'Azure Pipeline'
 az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 
+dg() {
+    npx docker4gis "$@"
+}
+
 # Run a command for each of a fixed list of REPOSITORY's.
 each_repository() {
-    for REPOSITORY in ^package cron; do
+    for REPOSITORY in ^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat; do
+
+        REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
+        # Trim surrouding "".
+        eval "REPOSITORY_ID=$REPOSITORY_ID"
+
         "$@" || exit
     done
 }
@@ -47,6 +56,159 @@ git_origin() {
     echo "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
 }
 
+# Steps to create a repo named $REPOSITORY.
+create_repository() {
+
+    log "Repository $REPOSITORY"
+    az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
+        echo "Skipping this repository, since it already exists."
+        sleep 1
+        return 0
+    }
+
+    log "Create repository $REPOSITORY"
+    az repos create --name "$REPOSITORY" &&
+        log "Initialise repository $REPOSITORY" &&
+        (
+            temp=$(mktemp --directory)
+            cd "$temp" || exit
+            git init &&
+                git commit --allow-empty -m "initialise repository" &&
+                git branch -m main &&
+                git remote add origin "$(git_origin)" &&
+                git push origin main
+        ) &&
+        log "Update repository $REPOSITORY: set default branch to 'main'" &&
+        az repos update --repository="$REPOSITORY" \
+            --default-branch main
+}
+
+# Clone the repo $REPOSITORY.
+git_clone() {
+    log "Clone $REPOSITORY"
+    mkdir -p ~/project &&
+        cd ~/project &&
+        git clone "$(git_origin)"
+}
+
+# Create a docker4gis component for the repo $REPOSITORY.
+dg_component() {
+    local action=component
+    if [ "$REPOSITORY" = ^package ]; then
+        action=init
+        local registry=docker.merkator.com
+    fi
+    cd ~/project/"$REPOSITORY" &&
+        log "dg $action $REPOSITORY" &&
+        echo n | dg "$action" "$registry" &&
+        log "Save $REPOSITORY changes" &&
+        git add . &&
+        git commit -m "docker4gis $action" &&
+        git push origin
+}
+
+# Create the pipelines for the repo $REPOSITORY.
+create_pipelines() {
+
+    # Create variable group if not exists.
+    [ "$variable_group_id" ] || {
+        log Create variable group
+        variable_group_id=$(az pipelines variable-group create \
+            --name "docker4gis" \
+            --authorize true \
+            --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
+            --query=id)
+
+        log Make variable DOCKER_PASSWORD secret
+        az pipelines variable-group variable update \
+            --group-id "$variable_group_id" \
+            --name DOCKER_PASSWORD \
+            --secret true
+    }
+
+    pipeline() {
+        local name=$1
+        local yaml=$2
+
+        [ "$yaml" = azure-pipeline-build-validation.yml ] &&
+            local PR=true
+
+        log Create pipeline "$name"
+
+        # Create the pipeline, a.k.a. build definition.
+        build_definition_id=$(az pipelines create --name "$name" \
+            --skip-first-run \
+            --repository "$REPOSITORY" \
+            --repository-type tfsgit \
+            --branch main \
+            --yaml-path "$yaml" \
+            --query=id)
+
+        # Disable continuous integration for the PR pipeline. But this doesn't
+        # work...
+        [ "$PR" ] &&
+            local triggers='"triggers": [],'
+
+        # Link the build definition to the variable group.
+        curl --silent -X PUT \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECTID/_apis/build/definitions/$build_definition_id?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+                \"id\": $build_definition_id,
+                \"name\": \"$name\",
+                \"process\": {
+                    \"yamlFilename\": \"$yaml\"
+                },
+                \"repository\": {
+                    \"name\": \"$REPOSITORY\",
+                    \"type\": \"TfsGit\",
+                },	
+                \"revision\": 1,
+                $triggers
+                \"variableGroups\": [
+                    {
+                        \"id\": $variable_group_id
+                    }
+                ]
+            }"
+
+        # Newline after curl output.
+        echo
+
+        # Create a policy to require a successful build before merging.
+        [ "$PR" ] && az repos policy build create --blocking true \
+            --build-definition-id "$build_definition_id" \
+            --repository-id "$REPOSITORY_ID" \
+            --branch main \
+            --display-name "$name" \
+            --enabled true \
+            --manual-queue-only false \
+            --queue-on-source-update-only false \
+            --valid-duration 0
+    }
+
+    pipeline "$REPOSITORY" \
+        azure-pipeline-continuous-integration.yml
+
+    pipeline "$REPOSITORY PR" \
+        azure-pipeline-build-validation.yml
+}
+
+# Execute the create_repository function for each repository.
+each_repository create_repository
+
+# Execute the git_clone function for each repository.
+each_repository git_clone
+
+# Execute the dg_component function for each repository.
+each_repository dg_component
+
+# Execute the create_pipeline function for each repository.
+each_repository create_pipelines
+
+log Create a project-wide policy to require resolution of all comments in a pull request
+
 # Invoke the REST api to create a cross-repo main-branch policy to require
 # resolution of all pull request comments.
 az devops invoke \
@@ -55,6 +217,8 @@ az devops invoke \
     --resource configurations \
     --http-method POST \
     --in-file "$(dirname "$0")"/comment_requirements_policy.json
+
+log Set permissions for the project build service
 
 # Invoke the REST api manually to get the identity descriptor of the project
 # build service, which we want to assign some permissions.
@@ -99,68 +263,20 @@ curl --silent -X POST \
         ]
     }"
 
-# Steps to create a repo named $REPOSITORY.
-create_repository() {
+log Create pipeline Environment TEST
 
-    log "Repository $REPOSITORY"
-    az repos show --repository="$REPOSITORY" >/dev/null 2>&1 && {
-        echo "Skipping this repository, since it already exists."
-        return 0
-    }
+curl --silent -X POST \
+    "POST $authorised_collection_uri/$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{
+        \"name\": \"TEST\"
+    }"
 
-    log "Create repository $REPOSITORY"
-    az repos create --name "$REPOSITORY" &&
-        log "Initialise repository $REPOSITORY" &&
-        (
-            temp=$(mktemp --directory)
-            cd "$temp" || exit
-            git init &&
-                git commit --allow-empty -m "initialise repository" &&
-                git branch -m main &&
-                git remote add origin "$(git_origin)" &&
-                git push origin main
-        ) &&
-        log "Update repository $REPOSITORY: set default branch to 'main'" &&
-        az repos update --repository="$REPOSITORY" \
-            --default-branch main
-}
+log Create SSH Service Connection TEST
 
-# Execute the create_repository function for each repository.
-each_repository create_repository
-
-# Create a project directory
-mkdir -p ~/project
-
-git_clone() {
-    log "Clone $REPOSITORY"
-    cd ~/project &&
-        git clone "$(git_origin)"
-}
-
-# Execute the git_clone function for each repository.
-each_repository git_clone
-
-dg() {
-    npx docker4gis "$@"
-}
-
-dg_component() {
-    local action='init|component'
-    cd ~/project/"$REPOSITORY" &&
-        log "dg $action $REPOSITORY" &&
-        if [ "$REPOSITORY" = ^package ]; then
-            echo n | dg init docker.merkator.com project
-        else
-            dg component
-        fi &&
-        log "Save $REPOSITORY changes" &&
-        git add . &&
-        git commit -m "docker4gis $action" &&
-        git push origin
-}
-
-# Execute the dg_component function for each repository.
-each_repository dg_component
+az devops service-endpoint ssh create \
+    --service-endpoint-configuration "$(dirname "$0")"/ssh_service_endpoint.json
 
 log Delete project template repository
 
