@@ -252,12 +252,12 @@ $steps" >"$file"
 #                 # Log into the Docker registry.
 #                 $docker_login_command 2>&1 &&
 #                     # Go to the application's directory.
-#                     cd /opt/docker4gis/klicav &&
+#                     cd /opt/docker4gis/$DOCKER_USER &&
 #                     # Log at what time the pipeline deployed which version.
 #                     echo -n \"\$(date -Iseconds) \$(DOCKER4GIS_VERSION) \" >>pipeline.log &&
 #                     {
 #                         # Start the new version of the application.
-#                         echo '' | ./klicav.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1
+#                         echo '' | ./$DOCKER_USER.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1
 #                         # Catch the result code.
 #                         result=\$?
 #                         # Log the result code.

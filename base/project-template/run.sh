@@ -41,7 +41,7 @@ dg() {
 
 # Run a command for each of a fixed list of REPOSITORY's.
 each_repository() {
-    for REPOSITORY in ^package cron; do
+    for REPOSITORY in ^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat; do
 
         REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
         # Trim surrouding "".
@@ -116,7 +116,7 @@ create_pipelines() {
         variable_group_id=$(az pipelines variable-group create \
             --name "docker4gis" \
             --authorize true \
-            --variables "DOCKER_PASSWORD=secret" \
+            --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
             --query=id)
 
         log Make variable DOCKER_PASSWORD secret
@@ -262,6 +262,21 @@ curl --silent -X POST \
             }
         ]
     }"
+
+log Create pipeline Environment TEST
+
+curl --silent -X POST \
+    "POST $authorised_collection_uri/$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{
+        \"name\": \"TEST\"
+    }"
+
+log Create SSH Service Connection TEST
+
+az devops service-endpoint ssh create \
+    --service-endpoint-configuration "$(dirname "$0")"/ssh_service_endpoint.json
 
 log Delete project template repository
 

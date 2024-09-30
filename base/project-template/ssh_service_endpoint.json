@@ -1,0 +1,16 @@
+{
+    "data": {
+        "Host": "tst.example.com",
+        "Port": "22",
+        "PrivateKey": null
+    },
+    "name": "TEST",
+    "type": "ssh",
+    "authorization": {
+        "parameters": {
+            "username": "username",
+            "password": null
+        },
+        "scheme": "UsernamePassword"
+    }
+}
