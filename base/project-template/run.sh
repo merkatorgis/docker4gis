@@ -246,7 +246,7 @@ for environment in TEST PRODUCTION; do
     log Create environment "$environment" Approval check
 
     curl -i -X POST \
-        "https://$PAT@dev.azure.com/merkatordev/wouterscherphof/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
+        "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
         -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -d "{
@@ -260,9 +260,9 @@ for environment in TEST PRODUCTION; do
             },
             \"settings\": {
                 \"approvers\": [
-                {
-                    \"id\": \"$team_id\"
-                }
+                    {
+                        \"id\": \"$team_id\"
+                    }
                 ]
             }
         }"
