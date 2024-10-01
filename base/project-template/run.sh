@@ -107,6 +107,22 @@ dg_component() {
 # Create the pipelines for the repo $REPOSITORY.
 create_pipelines() {
 
+    # Create variable group if not exists.
+    [ "$variable_group_id" ] || {
+        log Create variable group
+        variable_group_id=$(az pipelines variable-group create \
+            --name "docker4gis" \
+            --authorize true \
+            --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
+            --query=id)
+
+        log Make variable DOCKER_PASSWORD secret
+        az pipelines variable-group variable update \
+            --group-id "$variable_group_id" \
+            --name DOCKER_PASSWORD \
+            --secret true
+    }
+
     pipeline() {
         local name=$1
         local yaml=$2
@@ -124,6 +140,32 @@ create_pipelines() {
             --branch main \
             --yaml-path "$yaml" \
             --query=id)
+
+        # Link the build definition to the variable group.
+        curl --silent -X PUT \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECTID/_apis/build/definitions/$build_definition_id?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+                \"id\": $build_definition_id,
+                \"name\": \"$name\",
+                \"process\": {
+                    \"yamlFilename\": \"$yaml\"
+                },
+                \"repository\": {
+                    \"name\": \"$REPOSITORY\",
+                    \"type\": \"TfsGit\",
+                },	
+                \"revision\": 1,
+                \"variableGroups\": [
+                    {
+                        \"id\": $variable_group_id
+                    }
+                ]
+            }"
+
+        # Newline after curl output.
+        echo
 
         # Create a policy to require a successful build before merging.
         [ "$PR" ] && az repos policy build create --blocking true \
@@ -155,19 +197,6 @@ each_repository dg_component
 
 # Execute the create_pipeline function for each repository.
 each_repository create_pipelines
-
-log Create variable group
-variable_group_id=$(az pipelines variable-group create \
-    --name "docker4gis" \
-    --authorize true \
-    --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
-    --query=id)
-
-log Make variable DOCKER_PASSWORD secret
-az pipelines variable-group variable update \
-    --group-id "$variable_group_id" \
-    --name DOCKER_PASSWORD \
-    --secret true
 
 log Create a project-wide policy to require resolution of all comments in a pull request
 
