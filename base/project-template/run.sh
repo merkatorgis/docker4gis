@@ -141,6 +141,25 @@ create_pipelines() {
             --yaml-path "$yaml" \
             --query=id)
 
+        [ "$PR" ] || triggers='
+            "triggers": [
+                {
+                "batchChanges": false,
+                "maxConcurrentBuildsPerBranch": 1,
+                "pollingJobId": null,
+                "pollingInterval": 0,
+                "pathFilters": [],
+                "branchFilters": [
+                    "+refs/heads/main"
+                ],
+                "defaultSettingsSourceType": 2,
+                "isSettingsSourceOptionSupported": true,
+                "settingsSourceType": 2,
+                "triggerType": 2
+                }
+            ],
+        '
+
         # Link the build definition to the variable group.
         curl --silent -X PUT \
             "$authorised_collection_uri$SYSTEM_TEAMPROJECTID/_apis/build/definitions/$build_definition_id?api-version=7.1" \
@@ -157,6 +176,7 @@ create_pipelines() {
                     \"type\": \"TfsGit\",
                 },	
                 \"revision\": 1,
+                $triggers
                 \"variableGroups\": [
                     {
                         \"id\": $variable_group_id

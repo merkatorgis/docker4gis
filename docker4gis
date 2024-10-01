@@ -148,6 +148,9 @@ pipeline() {
 pr:
 - $pr
 
+pool:
+  vmImage: ubuntu-latest
+
 stages:
 - stage: $stage
   displayName: $stage_display_name
