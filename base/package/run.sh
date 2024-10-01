@@ -17,7 +17,7 @@ log=$(realpath "$DOCKER_USER".log)
 
 # Tee all stdout & stderr to a log file (from
 # https://superuser.com/a/212436/462952).
-exec > >(tee "$log") 2>&1
+exec > >(tee -a "$log") 2>&1
 
 echo "
 $(date)

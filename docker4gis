@@ -148,6 +148,9 @@ pipeline() {
 pr:
 - $pr
 
+variables:
+- group: docker4gis
+
 stages:
 - stage: $stage
   displayName: $stage_display_name
@@ -220,51 +223,75 @@ $steps" >"$file"
     local continuous_integration=azure-pipeline-continuous-integration.yml
     write "$continuous_integration"
 
-    # For a package image, append a (commented-out) stage with a job deploying
-    # the new version to the TEST environment.
-    [ "$is_package" ] && echo "
-# Uncomment the deploy_stage to have the pipeline deploy automatically to the
-# TEST environment. This depends on the docker4gis_version_step in the preceding
-# stage, AND on a Service Connection (of type \"SSH\") named TEST (see the
-# \"sshEndpoint\" attribute) configured in the Project. Note that the inline
-# script must not write anything to stderr, or the pipeline will fail (hence the
-# \"2>&1\" at the end of certain lines).
-# - stage: deploy_stage
-#   displayName: Deploy stage
-#   # Maybe you need to set up a custom pool, with an agent that runs from a
-#   # location that is whitelisted in your target servers' firewalls.
-#   # pool: VPN Agent
-#   jobs:
-#   - deployment: deploy_job
-#     displayName: Deploy job
-#     environment: TEST
-#     variables:
-#       DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
-#     strategy:
-#       runOnce:
-#         deploy:
-#           steps:
-#           - task: SSH@0
-#             inputs:
-#               sshEndpoint: TEST
-#               runOptions: inline
-#               inline: |
-#                 # Log into the Docker registry.
-#                 $docker_login_command 2>&1 &&
-#                     # Go to the application's directory.
-#                     cd /opt/docker4gis/$DOCKER_USER &&
-#                     # Log at what time the pipeline deployed which version.
-#                     echo -n \"\$(date -Iseconds) \$(DOCKER4GIS_VERSION) \" >>pipeline.log &&
-#                     {
-#                         # Start the new version of the application.
-#                         echo '' | ./$DOCKER_USER.TEST \"\$(DOCKER4GIS_VERSION)\" 2>&1
-#                         # Catch the result code.
-#                         result=\$?
-#                         # Log the result code.
-#                         echo \"\$result\" >>pipeline.log
-#                         # Return the result code, determining the task's failure or success.
-#                         exit \"\$result\"
-#                     }" >>"$continuous_integration"
+    # For a package image, append deployment stages.
+    [ "$is_package" ] && for environment in TEST PRODUCTION; do
+        temp=$(mktemp)
+        [ "$previous_environment" ] && extra_dependency="
+  - ${previous_environment}_deploy_stage"
+        echo "
+- stage: ${environment}_deploy_stage
+  displayName: Deploy $environment stage
+  dependsOn:
+  - ci_stage$extra_dependency
+  # You probably need to set up a custom pool, with an agent that runs from a
+  # location that is whitelisted in your target servers' firewalls. Otherwise,
+  # you can comment out the next line.
+  pool: VPN Agent
+  jobs:
+  - deployment: ${environment}_deploy_job
+    displayName: Deploy $environment job
+    environment: $environment
+    variables:
+      DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: SSH@0
+            inputs:
+              sshEndpoint: $environment
+              runOptions: inline
+              inline: |
+                # Log into the Docker registry.
+                $docker_login_command 2>&1 || exit
+
+                # Go to the application's directory.
+                app_dir=/opt/docker4gis/$DOCKER_USER
+                mkdir -p \$app_dir
+                cd \$app_dir || exit
+
+                tag=\$(DOCKER4GIS_VERSION)
+                echo '' | {
+$(
+            # Loop over each line in the output of command $DOCKER_BASE/package/setup_pipeline.sh
+            export DOCKER_REGISTRY
+            export DOCKER_USER
+            while IFS= read -r line; do
+                echo "                  $line"
+            done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
+        )
+                }" >"$temp"
+        if [ "$TF_BUILD" ]; then
+            # We're running from the project-template pipeline, so the
+            # Environments, and their Manual Approval checks are set up as well,
+            # preventing the deployment stages from running automatically.
+            cat "$temp" >>"$continuous_integration"
+        else
+            [ "$previous_environment" ] || echo "
+# Uncomment the deploy stages to have the pipeline deploy automatically to the
+# corresponding environment. This depends on the docker4gis_version_step in the
+# ci_stage, AND on a Service Connection (of type \"SSH\") (see the
+# \"sshEndpoint\" attribute) configured in the Project for each environment." >>"$continuous_integration"
+            # Loop over each line in "$temp" and append it, commented-out, to
+            # "$continuous_integration".
+            while IFS= read -r line; do
+                echo "# $line" >>"$continuous_integration"
+            done <"$temp"
+        fi
+        rm "$temp"
+        previous_environment=$environment
+    done
+
     # pipeline - End of function.
 }
 
@@ -923,7 +950,9 @@ $(cat "$DOCKER_BASE/$action/doc.txt")"
 
     [ "$TF_BUILD" ] || just_help "$help_text"
 
-    "$DOCKER_BASE/$action/run.sh"
+    # Only parameter is 'test', which minimalises the number of repositories
+    # created.
+    "$DOCKER_BASE/$action/run.sh" "$@"
     ;;
 
 *)

@@ -21,19 +21,23 @@ for the project-template pipeline):
     - Click Pipelines (center left) | Create pipeline (center) | Azure Repos Git
         | {this project's default repo} | Starter pipeline
 
-    5.2. Replace the starter pipeline code with exactly these two lines:
-steps:
-- bash: npx docker4gis project-template
-
-    5.3. Create the pipeline's variables (they'll be removed when the pipeline
+    5.2. Create the pipeline's variables (they'll be removed when the pipeline
     run completes):
     - Click Variables (top right) | New variable
-        -> Name: PAT, Value: {the PAT you created}, DON'T Keep this value secret
+        -> Name: PAT, Value: {the PAT you created}, tick Keep this value secret
     - Clik OK.
     - Click "+" (top right) to add another variable.
         -> Name: DOCKER_PASSWORD, Value: {your project's Docker registry
-            password}, DON'T Keep this value secret
+            password}, tick Keep this value secret
     - Click OK, then Save.
+
+    5.3. Replace all of the starter pipeline code with exactly these five lines
+    (leading whitespace is important):
+steps:
+- bash: npx docker4gis project-template
+  env:
+    PAT: $(PAT)
+    DOCKER_PASSWORD: $(DOCKER_PASSWORD)
 
     5.4. Now run the pipeline:
     - Click Save and run (top right) | Save and run (bottom right).
@@ -58,6 +62,10 @@ Remove any repositories from the project that you won't be using. Also, rename
 some - specifically rename one to "app", and one to "api", so that those
 containers will be found by the "proxy" component automatically.
 
-Lastly, a "TEST" Environment is created, along with a template "TEST" Service
-Connection. Edit the Service connection details, before uncommenting the Deploy
-Job in the Continuous Integration pipeline created in the ^package repo.
+Lastly, a "TEST" and "PRODUCTION" Environment are created, each with a template
+SSH Service Connection. Both Environments require manual Approval by a project
+Team member, so the respective Deployment Stages of the ^package's Continuous
+Integration Pipeline aren't run automatically. Edit the Service Connection
+details (Project settings | Pipelines | Service connections), before removing
+the TEST Environment Approval Check (Pipelines | Environments | TEST/PRODUCTION
+| Approvals and checks | {hover} | ⁝ | Delete).
