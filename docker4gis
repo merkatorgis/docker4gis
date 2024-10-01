@@ -148,9 +148,6 @@ pipeline() {
 pr:
 - $pr
 
-variables:
-- group: docker4gis
-
 stages:
 - stage: $stage
   displayName: $stage_display_name
