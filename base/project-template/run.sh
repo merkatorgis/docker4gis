@@ -1,5 +1,10 @@
 #!/bin/bash
 
+[ "$1" = test ] && TEST=true
+
+# Stop if we're not a pipeline.
+_=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
+
 log() {
     set +x
     echo '---------------------------------------------------------------------'
@@ -11,11 +16,6 @@ log() {
 }
 
 set -x
-
-[ "$1" = test ] || TEST=true
-
-# Stop if we're not a pipeline.
-_=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
 
 log Setup
 
