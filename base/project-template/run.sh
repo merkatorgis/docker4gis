@@ -218,6 +218,23 @@ each_repository dg_component
 # Execute the create_pipeline function for each repository.
 each_repository create_pipelines
 
+log Add Agent Pool "$VPN_POOL"
+
+pool_id=$(
+    az pipelines pool list --query="([?name=='$VPN_POOL'].id)[0]"
+)
+
+[ "$pool_id" ] && curl --silent -X POST \
+    "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/distributedtask/queues?api-version=7.1&authorizePipelines=false" \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{
+        \"name\": \"$VPN_POOL\",
+        \"pool\": {
+            \"id\": $pool_id
+        }
+    }"
+
 log Create a project-wide policy to require resolution of all comments in a pull request
 
 # Invoke the REST api to create a cross-repo main-branch policy to require
@@ -307,8 +324,8 @@ for environment in TEST PRODUCTION; do
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -d "{
-            \"name\": \"$environment\"
-        }"
+                \"name\": \"$environment\"
+            }"
     )
     environment_id=$(node --print "($environment_object).id")
 

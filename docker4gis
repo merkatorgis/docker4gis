@@ -58,6 +58,8 @@ else
     exit 1
 fi
 
+export VPN_POOL='VPN Agent'
+
 package_json() {
     [ -f package.json ] || echo '{
   "version": "0.0.0"
@@ -236,7 +238,7 @@ $steps" >"$file"
   # You probably need to set up a custom pool, with an agent that runs from a
   # location that is whitelisted in your target servers' firewalls. Otherwise,
   # you can comment out the next line.
-  pool: VPN Agent
+  pool: $VPN_POOL
   jobs:
   - deployment: ${environment}_deploy_job
     displayName: Deploy $environment job
