@@ -62,6 +62,10 @@ Remove any repositories from the project that you won't be using. Also, rename
 some - specifically rename one to "app", and one to "api", so that those
 containers will be found by the "proxy" component automatically.
 
-Lastly, a "TEST" Environment is created, along with a template "TEST" Service
-Connection. Edit the Service connection details, before uncommenting the Deploy
-Job in the Continuous Integration pipeline created in the ^package repo.
+Lastly, a "TEST" and "PRODUCTION" Environment are created, each with a template
+SSH Service Connection. Both Environments require manual Approval by a project
+Team member, so the respective Deployment Stages of the ^package's Continuous
+Integration Pipeline aren't run automatically. Edit the Service Connection
+details (Project settings | Pipelines | Service connections), before removing
+the TEST Environment Approval Check (Pipelines | Environments | TEST/PRODUCTION
+| Approvals and checks | {hover} | ⁝ | Delete).

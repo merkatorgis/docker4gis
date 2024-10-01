@@ -1,5 +1,7 @@
 #!/bin/bash
 
+[ "$1" = test ] || TEST=true
+
 # Stop if we're not a pipeline.
 _=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
 
@@ -41,7 +43,10 @@ dg() {
 
 # Run a command for each of a fixed list of REPOSITORY's.
 each_repository() {
-    for REPOSITORY in ^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat; do
+    repositories=(package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat)
+    [ "$TEST" ] && repositories=(package cron)
+
+    for REPOSITORY in "${repositories[@]}"; do
 
         REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
         # Trim surrouding "".
@@ -102,22 +107,6 @@ dg_component() {
 # Create the pipelines for the repo $REPOSITORY.
 create_pipelines() {
 
-    # Create variable group if not exists.
-    [ "$variable_group_id" ] || {
-        log Create variable group
-        variable_group_id=$(az pipelines variable-group create \
-            --name "docker4gis" \
-            --authorize true \
-            --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
-            --query=id)
-
-        log Make variable DOCKER_PASSWORD secret
-        az pipelines variable-group variable update \
-            --group-id "$variable_group_id" \
-            --name DOCKER_PASSWORD \
-            --secret true
-    }
-
     pipeline() {
         local name=$1
         local yaml=$2
@@ -135,38 +124,6 @@ create_pipelines() {
             --branch main \
             --yaml-path "$yaml" \
             --query=id)
-
-        # Disable continuous integration for the PR pipeline. But this doesn't
-        # work...
-        [ "$PR" ] &&
-            local triggers='"triggers": [],'
-
-        # Link the build definition to the variable group.
-        curl --silent -X PUT \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECTID/_apis/build/definitions/$build_definition_id?api-version=7.1" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d "{
-                \"id\": $build_definition_id,
-                \"name\": \"$name\",
-                \"process\": {
-                    \"yamlFilename\": \"$yaml\"
-                },
-                \"repository\": {
-                    \"name\": \"$REPOSITORY\",
-                    \"type\": \"TfsGit\",
-                },	
-                \"revision\": 1,
-                $triggers
-                \"variableGroups\": [
-                    {
-                        \"id\": $variable_group_id
-                    }
-                ]
-            }"
-
-        # Newline after curl output.
-        echo
 
         # Create a policy to require a successful build before merging.
         [ "$PR" ] && az repos policy build create --blocking true \
@@ -199,6 +156,19 @@ each_repository dg_component
 # Execute the create_pipeline function for each repository.
 each_repository create_pipelines
 
+log Create variable group
+variable_group_id=$(az pipelines variable-group create \
+    --name "docker4gis" \
+    --authorize true \
+    --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
+    --query=id)
+
+log Make variable DOCKER_PASSWORD secret
+az pipelines variable-group variable update \
+    --group-id "$variable_group_id" \
+    --name DOCKER_PASSWORD \
+    --secret true
+
 log Create a project-wide policy to require resolution of all comments in a pull request
 
 # Invoke the REST api to create a cross-repo main-branch policy to require
@@ -214,18 +184,16 @@ log Set permissions for the project build service
 
 # Invoke the REST api manually to get the identity descriptor of the project
 # build service, which we want to assign some permissions.
-
-curl --silent -X GET \
-    "${authorised_collection_uri_vssps}_apis/identities?api-version=7.1&searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID" \
-    -H 'Accept: application/json' \
-    >./project_build_service_identity.json
-
+project_build_service_identity=$(
+    curl --silent -X GET \
+        "${authorised_collection_uri_vssps}_apis/identities?api-version=7.1&searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID" \
+        -H 'Accept: application/json'
+)
 project_build_service_descriptor=$(
-    node --print "require('./project_build_service_identity.json').value[0].descriptor"
+    node --print "($project_build_service_identity).value[0].descriptor"
 )
 
 security_namespace_git_repositories=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
-
 # az devops security permission namespace show \
 #     --namespace-id $security_namespace_git_repositories \
 #     --output table
@@ -239,7 +207,6 @@ security_namespace_git_repositories=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
 
 # Invoke the REST api manually to allow the GenericRead, GenericContribute,
 # CreateTag, PolicyExemptproject permissions to the project build service.
-
 curl --silent -X POST \
     "${authorised_collection_uri}_apis/AccessControlEntries/$security_namespace_git_repositories?api-version=7.1" \
     -H 'Accept: application/json' \
@@ -255,20 +222,76 @@ curl --silent -X POST \
         ]
     }"
 
-log Create pipeline Environment TEST
+# Create the Environments, each with an Approval check, and an SSH Service
+# Connection.
+for environment in TEST PRODUCTION; do
+    log Create pipeline Environment "$environment"
 
-curl --silent -X POST \
-    "${authorised_collection_uri}$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
-    -H 'Accept: application/json' \
-    -H 'Content-Type: application/json' \
-    -d "{
-        \"name\": \"TEST\"
-    }"
+    environment_object=$(
+        curl --silent -X POST \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+            \"name\": \"$environment\"
+        }"
+    )
+    environment_id=$(node --print "($environment_object).id")
 
-log Create SSH Service Connection TEST
+    [ "$team_id" ] || {
+        log Query id of "$SYSTEM_TEAMPROJECT Team" group
+        team_id=$(az devops team list --query=[0].id)
+    }
 
-az devops service-endpoint create \
-    --service-endpoint-configuration "$(dirname "$0")"/ssh_service_endpoint.json
+    log Create environment "$environment" Approval check
+
+    curl -i -X POST \
+        "https://$PAT@dev.azure.com/merkatordev/wouterscherphof/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d "{
+            \"type\": {
+                \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
+                \"name\": \"Approval\"
+            },
+            \"resource\": {
+                \"type\": \"environment\",
+                \"id\": \"$environment_id\"
+            },
+            \"settings\": {
+                \"approvers\": [
+                {
+                    \"id\": \"$team_id\"
+                }
+                ]
+            }
+        }"
+
+    log Create SSH Service Connection "$environment"
+
+    [ "$environment" = TEST ] && subdomain=tst
+    [ "$environment" = PRODUCTION ] && subdomain=www
+    subdomain=${subdomain:-$environment}
+    echo "{
+        \"data\": {
+            \"Host\": \"$subdomain.example.com\",
+            \"Port\": \"22\",
+            \"PrivateKey\": null
+        },
+        \"name\": \"$environment\",
+        \"type\": \"ssh\",
+        \"authorization\": {
+            \"parameters\": {
+                \"username\": \"username\",
+                \"password\": null
+            },
+            \"scheme\": \"UsernamePassword\"
+        }
+    }" >./ssh_service_endpoint.json
+
+    az devops service-endpoint create \
+        --service-endpoint-configuration ./ssh_service_endpoint.json
+done
 
 log Delete project template repository
 

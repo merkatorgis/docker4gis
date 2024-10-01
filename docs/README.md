@@ -162,6 +162,10 @@ docker.example.com/theapp/package:237 > theapp`.
       and automatically run the build on each _pull request_ before its changes
       can be merged.
 
+**When you have Azure DevOps, the above steps can be run automatically in a
+newly created DevOps project, using `dg project-template`. See
+[instructions](../base/project-template/doc.txt).**
+
 ## Background: version management
 
 Fitting within a Docker environment, the _images_ of the different components
