@@ -225,50 +225,8 @@ curl --silent -X POST \
 # Create the Environments, each with an Approval check, and an SSH Service
 # Connection.
 for environment in TEST PRODUCTION; do
-    log Create pipeline Environment "$environment"
-
-    environment_object=$(
-        curl --silent -X POST \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d "{
-            \"name\": \"$environment\"
-        }"
-    )
-    environment_id=$(node --print "($environment_object).id")
-
-    [ "$team_id" ] || {
-        log Query id of "$SYSTEM_TEAMPROJECT Team" group
-        team_id=$(az devops team list --query=[0].id)
-    }
-
-    log Create environment "$environment" Approval check
-
-    curl -i -X POST \
-        "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d "{
-            \"type\": {
-                \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
-                \"name\": \"Approval\"
-            },
-            \"resource\": {
-                \"type\": \"environment\",
-                \"id\": \"$environment_id\"
-            },
-            \"settings\": {
-                \"approvers\": [
-                    {
-                        \"id\": \"$team_id\"
-                    }
-                ]
-            }
-        }"
 
     log Create SSH Service Connection "$environment"
-
     [ "$environment" = TEST ] && subdomain=tst
     [ "$environment" = PRODUCTION ] && subdomain=www
     subdomain=${subdomain:-$environment}
@@ -291,6 +249,50 @@ for environment in TEST PRODUCTION; do
 
     az devops service-endpoint create \
         --service-endpoint-configuration ./ssh_service_endpoint.json
+
+    log Create pipeline Environment "$environment"
+
+    environment_object=$(
+        curl --silent -X POST \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+            \"name\": \"$environment\"
+        }"
+    )
+    environment_id=$(node --print "($environment_object).id")
+
+    [ "$team_id" ] || {
+        log Query id of "$SYSTEM_TEAMPROJECT Team" group
+        team_id=$(az devops team list --query=[0].id)
+        # Trim surrouding "".
+        eval "team_id=$team_id"
+    }
+
+    log Create environment "$environment" Approval check
+
+    curl --silent -X POST \
+        "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d "{
+            \"type\": {
+                \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
+                \"name\": \"Approval\"
+            },
+            \"resource\": {
+                \"type\": \"environment\",
+                \"id\": \"$environment_id\"
+            },
+            \"settings\": {
+                \"approvers\": [
+                    {
+                        \"id\": \"$team_id\"
+                    }
+                ]
+            }
+        }"
 done
 
 log Delete project template repository
