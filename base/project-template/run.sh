@@ -1,10 +1,5 @@
 #!/bin/bash
 
-[ "$1" = test ] || TEST=true
-
-# Stop if we're not a pipeline.
-_=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
-
 log() {
     set +x
     echo '---------------------------------------------------------------------'
@@ -16,6 +11,11 @@ log() {
 }
 
 set -x
+
+[ "$1" = test ] || TEST=true
+
+# Stop if we're not a pipeline.
+_=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
 
 log Setup
 
@@ -43,8 +43,8 @@ dg() {
 
 # Run a command for each of a fixed list of REPOSITORY's.
 each_repository() {
-    repositories=(package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat)
-    [ "$TEST" ] && repositories=(package cron)
+    repositories=(^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat)
+    [ "$TEST" ] && repositories=(^package cron)
 
     for REPOSITORY in "${repositories[@]}"; do
 
