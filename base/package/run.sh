@@ -59,7 +59,7 @@ OSM_CACHE_MB=$OSM_CACHE_MB
 read -rn 1 -p "Press any key to continue..."
 
 echo "
-Executing $DOCKER_REGISTRY$DOCKER_USER/package:$tag
+Executing $DOCKER_REGISTRY/$DOCKER_USER/package:$tag
 "
 
 temp=$(mktemp -d)
