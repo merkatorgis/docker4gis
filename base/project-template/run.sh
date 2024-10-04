@@ -182,6 +182,7 @@ for environment in TEST PRODUCTION; do
                 \"type\": \"environment\",
                 \"id\": \"$environment_id\"
             },
+            \"timeout\": 60,
             \"settings\": {
                 \"approvers\": [
                     {
@@ -224,15 +225,6 @@ create_pipelines() {
 
         log Create pipeline "$name"
 
-        [ "$PR" ] || local triggers='"triggers": [{
-            "branchFilters": [],
-            "pathFilters": [],
-            "settingsSourceType": 2,
-            "batchChanges": false,
-            "maxConcurrentBuildsPerBranch": 1,
-            "triggerType": "continuousIntegration"
-        }]'
-
         # Create the pipeline, a.k.a. build definition.
         build_definition=$(curl --silent -X POST \
             "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/build/definitions?api-version=7.1" \
@@ -249,8 +241,7 @@ create_pipelines() {
                     \"type\": 2
                 },
                 \"variableGroups\": [ { \"id\": $variable_group_id } ],
-                \"queue\": { \"name\": \"Azure Pipelines\" },
-                $triggers
+                \"queue\": { \"name\": \"Azure Pipelines\" }
             }")
         echo "$build_definition"
 
