@@ -408,9 +408,20 @@ case "$action" in
 variables)
     echo "BUILD_REPOSITORY_NAME=$BUILD_REPOSITORY_NAME"
     echo "SYSTEM_TEAMPROJECT=$SYSTEM_TEAMPROJECT"
+
     dotenv export
-    echo "DOCKER_REPO=$DOCKER_REPO"
-    echo "DOCKER_USER=$DOCKER_USER"
+
+    echo "variables):
+    - DOCKER_REPO=$DOCKER_REPO
+    - DOCKER_USER=$DOCKER_USER
+    "
+
+    "$DOCKER_BASE"/variables.sh
+
+    echo export
+    export DOCKER_REPO
+    export DOCKER_USER
+    "$DOCKER_BASE"/variables.sh
     ;;
 
 init)
@@ -753,6 +764,7 @@ container, to the geoserver component repository in the current directory."
     [ "$action" = p ] && action=push
     [ "$action" = t ] && action='test'
 
+    "$DOCKER_BASE"/variables.sh
     "$DOCKER_BASE/main.sh" . "$action" "$@"
     ;;
 
