@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Uncomment for debugging the commands that are issued:
+# Uncomment for debugging the commands that are issued:
 echo
 echo " -- main.sh $* --"
 echo
