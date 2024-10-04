@@ -212,6 +212,15 @@ create_pipelines() {
             --secret true
     }
 
+    [ "$triggers_definition" ] || triggers_definition='"triggers": [{
+        "branchFilters": [],
+        "pathFilters": [],
+        "settingsSourceType": 2,
+        "batchChanges": false,
+        "maxConcurrentBuildsPerBranch": 1,
+        "triggerType": "continuousIntegration"
+    }]'
+
     local yaml
     for yaml in \
         azure-pipeline-continuous-integration.yml \
@@ -224,6 +233,9 @@ create_pipelines() {
         [ "$PR" ] && name="$name PR"
 
         log Create pipeline "$name"
+
+        local triggers
+        [ "$PR" ] || triggers=$triggers_definition
 
         # Create the pipeline, a.k.a. build definition.
         build_definition=$(curl --silent -X POST \
@@ -241,7 +253,8 @@ create_pipelines() {
                     \"type\": 2
                 },
                 \"variableGroups\": [ { \"id\": $variable_group_id } ],
-                \"queue\": { \"name\": \"Azure Pipelines\" }
+                \"queue\": { \"name\": \"Azure Pipelines\" },
+                $triggers
             }")
         echo "$build_definition"
 
