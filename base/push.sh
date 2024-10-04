@@ -1,23 +1,19 @@
 #!/bin/bash
-set -e
+set -ex
 
 for build_arg in "$@"; do
     suffix=$suffix-$build_arg
 done
 
-DOCKER_BASE=$DOCKER_BASE
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$DOCKER_REPO
+_=${DOCKER_BASE:?'Must have DOCKER_BASE set.'}
+_=${DOCKER_REGISTRY:?'Must have DOCKER_REGISTRY set.'}
+_=${DOCKER_USER:?'Must have DOCKER_USER set.'}
+_=${DOCKER_REPO:?'Must have DOCKER_REPO set.'}
 
 error() {
     echo "Error: $1" >&2
     exit 1
 }
-
-if ! [ "$DOCKER_REPO" ]; then
-    error "DOCKER_REPO variable not set"
-fi
 
 if ! "$DOCKER_BASE"/check_git_clear.sh; then
     exit 1
