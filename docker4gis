@@ -753,16 +753,15 @@ container, to the geoserver component repository in the current directory."
             # Output this version's base directory.
             npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
         ))
-    # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
-    # the new in-development version to see its effects.
-    else
-        export DOCKER4GIS_VERSION=$version_development
     fi
 
     [ "$action" = b ] && action=build
     [ "$action" = r ] && action=run
     [ "$action" = p ] && action=push
     [ "$action" = t ] && action='test'
+
+    dotenv export
+    [ "$INSTALLED" ] || export DOCKER4GIS_VERSION=$version_development
 
     "$DOCKER_BASE"/variables.sh
     "$DOCKER_BASE/main.sh" . "$action" "$@"
