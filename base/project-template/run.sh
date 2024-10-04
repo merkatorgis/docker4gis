@@ -93,7 +93,7 @@ dg_component() {
     local action=component
     if [ "$REPOSITORY" = ^package ]; then
         action=init
-        local registry=docker.merkator.com
+        local registry=$PIPELINE_DOCKER_REGISTRY
     fi
     cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" &&
         log "dg $action $REPOSITORY" &&
@@ -281,10 +281,10 @@ create_pipelines() {
 # Execute the create_pipeline function for each repository.
 each_repository create_pipelines
 
-log Add Agent Pool "$VPN_POOL"
+log Add Agent Pool "$PIPELINE_VPN_POOL"
 
 pool_id=$(
-    az pipelines pool list --query="([?name=='$VPN_POOL'].id)[0]"
+    az pipelines pool list --query="([?name=='$PIPELINE_VPN_POOL'].id)[0]"
 )
 
 [ "$pool_id" ] && curl --silent -X POST \
@@ -292,7 +292,7 @@ pool_id=$(
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
-        \"name\": \"$VPN_POOL\",
+        \"name\": \"$PIPELINE_VPN_POOL\",
         \"pool\": {
             \"id\": $pool_id
         }
