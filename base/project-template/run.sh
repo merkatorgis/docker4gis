@@ -347,22 +347,24 @@ curl --silent -X POST \
         ]
     }"
 
-log Delete project template repository
+if [ -z "$TEST" ]; then
+    log Delete project template repository
 
-# Query the id of the repo to delete.
-id=$(az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
-    # Trim surrouding "".
-    eval "id=$id" &&
-    [ "$id" ]
+    # Query the id of the repo to delete.
+    id=$(az repos show --repository="$SYSTEM_TEAMPROJECT" --query=id) &&
+        # Trim surrouding "".
+        eval "id=$id" &&
+        [ "$id" ]
 
-# Delete the repo by id.
-az repos delete --id="$id" --yes
+    # Delete the repo by id.
+    az repos delete --id="$id" --yes
 
-log Delete project template pipeline
+    log Delete project template pipeline
 
-# Query the id of the pipeline to delete.
-id=$(az pipelines show --name="$SYSTEM_TEAMPROJECT" --query=id) &&
-    [ "$id" ]
+    # Query the id of the pipeline to delete.
+    id=$(az pipelines show --name="$SYSTEM_TEAMPROJECT" --query=id) &&
+        [ "$id" ]
 
-# Delete the pipeline by id.
-az pipelines delete --id="$id" --yes
+    # Delete the pipeline by id.
+    az pipelines delete --id="$id" --yes
+fi
