@@ -409,25 +409,6 @@ rename_replace() {
 
 case "$action" in
 
-variables)
-    echo "BUILD_REPOSITORY_NAME=$BUILD_REPOSITORY_NAME"
-    echo "SYSTEM_TEAMPROJECT=$SYSTEM_TEAMPROJECT"
-
-    dotenv export
-
-    echo "variables):
-    - DOCKER_REPO=$DOCKER_REPO
-    - DOCKER_USER=$DOCKER_USER
-    "
-
-    "$DOCKER_BASE"/variables.sh
-
-    echo export
-    export DOCKER_REPO
-    export DOCKER_USER
-    "$DOCKER_BASE"/variables.sh
-    ;;
-
 init)
     help "Initialise a new $docker4gis application in the current directory.
 Do this in a directory where you can later create sibbling directories for the
@@ -750,13 +731,19 @@ container, to the geoserver component repository in the current directory."
     # docker4gis, switch to the version that the component scripts are
     # expecting.
     if [ "$INSTALLED" ]; then
-        [ "$DOCKER4GIS_TRACE" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
-        DOCKER_BASE=$( (
-            # Prevent any trace output.
-            set +x
-            # Output this version's base directory.
-            npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
-        ))
+        if [ "$DOCKER4GIS_VERSION" != "$(version)" ]; then
+            [ "$DOCKER4GIS_TRACE" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
+            DOCKER_BASE=$( (
+                # Prevent any trace output.
+                set +x
+                # Output this version's base directory.
+                npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
+            ))
+        fi
+    else
+        # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
+        # the new in-development version to see its effects.
+        export DOCKER4GIS_VERSION=$version_development
     fi
 
     [ "$action" = b ] && action=build
@@ -764,10 +751,6 @@ container, to the geoserver component repository in the current directory."
     [ "$action" = p ] && action=push
     [ "$action" = t ] && action='test'
 
-    dotenv export
-    [ "$INSTALLED" ] || export DOCKER4GIS_VERSION=$version_development
-
-    "$DOCKER_BASE"/variables.sh
     "$DOCKER_BASE/main.sh" . "$action" "$@"
     ;;
 
