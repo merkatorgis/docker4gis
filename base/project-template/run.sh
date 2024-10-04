@@ -83,8 +83,8 @@ create_repository() {
 # Clone the repo $REPOSITORY.
 git_clone() {
     log "Clone $REPOSITORY"
-    mkdir -p ~/project &&
-        cd ~/project &&
+    mkdir -p ~/"$SYSTEM_TEAMPROJECT" &&
+        cd ~/"$SYSTEM_TEAMPROJECT" &&
         git clone "$(git_origin)"
 }
 
@@ -95,115 +95,13 @@ dg_component() {
         action=init
         local registry=docker.merkator.com
     fi
-    cd ~/project/"$REPOSITORY" &&
+    cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" &&
         log "dg $action $REPOSITORY" &&
         echo n | dg "$action" "$registry" &&
         log "Save $REPOSITORY changes" &&
         git add . &&
         git commit -m "docker4gis $action" &&
         git push origin
-}
-
-# Create the pipelines for the repo $REPOSITORY.
-create_pipelines() {
-
-    # Create variable group if not exists.
-    [ "$variable_group_id" ] || {
-        log Create variable group
-        variable_group_id=$(az pipelines variable-group create \
-            --name "docker4gis" \
-            --authorize true \
-            --variables "DOCKER_PASSWORD=$(DOCKER_PASSWORD)" \
-            --query=id)
-
-        log Make variable DOCKER_PASSWORD secret
-        az pipelines variable-group variable update \
-            --group-id "$variable_group_id" \
-            --name DOCKER_PASSWORD \
-            --secret true
-    }
-
-    pipeline() {
-        local name=$1
-        local yaml=$2
-
-        [ "$yaml" = azure-pipeline-build-validation.yml ] &&
-            local PR=true
-
-        log Create pipeline "$name"
-
-        # Create the pipeline, a.k.a. build definition.
-        build_definition_id=$(az pipelines create --name "$name" \
-            --skip-first-run \
-            --repository "$REPOSITORY" \
-            --repository-type tfsgit \
-            --branch main \
-            --yaml-path "$yaml" \
-            --query=id)
-
-        [ "$PR" ] || triggers='
-            "triggers": [
-                {
-                "batchChanges": false,
-                "maxConcurrentBuildsPerBranch": 1,
-                "pollingJobId": null,
-                "pollingInterval": 0,
-                "pathFilters": [],
-                "branchFilters": [
-                    "+refs/heads/main"
-                ],
-                "defaultSettingsSourceType": 2,
-                "isSettingsSourceOptionSupported": true,
-                "settingsSourceType": 2,
-                "triggerType": 2
-                }
-            ],
-        '
-
-        # Link the build definition to the variable group.
-        curl --silent -X PUT \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECTID/_apis/build/definitions/$build_definition_id?api-version=7.1" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d "{
-                \"id\": $build_definition_id,
-                \"name\": \"$name\",
-                \"process\": {
-                    \"yamlFilename\": \"$yaml\"
-                },
-                \"repository\": {
-                    \"name\": \"$REPOSITORY\",
-                    \"type\": \"TfsGit\",
-                },	
-                \"revision\": 1,
-                $triggers
-                \"variableGroups\": [
-                    {
-                        \"id\": $variable_group_id
-                    }
-                ]
-            }"
-
-        # Newline after curl output.
-        echo
-
-        # Create a policy to require a successful build before merging.
-        [ "$PR" ] && az repos policy build create --blocking true \
-            --build-definition-id "$build_definition_id" \
-            --repository-id "$REPOSITORY_ID" \
-            --branch main \
-            --display-name "$name" \
-            --enabled true \
-            --manual-queue-only false \
-            --queue-on-source-update-only false \
-            --valid-duration 0
-    }
-
-    pipeline "$REPOSITORY" \
-        azure-pipeline-continuous-integration.yml
-
-    pipeline "$REPOSITORY PR" \
-        azure-pipeline-build-validation.yml
 }
 
 # Execute the create_repository function for each repository.
@@ -214,6 +112,167 @@ each_repository git_clone
 
 # Execute the dg_component function for each repository.
 each_repository dg_component
+
+# Create the Environments, each with an Approval check, and an SSH Service
+# Connection. Do this before creating any pipelines referencing the
+# environments, because that will create them automatically, and in a state that
+# prevents us from adding the approval checks.
+for environment in TEST PRODUCTION; do
+
+    # Create service connections before environments, to prevent an exception
+    # about not having the privilege to create the service connection.
+
+    log Create SSH Service Connection "$environment"
+
+    [ "$environment" = TEST ] && subdomain=tst
+    [ "$environment" = PRODUCTION ] && subdomain=www
+    subdomain=${subdomain:-$environment}
+    echo "{
+        \"data\": {
+            \"Host\": \"$subdomain.example.com\",
+            \"Port\": \"22\",
+            \"PrivateKey\": null
+        },
+        \"name\": \"$environment\",
+        \"type\": \"ssh\",
+        \"authorization\": {
+            \"parameters\": {
+                \"username\": \"username\",
+                \"password\": null
+            },
+            \"scheme\": \"UsernamePassword\"
+        }
+    }" >./ssh_service_endpoint.json
+
+    az devops service-endpoint create \
+        --service-endpoint-configuration ./ssh_service_endpoint.json
+
+    log Create pipeline Environment "$environment"
+
+    environment_object=$(
+        curl --silent -X POST \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+                    \"name\": \"$environment\"
+                }"
+    )
+    environment_id=$(node --print "($environment_object).id")
+
+    [ "$team_id" ] || {
+        log Query id of "$SYSTEM_TEAMPROJECT Team" group
+        team_id=$(az devops team list --query=[0].id)
+        # Trim surrouding "".
+        eval "team_id=$team_id"
+    }
+
+    log Create environment "$environment" Approval check
+
+    curl --silent -X POST \
+        "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d "{
+            \"type\": {
+                \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
+                \"name\": \"Approval\"
+            },
+            \"resource\": {
+                \"type\": \"environment\",
+                \"id\": \"$environment_id\"
+            },
+            \"settings\": {
+                \"approvers\": [
+                    {
+                        \"id\": \"$team_id\"
+                    }
+                ]
+            }
+        }"
+done
+
+# Create the pipelines for the repo $REPOSITORY.
+create_pipelines() {
+
+    # Create variable group if not exists.
+    [ "$variable_group_id" ] || {
+        log Create variable group
+        variable_group_id=$(az pipelines variable-group create \
+            --name "docker4gis" \
+            --authorize true \
+            --variables "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
+            --query=id)
+
+        log Make variable DOCKER_PASSWORD secret
+        az pipelines variable-group variable update \
+            --group-id "$variable_group_id" \
+            --name DOCKER_PASSWORD \
+            --secret true
+    }
+
+    local yaml
+    for yaml in \
+        azure-pipeline-continuous-integration.yml \
+        azure-pipeline-build-validation.yml; do
+
+        [ "$yaml" = azure-pipeline-build-validation.yml ] &&
+            local PR=true
+
+        local name=$REPOSITORY
+        [ "$PR" ] && name="$name PR"
+
+        log Create pipeline "$name"
+
+        [ "$PR" ] || local triggers='"triggers": [{
+            "branchFilters": [],
+            "pathFilters": [],
+            "settingsSourceType": 2,
+            "batchChanges": false,
+            "maxConcurrentBuildsPerBranch": 1,
+            "triggerType": "continuousIntegration"
+        }]'
+
+        # Create the pipeline, a.k.a. build definition.
+        build_definition=$(curl --silent -X POST \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/build/definitions?api-version=7.1" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{
+                \"name\": \"$name\",
+                \"repository\": {
+                    \"type\": \"TfsGit\",
+                    \"name\": \"$REPOSITORY\"
+                },
+                \"process\": {
+                    \"yamlFilename\": \"$yaml\",
+                    \"type\": 2
+                },
+                \"variableGroups\": [ { \"id\": $variable_group_id } ],
+                \"queue\": { \"name\": \"Azure Pipelines\" },
+                $triggers
+            }")
+        echo "$build_definition"
+
+        build_definition_id=$(
+            node --print "($build_definition).id"
+        )
+
+        # Create a policy to require a successful build before merging.
+        [ "$PR" ] && {
+            log Create build policy "$name"
+            az repos policy build create --blocking true \
+                --build-definition-id "$build_definition_id" \
+                --repository-id "$REPOSITORY_ID" \
+                --branch main \
+                --display-name "$name" \
+                --enabled true \
+                --manual-queue-only false \
+                --queue-on-source-update-only false \
+                --valid-duration 0
+        }
+    done
+}
 
 # Execute the create_pipeline function for each repository.
 each_repository create_pipelines
@@ -287,79 +346,6 @@ curl --silent -X POST \
             }
         ]
     }"
-
-# Create the Environments, each with an Approval check, and an SSH Service
-# Connection.
-for environment in TEST PRODUCTION; do
-
-    log Create SSH Service Connection "$environment"
-    [ "$environment" = TEST ] && subdomain=tst
-    [ "$environment" = PRODUCTION ] && subdomain=www
-    subdomain=${subdomain:-$environment}
-    echo "{
-        \"data\": {
-            \"Host\": \"$subdomain.example.com\",
-            \"Port\": \"22\",
-            \"PrivateKey\": null
-        },
-        \"name\": \"$environment\",
-        \"type\": \"ssh\",
-        \"authorization\": {
-            \"parameters\": {
-                \"username\": \"username\",
-                \"password\": null
-            },
-            \"scheme\": \"UsernamePassword\"
-        }
-    }" >./ssh_service_endpoint.json
-
-    az devops service-endpoint create \
-        --service-endpoint-configuration ./ssh_service_endpoint.json
-
-    log Create pipeline Environment "$environment"
-
-    environment_object=$(
-        curl --silent -X POST \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
-            -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d "{
-                \"name\": \"$environment\"
-            }"
-    )
-    environment_id=$(node --print "($environment_object).id")
-
-    [ "$team_id" ] || {
-        log Query id of "$SYSTEM_TEAMPROJECT Team" group
-        team_id=$(az devops team list --query=[0].id)
-        # Trim surrouding "".
-        eval "team_id=$team_id"
-    }
-
-    log Create environment "$environment" Approval check
-
-    curl --silent -X POST \
-        "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d "{
-            \"type\": {
-                \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
-                \"name\": \"Approval\"
-            },
-            \"resource\": {
-                \"type\": \"environment\",
-                \"id\": \"$environment_id\"
-            },
-            \"settings\": {
-                \"approvers\": [
-                    {
-                        \"id\": \"$team_id\"
-                    }
-                ]
-            }
-        }"
-done
 
 log Delete project template repository
 
