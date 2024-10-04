@@ -150,9 +150,6 @@ pipeline() {
 pr:
 - $pr
 
-pool:
-  vmImage: ubuntu-latest
-
 stages:
 - stage: $stage
   displayName: $stage_display_name
@@ -323,8 +320,15 @@ dotenv() {
         [ "$flag" = 'export' ] && set -a
         # shellcheck source=/dev/null
         source "$file"
-        [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath .)")
-        [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(realpath ..)")
+        if [ "$TF_BUILD" ]; then
+            # Running in an Azure DevOps pipeline.
+            [ "$DOCKER_REPO" ] || DOCKER_REPO=$BUILD_REPOSITORY_NAME
+            [ "$DOCKER_USER" ] || DOCKER_USER=$SYSTEM_TEAMPROJECT
+        else
+            # Running in a local clone, that should be in a proper directory structure.
+            [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath .)")
+            [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(realpath ..)")
+        fi
         [ "$flag" = 'export' ] && set +a
     fi
 
