@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 for build_arg in "$@"; do
     suffix=$suffix-$build_arg
