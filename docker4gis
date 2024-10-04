@@ -58,7 +58,11 @@ else
     exit 1
 fi
 
-export VPN_POOL='VPN Agent'
+export PIPELINE=${PIPELINE:-$TF_BUILD}
+export PIPELINE_DOCKER_USER=${PIPELINE_DOCKER_USER:-$BUILD_REPOSITORY_NAME}
+export PIPELINE_DOCKER_REPO=${PIPELINE_DOCKER_REPO:-$SYSTEM_TEAMPROJECT}
+export PIPELINE_DOCKER_REGISTRY=${PIPELINE_DOCKER_REGISTRY:-'docker.merkator.com'}
+export PIPELINE_VPN_POOL=${PIPELINE_VPN_POOL:-'VPN Agent'}
 
 package_json() {
     [ -f package.json ] || echo '{
@@ -235,7 +239,7 @@ $steps" >"$file"
   # You probably need to set up a custom pool, with an agent that runs from a
   # location that is whitelisted in your target servers' firewalls. Otherwise,
   # you can comment out the next line.
-  pool: $VPN_POOL
+  pool: $PIPELINE_VPN_POOL
   jobs:
   - deployment: ${environment}_deploy_job
     displayName: Deploy $environment job
@@ -270,7 +274,7 @@ $(
             done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
         )
                 }" >"$temp"
-        if [ "$TF_BUILD" ]; then
+        if [ "$PIPELINE" ]; then
             # We're running from the project-template pipeline, so the
             # Environments, and their Manual Approval checks are set up as well,
             # preventing the deployment stages from running automatically.
@@ -320,12 +324,13 @@ dotenv() {
         [ "$flag" = 'export' ] && set -a
         # shellcheck source=/dev/null
         source "$file"
-        if [ "$TF_BUILD" ]; then
-            # Running in an Azure DevOps pipeline.
-            [ "$DOCKER_REPO" ] || DOCKER_REPO=$BUILD_REPOSITORY_NAME
-            [ "$DOCKER_USER" ] || DOCKER_USER=$SYSTEM_TEAMPROJECT
+        if [ "$PIPELINE" ]; then
+            # Running in a pipeline.
+            [ "$DOCKER_REPO" ] || DOCKER_REPO=$PIPELINE_DOCKER_REPO
+            [ "$DOCKER_USER" ] || DOCKER_USER=$PIPELINE_DOCKER_USER
         else
-            # Running in a local clone, that should be in a proper directory structure.
+            # Running in a local clone, that should be in a proper directory
+            # structure.
             [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath .)")
             [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(realpath ..)")
         fi
@@ -336,7 +341,9 @@ dotenv() {
         }
     fi
 
-    if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
+    if [ "$DOCKER4GIS_VERSION" ] &&
+        [ -e "$file" ] &&
+        [ -e "$(dirname "$file")"/package.json ]; then
         true
     elif [ "$flag" = 'forgiving' ]; then
         false
@@ -960,7 +967,7 @@ Azure DevOps project:
 $(cat "$DOCKER_BASE/$action/doc.txt")"
     help "$help_text"
 
-    [ "$TF_BUILD" ] || just_help "$help_text"
+    [ "$PIPELINE" ] || just_help "$help_text"
 
     # Only parameter is 'test', which minimalises the number of repositories
     # created.
