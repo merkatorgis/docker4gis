@@ -329,7 +329,11 @@ dotenv() {
             [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath .)")
             [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(realpath ..)")
         fi
-        [ "$flag" = 'export' ] && set +a
+        [ "$flag" = 'export' ] && {
+            set +a
+            export DOCKER_REPO
+            export DOCKER_USER
+        }
     fi
 
     if [ "$DOCKER4GIS_VERSION" ] && [ -e "$file" ] && [ -e "$(dirname "$file")"/package.json ]; then
