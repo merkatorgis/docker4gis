@@ -38,7 +38,7 @@ az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 
 dg() {
-    npx docker4gis "$@"
+    npx --yes docker4gis@latest "$@"
 }
 
 # Get an authenticated git origin URI for repo $REPOSITORY.
