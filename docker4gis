@@ -465,7 +465,9 @@ POSTFIX_DOMAIN=" >>.env
     pipeline
 
     # Offer to create the dg alias.
-    [ -z "$PIPELINE" ] && [ -z "$ALIAS_NAME" ] && bash -i "$0" alias TEST
+    if [ -z "$PIPELINE" ] && [ -z "$ALIAS_NAME" ]; then
+        bash -i "$0" alias TEST
+    fi
     ;;
 
 component | base-component | template)
