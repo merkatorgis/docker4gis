@@ -11,15 +11,15 @@ dotenv() {
         source "$file"
         if [ "$PIPELINE" ]; then
             # Running in a pipeline.
-            [ "$DOCKER_REPO" ] || DOCKER_REPO=$PIPELINE_DOCKER_REPO
-            [ "$DOCKER_USER" ] || DOCKER_USER=$PIPELINE_DOCKER_USER
+            DOCKER_REPO=${DOCKER_REPO:-$PIPELINE_DOCKER_REPO}
+            DOCKER_USER=${DOCKER_USER:-$PIPELINE_DOCKER_USER}
         else
             # Running in a local clone, that should be in a proper directory
             # structure.
             local dir
             dir=$(realpath "$(dirname "$file")")
-            [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$dir")
-            [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(dirname "$dir")")
+            DOCKER_REPO=${DOCKER_REPO:-$(basename "$dir")}
+            DOCKER_USER=${DOCKER_USER:-$(basename "$(dirname "$dir")")}
         fi
         [ "$flag" = 'export' ] && {
             set +a
