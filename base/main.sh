@@ -57,6 +57,9 @@ this() {
 	"$0" "$dir" "$@"
 }
 
+# shellcheck disable=SC1091
+source "$DOCKER_BASE"/dotenv.bash
+
 dir() {
 	# If the first argument is a docker4gis component/package directory, perform
 	# the current action in the given component/package directory, with the
@@ -71,8 +74,7 @@ dir() {
 		for env_file in ../*/.env; do
 			[ -f "$env_file" ] || break
 			(
-				# shellcheck source=/dev/null
-				. "$env_file"
+				dotenv forgiving "$env_file"
 				if [ "$repo" = "$DOCKER_REPO" ]; then
 					dir=$(dirname "$env_file")
 					# Signal.
