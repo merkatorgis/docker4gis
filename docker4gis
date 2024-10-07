@@ -463,7 +463,9 @@ POSTFIX_DOMAIN=" >>.env
 
     package_json
     pipeline
-    [ "$ALIAS_NAME" ] || bash -i "$0" alias TEST
+
+    # Offer to create the dg alias.
+    [ -z "$PIPELINE" ] && [ -z "$ALIAS_NAME" ] && bash -i "$0" alias TEST
     ;;
 
 component | base-component | template)

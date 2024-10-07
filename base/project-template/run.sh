@@ -41,21 +41,6 @@ dg() {
     npx docker4gis "$@"
 }
 
-# Run a command for each of a fixed list of REPOSITORY's.
-each_repository() {
-    repositories=(^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat)
-    [ "$TEST" ] && repositories=(^package cron)
-
-    for REPOSITORY in "${repositories[@]}"; do
-
-        REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
-        # Trim surrouding "".
-        eval "REPOSITORY_ID=$REPOSITORY_ID"
-
-        "$@" || exit
-    done
-}
-
 # Get an authenticated git origin URI for repo $REPOSITORY.
 git_origin() {
     echo "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
@@ -68,8 +53,8 @@ create_repository() {
         log "Initialise repository $REPOSITORY" &&
         (
             temp=$(mktemp --directory)
-            cd "$temp" || exit
-            git init &&
+            cd "$temp" &&
+                git init &&
                 git commit --allow-empty -m "initialise repository" &&
                 git branch -m main &&
                 git remote add origin "$(git_origin)" &&
@@ -89,45 +74,40 @@ git_clone() {
 }
 
 # Create a docker4gis component for the repo $REPOSITORY.
-dg_component() {
-    local action=component
-    if [ "$REPOSITORY" = ^package ]; then
-        action=init
-        local registry=$PIPELINE_DOCKER_REGISTRY
-    fi
+dg_init_component() {
+    log "dg init/component $REPOSITORY" &&
+        if [ "$REPOSITORY" = ^package ]; then
+            dg init "${PIPELINE_DOCKER_REGISTRY:-docker.merkator.com}"
+        else
+            dg component "$REPOSITORY"
+        fi
     cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" &&
-        log "dg $action $REPOSITORY" &&
-        echo n | dg "$action" "$registry" &&
         log "Save $REPOSITORY changes" &&
         git add . &&
-        git commit -m "docker4gis $action" &&
+        git commit -m "docker4gis init/component" &&
         git push origin
 }
 
-# Execute the create_repository function for each repository.
-each_repository create_repository
+create_environments() {
 
-# Execute the git_clone function for each repository.
-each_repository git_clone
+    # Skip if already created.
+    [ -z "$environment" ] || return
 
-# Execute the dg_component function for each repository.
-each_repository dg_component
+    # Create the Environments, each with an Approval check, and an SSH Service
+    # Connection. Do this before creating any pipelines referencing the
+    # environments, because that will create them automatically, and in a state that
+    # prevents us from adding the approval checks.
+    for environment in TEST PRODUCTION; do
 
-# Create the Environments, each with an Approval check, and an SSH Service
-# Connection. Do this before creating any pipelines referencing the
-# environments, because that will create them automatically, and in a state that
-# prevents us from adding the approval checks.
-for environment in TEST PRODUCTION; do
+        # Create service connections before environments, to prevent an exception
+        # about not having the privilege to create the service connection.
 
-    # Create service connections before environments, to prevent an exception
-    # about not having the privilege to create the service connection.
+        log Create SSH Service Connection "$environment"
 
-    log Create SSH Service Connection "$environment"
-
-    [ "$environment" = TEST ] && subdomain=tst
-    [ "$environment" = PRODUCTION ] && subdomain=www
-    subdomain=${subdomain:-$environment}
-    echo "{
+        [ "$environment" = TEST ] && subdomain=tst
+        [ "$environment" = PRODUCTION ] && subdomain=www
+        subdomain=${subdomain:-$environment}
+        echo "{
         \"data\": {
             \"Host\": \"$subdomain.example.com\",
             \"Port\": \"22\",
@@ -144,36 +124,36 @@ for environment in TEST PRODUCTION; do
         }
     }" >./ssh_service_endpoint.json
 
-    az devops service-endpoint create \
-        --service-endpoint-configuration ./ssh_service_endpoint.json
+        az devops service-endpoint create \
+            --service-endpoint-configuration ./ssh_service_endpoint.json
 
-    log Create pipeline Environment "$environment"
+        log Create pipeline Environment "$environment"
 
-    environment_object=$(
+        environment_object=$(
+            curl --silent -X POST \
+                "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+                -H 'Accept: application/json' \
+                -H 'Content-Type: application/json' \
+                -d "{
+                    \"name\": \"$environment\"
+                }"
+        )
+        environment_id=$(node --print "($environment_object).id")
+
+        [ "$team_id" ] || {
+            log Query id of "$SYSTEM_TEAMPROJECT Team" group
+            team_id=$(az devops team list --query=[0].id)
+            # Trim surrouding "".
+            eval "team_id=$team_id"
+        }
+
+        log Create environment "$environment" Approval check
+
         curl --silent -X POST \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -d "{
-                    \"name\": \"$environment\"
-                }"
-    )
-    environment_id=$(node --print "($environment_object).id")
-
-    [ "$team_id" ] || {
-        log Query id of "$SYSTEM_TEAMPROJECT Team" group
-        team_id=$(az devops team list --query=[0].id)
-        # Trim surrouding "".
-        eval "team_id=$team_id"
-    }
-
-    log Create environment "$environment" Approval check
-
-    curl --silent -X POST \
-        "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d "{
             \"type\": {
                 \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
                 \"name\": \"Approval\"
@@ -191,35 +171,42 @@ for environment in TEST PRODUCTION; do
                 ]
             }
         }"
-done
+    done
+}
+
+create_variable_group() {
+
+    # Skip if already created.
+    [ -z "$variable_group_id" ] || return
+
+    log Create variable group
+    variable_group_id=$(az pipelines variable-group create \
+        --name "docker4gis" \
+        --authorize true \
+        --variables "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
+        --query=id)
+
+    log Make variable DOCKER_PASSWORD secret
+    az pipelines variable-group variable update \
+        --group-id "$variable_group_id" \
+        --name DOCKER_PASSWORD \
+        --secret true
+}
 
 # Create the pipelines for the repo $REPOSITORY.
 create_pipelines() {
 
-    # Create variable group if not exists.
-    [ "$variable_group_id" ] || {
-        log Create variable group
-        variable_group_id=$(az pipelines variable-group create \
-            --name "docker4gis" \
-            --authorize true \
-            --variables "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
-            --query=id)
+    create_environments
+    create_variable_group
 
-        log Make variable DOCKER_PASSWORD secret
-        az pipelines variable-group variable update \
-            --group-id "$variable_group_id" \
-            --name DOCKER_PASSWORD \
-            --secret true
-    }
-
-    [ "$triggers_definition" ] || triggers_definition='"triggers": [{
+    triggers_definition=${triggers_definition:-'"triggers": [{
         "branchFilters": [],
         "pathFilters": [],
         "settingsSourceType": 2,
         "batchChanges": false,
         "maxConcurrentBuildsPerBranch": 1,
         "triggerType": "continuousIntegration"
-    }]'
+    }]'}
 
     local yaml
     for yaml in \
@@ -278,8 +265,24 @@ create_pipelines() {
     done
 }
 
-# Execute the create_pipeline function for each repository.
-each_repository create_pipelines
+repositories=(^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat)
+[ "$TEST" ] && repositories=(^package cron)
+
+log Repositories: "${repositories[@]}"
+
+for REPOSITORY in "${repositories[@]}"; do
+
+    create_repository
+    REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
+    # Trim surrouding "".
+    eval "REPOSITORY_ID=$REPOSITORY_ID"
+
+    git_clone
+    dg_init_component
+
+    create_pipelines
+
+done
 
 log Add Agent Pool "$PIPELINE_VPN_POOL"
 
