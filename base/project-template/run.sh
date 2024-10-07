@@ -48,27 +48,29 @@ git_origin() {
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
-    log "Create repository $REPOSITORY"
-    az repos create --name "$REPOSITORY" &&
-        log "Initialise repository $REPOSITORY" &&
+    log "Create repository $REPOSITORY" &&
+        REPOSITORY_ID=$(az repos create --name "$REPOSITORY" --query=id) &&
+        # Trim surrouding "".
+        eval "REPOSITORY_ID=$REPOSITORY_ID"
+    log "Initialise repository $REPOSITORY" &&
         (
-            temp=$(mktemp --directory)
-            cd "$temp" &&
+            temp=$(mktemp --directory) &&
+                cd "$temp" &&
                 git init &&
                 git commit --allow-empty -m "initialise repository" &&
                 git branch -m main &&
                 git remote add origin "$(git_origin)" &&
                 git push origin main
-        ) &&
-        log "Update repository $REPOSITORY: set default branch to 'main'" &&
+        )
+    log "Update repository $REPOSITORY: set default branch to 'main'" &&
         az repos update --repository="$REPOSITORY" \
             --default-branch main
 }
 
 # Clone the repo $REPOSITORY.
 git_clone() {
-    log "Clone $REPOSITORY"
-    mkdir -p ~/"$SYSTEM_TEAMPROJECT" &&
+    log "Clone $REPOSITORY" &&
+        mkdir -p ~/"$SYSTEM_TEAMPROJECT" &&
         cd ~/"$SYSTEM_TEAMPROJECT" &&
         git clone "$(git_origin)"
 }
@@ -76,13 +78,13 @@ git_clone() {
 # Create a docker4gis component for the repo $REPOSITORY.
 dg_init_component() {
     log "dg init/component $REPOSITORY" &&
+        cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" &&
         if [ "$REPOSITORY" = ^package ]; then
             dg init "${PIPELINE_DOCKER_REGISTRY:-docker.merkator.com}"
         else
             dg component "$REPOSITORY"
         fi
-    cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" &&
-        log "Save $REPOSITORY changes" &&
+    log "Push $REPOSITORY changes" &&
         git add . &&
         git commit -m "docker4gis init/component" &&
         git push origin
@@ -271,17 +273,10 @@ repositories=(^package cron dynamic geoserver postfix postgis postgrest proxy se
 log Repositories: "${repositories[@]}"
 
 for REPOSITORY in "${repositories[@]}"; do
-
     create_repository
-    REPOSITORY_ID=$(az repos show --repository="$REPOSITORY" --query=id)
-    # Trim surrouding "".
-    eval "REPOSITORY_ID=$REPOSITORY_ID"
-
     git_clone
     dg_init_component
-
     create_pipelines
-
 done
 
 log Add Agent Pool "$PIPELINE_VPN_POOL"
