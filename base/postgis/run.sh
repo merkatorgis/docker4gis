@@ -8,6 +8,7 @@ IMAGE=$IMAGE
 CONTAINER=$CONTAINER
 RESTART=$RESTART
 IP=$IP
+ENV_FILE=$ENV_FILE
 
 DOCKER_USER=$DOCKER_USER
 DOCKER_ENV=$DOCKER_ENV
@@ -25,12 +26,10 @@ mkdir -p "$RUNNER"
 
 docker volume create "$CONTAINER" >/dev/null &&
 	docker container run --restart "$RESTART" --name "$CONTAINER" \
+		--env-file "$ENV_FILE" \
 		--shm-size="$SHM_SIZE" \
-		-e DOCKER_USER="$DOCKER_USER" \
-		-e DOCKER_ENV="$DOCKER_ENV" \
 		-e POSTGRES_LOG_STATEMENT="$POSTGRES_LOG_STATEMENT" \
 		-e "$(docker4gis/noop.sh POSTFIX_DOMAIN "$POSTFIX_DOMAIN")" \
-		-e CONTAINER="$CONTAINER" \
 		--mount type=bind,source="$CERTIFICATES",target=/certificates \
 		--mount type=bind,source="$FILEPORT",target=/fileport \
 		--mount type=bind,source="$RUNNER",target=/runner \

@@ -36,8 +36,10 @@ if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$CONTAIN
 fi
 
 temp=$(mktemp -d)
+ENV_FILE=$(mktemp)
 finish() {
     rm -rf "$temp"
+    rm "$ENV_FILE"
     exit "${1:-$?}"
 }
 
@@ -84,13 +86,34 @@ iptables() {
     echo "$ip"
 }
 
+echo "DOCKER_USER=$DOCKER_USER
+DOCKER_ENV=$DOCKER_ENV
+CONTAINER=$CONTAINER" >>"$ENV_FILE"
+export ENV_FILE
+
+# Loop over all environment variables.
+for var in $(compgen -e); do
+    prefix=${DOCKER_USER}_${repo}_
+    # Make var and prefix lowercase.
+    l_var=${var,,}
+    l_prefix=${prefix,,}
+    # Test if $l_var starts with $l_prefix.
+    if [[ $l_var == ${l_prefix}* ]]; then
+        # Find the length of $prefix.
+        len=${#prefix}
+        # Extract the part of $var that comes after $prefix.
+        name=${var:$len}
+        # Print name and value to the --env-file file.
+        echo "$name=${!var}" >>"$ENV_FILE"
+    fi
+done
+
 docker4gis/network.sh &&
     IP=$(iptables) &&
     export IP &&
-    # Execute the (base) image's run script,
-    # passing args read from its args file,
-    # substituting environment variables,
-    # and skipping lines starting with a #.
+    # Execute the (base) image's run script, passing args read from its args
+    # file, substituting environment variables, and skipping lines starting with
+    # a #.
     envsubst <args | grep -v "^#" | xargs \
         ./run.sh "$@"
 
