@@ -29,13 +29,18 @@ type config struct {
 }
 
 var (
-	configs     = make(map[string]*config)
-	proxyHost   = os.Getenv("PROXY_HOST")
-	proxyPort   = os.Getenv("PROXY_PORT")
-	useAutocert = os.Getenv("AUTOCERT")
-	dockerEnv   = os.Getenv("DOCKER_ENV")
-	dockerUser  = os.Getenv("DOCKER_USER")
-	debug       = os.Getenv("DEBUG") == "true"
+	configs                         = make(map[string]*config)
+	proxyHost                       = os.Getenv("PROXY_HOST")
+	proxyPort                       = os.Getenv("PROXY_PORT")
+	useAutocert                     = os.Getenv("AUTOCERT")
+	dockerEnv                       = os.Getenv("DOCKER_ENV")
+	dockerUser                      = os.Getenv("DOCKER_USER")
+	debug                           = os.Getenv("DEBUG") == "true"
+	hstsMaxAge                      = os.Getenv("HSTS_MAX_AGE")
+	hstsIncludeSubdomains           = os.Getenv("HSTS_INCLUDE_SUBDOMAINS")
+	hstsPreload                     = os.Getenv("HSTS_PRELOAD")
+	contentSecurityPolicy           = os.Getenv("CONTENT_SECURITY_POLICY")
+	contentSecurityPolicyReportOnly = os.Getenv("CONTENT_SECURITY_POLICY_REPORT_ONLY")
 )
 
 func main() {
@@ -98,7 +103,7 @@ func main() {
 	if strings.HasPrefix(proxyHost, "localhost") || dockerEnv == "DEVELOPMENT" || useAutocert != "true" {
 		crt := "/certificates/" + proxyHost + ".crt"
 		key := "/certificates/" + proxyHost + ".key"
-		log.Fatal(http.ListenAndServeTLS(":443", crt, key, handlers.CompressHandler(http.HandlerFunc(handler))))
+		log.Fatal(http.ListenAndServeTLS(":443", crt, key, handlers.CompressHandler(http.HandlerFunc(secureHandler))))
 	} else {
 		manager := &autocert.Manager{
 			Cache:      autocert.DirCache("/config/autocert"),
@@ -122,7 +127,7 @@ func main() {
 		server := &http.Server{
 			Addr:      ":https",
 			TLSConfig: tlsConfig,
-			Handler:   handlers.CompressHandler(http.HandlerFunc(handler)),
+			Handler:   handlers.CompressHandler(http.HandlerFunc(secureHandler)),
 		}
 
 		log.Fatal(server.ListenAndServeTLS("", ""))
@@ -145,6 +150,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		reverse(w, r)
 	}
+}
+
+func secureHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	if contentSecurityPolicy != "" {
+		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+	}
+	if contentSecurityPolicyReportOnly != "" {
+		w.Header().Set("Content-Security-Policy-Report-Only", contentSecurityPolicyReportOnly)
+	}
+
+	hstsValue := "max-age=" + hstsMaxAge
+	if hstsIncludeSubdomains == "true" {
+		hstsValue += "; includeSubDomains"
+		if hstsPreload == "true" {
+			hstsValue += "; preload"
+		}
+	}
+	w.Header().Set("Strict-Transport-Security", hstsValue)
+
+	handler(w, r)
 }
 
 func defineProxy(app, key, value string) {
