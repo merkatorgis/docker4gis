@@ -1,32 +1,36 @@
 #!/bin/bash
 
-repo=$1
+DOCKER_REPO=$1
 tag=$2
 shift 2
 
 DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+
+export DOCKER_REPO
+
 export DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
+
 [ "$DOCKER_ENV" = DEVELOPMENT ] &&
     RESTART=no ||
     RESTART=always
 export RESTART
 
-FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$repo
+FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$DOCKER_REPO
 export FILEPORT
-RUNNER=$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$repo
+RUNNER=$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$DOCKER_REPO
 export RUNNER
 
-IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:$tag
+IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO:$tag
 export IMAGE
 
-CONTAINER=$DOCKER_USER-$repo
-[ "$repo" = proxy ] && CONTAINER=docker4gis-proxy
+CONTAINER=$DOCKER_USER-$DOCKER_REPO
+[ "$DOCKER_REPO" = proxy ] && CONTAINER=docker4gis-proxy
 export CONTAINER
 
 NETWORK=$DOCKER_USER
-[ "$repo" = proxy ] && NETWORK=$CONTAINER
+[ "$DOCKER_REPO" = proxy ] && NETWORK=$CONTAINER
 export NETWORK
 
 echo "Starting $CONTAINER from $IMAGE..."
@@ -55,13 +59,19 @@ finish() {
 
 echo "DOCKER_ENV=$DOCKER_ENV
 DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$repo
-CONTAINER=$CONTAINER" >>"$ENV_FILE"
+DOCKER_REPO=$DOCKER_REPO
+CONTAINER=$CONTAINER
+DEBUG=$DEBUG" >>"$ENV_FILE"
 export ENV_FILE
+
+# Write environment variables having the "${DOCKER_USER}_${DOCKER_REPO}_" prefix
+# (case insensitive) to the "$ENV_FILE" (without the prefix). E.g. a variable
+# named MYAPP_MYCOMPONENT_VAR will be an environment variable named VAR in the
+# "myapp-mycomponent" container.
 
 # Loop over all environment variables.
 for var in $(compgen -e); do
-    prefix=${DOCKER_USER}_${repo}_
+    prefix=${DOCKER_USER}_${DOCKER_REPO}_
     # Make var and prefix lowercase.
     l_var=${var,,}
     l_prefix=${prefix,,}
