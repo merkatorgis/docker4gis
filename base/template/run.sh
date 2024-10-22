@@ -11,4 +11,4 @@ docker container run --restart "$RESTART" --name "$CONTAINER" \
 	--mount type=bind,source="$RUNNER",target=/runner \
 	--mount source="$VOLUME",target=/volume \
 	--network "$NETWORK" \
-	-d "$IMAGE" {{COMPONENT}} "$@"
+	--detach "$IMAGE" {{COMPONENT}} "$@"
