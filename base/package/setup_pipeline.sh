@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC2016
 
-DOCKER_ENV=$1
+DOCKER_ENV=${1:-${DOCKER_ENV:-DEVELOPMENT}}
 [ "$DOCKER_ENV" ] || echo "# change to DEVELOPMENT, TEST, or PRODUCTION"
 echo "export DOCKER_ENV=${DOCKER_ENV:-'$DOCKER_ENV'}"
 
