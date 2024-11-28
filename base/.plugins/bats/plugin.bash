@@ -5,6 +5,11 @@
 # # shellcheck source=/dev/null
 # source ~/.bats/plugin.bash
 
+if [ -z "$BATS_PPID" ]; then
+    BATS_PPID=$PPID
+    export BATS_PPID
+fi
+
 function @sub() {
     _sub 'false' "$@"
 }
@@ -29,7 +34,7 @@ function _sub() {
         return 0
     else
         if [ "$survive" != 'true' ]; then
-            echo "$PPID $err $status $output"
+            echo "$BATS_PPID $err $status $output"
             exit "$err"
         else
             return "$err"

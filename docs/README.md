@@ -445,7 +445,7 @@ load "$DOCKER_BASE"/test_helper/load.bash
 This will load the [bats-assert](https://github.com/bats-core/bats-assert) and
 [bats-file](https://github.com/bats-core/bats-file) modules.
 
-Also, it exposes a `$cmd` variable holding the "command under test", presuming
+Also, it exposes a `$CMD` variable holding the "command under test", presuming
 the current `.bats` test file has the same name and location as the command
 file, except for the extra .bats suffix.
 
@@ -543,18 +543,18 @@ load "$DOCKER_BASE"/test_helper/load.bash
 ...
 @test 'string MAX_BYTES' {
     export MAX_BYTES=aa
-    run "$cmd" "$file"
+    run "$CMD" "$file"
     assert_failure 22
 }
 @test 'negative MIN_TIME_H' {
     export MIN_TIME_H=-1
-    run "$cmd" "$file"
+    run "$CMD" "$file"
     assert_failure 22
 }
 ...
 ```
 
-(Note that these tests use the [helper](#helper) `$cmd` variable.)
+(Note that these tests use the [helper](#helper) `$CMD` variable.)
 
 ## Base images
 
