@@ -86,12 +86,21 @@ for var in $(compgen -e); do
     fi
 done
 
-docker4gis/network.sh "$NETWORK" || finish 2
+docker4gis=docker4gis
+[ -d "$docker4gis" ] || docker4gis="$DOCKER_BASE"/.docker4gis/docker4gis
+
+"$docker4gis"/network.sh "$NETWORK" || finish 2
+
 export VOLUME=$CONTAINER
 docker volume create "$VOLUME" >/dev/null || finish 5
+
 # Execute the (base) image's run script, passing args read from its args file,
 # substituting environment variables, and skipping lines starting with a #.
-envsubst <args | grep -v "^#" | xargs \
+if [ -f args ]; then
+    envsubst <args | grep -v "^#" | xargs \
+        ./run.sh "$@"
+else
     ./run.sh "$@"
+fi
 
 finish "$?"

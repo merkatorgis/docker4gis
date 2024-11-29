@@ -124,10 +124,14 @@ unbuild)
 	;;
 
 run)
+	# Uncommon case: run a single standalone component.
+	dir "$@"
 	if [ -n "$DOCKER4GIS_STANDALONE" ]; then
-		[ -x ./run.sh ] && ./run.sh
+		"$DOCKER_BASE"/.docker4gis/docker4gis/run.sh "$DOCKER_REPO" latest
 		exit
 	fi
+
+	# Common case: run all (non-standalone) components in the package.
 	dir package "$@"
 	tag=$1
 	if [ "$tag" ]; then
