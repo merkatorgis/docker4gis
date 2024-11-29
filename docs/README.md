@@ -51,7 +51,7 @@ The available docker4gis base components all reside in their proper repo under
 e.g. [proxy](https://github.com/merkatorgis/docker4gis-proxy).
 
 Should you need a component that won't act as a "server" that should be started
-when the application is run, run `dg skip` after `dg component`.
+when the application is run, run `dg standalone` after `dg component`.
 
 ## Build and run
 

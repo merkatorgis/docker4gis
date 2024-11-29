@@ -491,6 +491,9 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
 
         cp -r "$DOCKER_BASE"/template/. .
         echo "
+# This may come in handy.
+ONBUILD ARG DOCKER_USER
+ONBUILD ENV DOCKER_USER=\$DOCKER_USER
 
 # Make this an extensible base component; see
 # https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
@@ -585,6 +588,11 @@ you mean base-component?"
         # Creating a component _not_ extending a docker4gis base component.
         cp -r "$DOCKER_BASE"/template/. .
         rm -rf template
+        echo "
+# This may come in handy.
+ARG DOCKER_USER
+ENV DOCKER_USER=\$DOCKER_USER
+" >>Dockerfile
         pipeline
     }
 
@@ -885,16 +893,16 @@ Integration pipeline, and syncing a forked repo)."
         fi
     ;;
 
-skip)
+standalone)
     help "Don't start the current directory's component when running the application.
 Usage: $DOCKER4GIS_COMMAND $action.
 Normally, components are expected to be a \"server\" of some sort, and running
 the application comes down to starting a container, with the --detach option,
 for each component.
-Skipping a component will exclude it from the list of server containers to
-start, while you still manage the code and the image for the component in the
-current project. For instance, you might want a component that runs a specific
-data processing task, maybe as a one-off instance somewhere \"in the cloud\"."
+A standalone component is excluded from the list of server containers to start,
+while you still manage the code and the image for the component in the current
+project. For instance, you might want a component that runs a specific data
+processing task, maybe as a one-off instance somewhere \"in the cloud\"."
 
     assert_docker4gis_directory
 
@@ -903,12 +911,12 @@ data processing task, maybe as a one-off instance somewhere \"in the cloud\"."
         exit 1
     }
 
-    echo "DOCKER4GIS_SKIP=true" >>.env
+    echo "DOCKER4GIS_STANDALONE=true" >>.env
 
     component_file=../$DOCKER_USER/components/$DOCKER_REPO
     [ -f "$component_file" ] && rm "$component_file"
 
-    echo "Component $DOCKER_REPO skipped."
+    echo "Component $DOCKER_REPO marked as standalone."
     ;;
 
 all)
@@ -982,8 +990,8 @@ $(cat "$DOCKER_BASE/$action/doc.txt")"
 Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |
   br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |
   stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |
-  base | login [PASSWORD] [USER] | version|v [local] | bump [push] | skip |
-  git-push|gp [BRANCH_NAME...] | bats | project-template |
+  base | login [PASSWORD] [USER] | version|v [local] | bump [push] |
+  standalone | git-push|gp [BRANCH_NAME...] | bats | project-template |
   all EXECUTABLE|self [ARG...]
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
