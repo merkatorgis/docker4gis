@@ -13,9 +13,5 @@ RUN /tmp/bats/install.sh
 COPY conf/.plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
 
-# This may come in handy.
-ONBUILD ARG DOCKER_USER
-ONBUILD ENV DOCKER_USER=$DOCKER_USER
-
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh run.sh /.docker4gis/
