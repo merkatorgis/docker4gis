@@ -43,8 +43,13 @@ for dotenv in ../*/.env; do
         DOCKER_REGISTRY=
         DOCKER_USER=
         DOCKER_REPO=
+
         # shellcheck source=/dev/null
         . "$dotenv"
+
+        # Skip this repo if indicated so.
+        [ -z "$DOCKER4GIS_SKIP" ] || exit
+
         [ "$DOCKER_USER" ] || DOCKER_USER=$(basename "$(realpath "$(dirname "$dotenv")/..")")
         [ "$DOCKER_REPO" ] || DOCKER_REPO=$(basename "$(realpath "$(dirname "$dotenv")")")
         # If this is a docker4gis repo directory, it must have these variables

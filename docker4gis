@@ -885,6 +885,32 @@ Integration pipeline, and syncing a forked repo)."
         fi
     ;;
 
+skip)
+    help "Don't start the current directory's component when running the application.
+Usage: $DOCKER4GIS_COMMAND $action.
+Normally, components are expected to be a \"server\" of some sort, and running
+the application comes down to starting a container, with the --detach option,
+for each component.
+Skipping a component will exclude it from the list of server containers to
+start, while you still manage the code and the image for the component in the
+current project. For instance, you might want a component that runs a specific
+data processing task, maybe as a one-off instance somewhere \"in the cloud\"."
+
+    assert_docker4gis_directory
+
+    [ -z "$1" ] || {
+        echo "No parameters expected."
+        exit 1
+    }
+
+    echo "DOCKER4GIS_SKIP=true" >>.env
+
+    component_file=../$DOCKER_USER/components/$DOCKER_REPO
+    [ -f "$component_file" ] && rm "$component_file"
+
+    echo "Component $DOCKER_REPO skipped."
+    ;;
+
 all)
     help "Run something in each sibling $docker4gis directory.
 Usage: $DOCKER4GIS_COMMAND $action EXECUTABLE [ARG...]
@@ -956,7 +982,7 @@ $(cat "$DOCKER_BASE/$action/doc.txt")"
 Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |
   br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |
   stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |
-  base | login [PASSWORD] [USER] | version|v [local] | bump [push] |
+  base | login [PASSWORD] [USER] | version|v [local] | bump [push] | skip |
   git-push|gp [BRANCH_NAME...] | bats | project-template |
   all EXECUTABLE|self [ARG...]
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the

@@ -50,6 +50,9 @@ The available docker4gis base components all reside in their proper repo under
 [https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis/docker4gis-{name}),
 e.g. [proxy](https://github.com/merkatorgis/docker4gis-proxy).
 
+Should you need a component that won't act as a "server" that should be started
+when the application is run, run `dg skip` after `dg component`.
+
 ## Build and run
 
 From a component directory, you can build its image by issuing `dg build`. When
