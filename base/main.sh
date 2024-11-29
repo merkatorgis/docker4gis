@@ -124,6 +124,10 @@ unbuild)
 	;;
 
 run)
+	if [ -n "$DOCKER4GIS_STANDALONE" ]; then
+		[ -x ./run.sh ] && ./run.sh
+		exit
+	fi
 	dir package "$@"
 	tag=$1
 	if [ "$tag" ]; then
