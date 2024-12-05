@@ -127,7 +127,7 @@ run)
 	# Uncommon case: run a single standalone component.
 	dir "$@"
 	if [ -n "$DOCKER4GIS_STANDALONE" ]; then
-		"$DOCKER_BASE"/.docker4gis/docker4gis/run.sh "$DOCKER_REPO" latest
+		"$DOCKER_BASE"/.docker4gis/docker4gis/run.sh "$DOCKER_REPO" latest "$@"
 		exit
 	fi
 
@@ -148,7 +148,7 @@ run)
 
 br)
 	this build "$@" && echo &&
-		this run
+		this run "$@"
 	;;
 
 push)
