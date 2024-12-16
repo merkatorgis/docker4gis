@@ -37,7 +37,7 @@ log "Bumping our version"
 npm config set git-tag-version false
 version=$(npm version patch)
 # Include any build_args in the image's tag.
-[ -n "$suffix" ] && version=$version-$suffix
+[ -n "$suffix" ] && version=$version$suffix
 echo "$version"
 
 # Base components have templates with Dockerfiles stating the image's version.
