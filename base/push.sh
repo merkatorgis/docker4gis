@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+[ "$1" = --no-save ] && {
+    no_save=true
+    shift
+}
+
 for build_arg in "$@"; do
     suffix=$suffix-$build_arg
 done
@@ -32,7 +37,7 @@ log "Bumping our version"
 npm config set git-tag-version false
 version=$(npm version patch)
 # Include any build_args in the image's tag.
-version=$version$suffix
+[ -n "$suffix" ] && version=$version-$suffix
 echo "$version"
 
 # Base components have templates with Dockerfiles stating the image's version.
@@ -56,6 +61,8 @@ docker image push "$image":"$version"
 # since the default base image tag sugested in `dg component` is `latest`.
 log "Pushing $image:latest"
 docker image push "$image":latest
+
+[ "$no_save" = true ] && exit
 
 push() {
     if ! git push origin "$@"; then

@@ -666,8 +666,13 @@ Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT]\` from a sibling directory."
 
     [ "$action" = push ] || [ "$action" = p ] && help "Increment the component's version, build its image, push it to the Docker
 registry, commit and push git changes.
+
 Note that ideally, this is run by the Continuous Integration pipeline. If
-that's configured, refrain from running \`$DOCKER4GIS_COMMAND $action\` by hand."
+that's configured, refrain from running \`$DOCKER4GIS_COMMAND $action\` by hand.
+
+Pass --no-save as the first argument to prevent the component's version from
+being bumped and saved in git, which is useful when you create different
+'flavours' of the image with each version."
 
     [ "$action" = test ] || [ "$action" = t ] && help "Run the component's tests.
 First, any files named 'test.sh' in the component's directory (and below) are
@@ -987,12 +992,12 @@ $(cat "$DOCKER_BASE/$action/doc.txt")"
 
 *)
     echo "Manage $docker4gis applications and their components and base components.
-Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] | run|r |
-  br [COMPONENT] | push|p [COMPONENT] | test|t [FILE] | unbuild [COMPONENT] |
-  stop | geoserver |  base-component | template | alias [NAME] | $docker4gis |
-  base | login [PASSWORD] [USER] | version|v [local] | bump [push] |
-  standalone | git-push|gp [BRANCH_NAME...] | bats | project-template |
-  all EXECUTABLE|self [ARG...]
+Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
+  run|r | br [COMPONENT] | push|p [COMPONENT] [--no-save] [ARG...] |
+  test|t [FILE] | unbuild [COMPONENT] | stop | geoserver |  base-component |
+  template | alias [NAME] | $docker4gis | base | login [PASSWORD] [USER] |
+  version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
+  bats | project-template | all EXECUTABLE|self [ARG...]
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
 For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
