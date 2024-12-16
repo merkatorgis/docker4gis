@@ -36,6 +36,8 @@ log() {
 log "Bumping our version"
 npm config set git-tag-version false
 version=$(npm version patch)
+# Save the "bare" version for tagging the git repo.
+tag=$version
 # Include any build_args in the image's tag.
 [ -n "$suffix" ] && version=$version$suffix
 echo "$version"
@@ -81,7 +83,6 @@ push() {
     fi
 }
 
-tag="$version"
 message="$tag [skip ci]"
 
 log "Committing the version"
