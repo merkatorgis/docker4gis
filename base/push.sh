@@ -62,7 +62,11 @@ docker image push "$image":"$version"
 log "Pushing $image:latest"
 docker image push "$image":latest
 
-[ "$no_save" = true ] && exit
+[ "$no_save" = true ] && {
+    # Undo all changes.
+    git reset --hard
+    exit
+}
 
 push() {
     if ! git push origin "$@"; then
