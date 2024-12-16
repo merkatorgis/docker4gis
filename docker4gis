@@ -672,7 +672,9 @@ that's configured, refrain from running \`$DOCKER4GIS_COMMAND $action\` by hand.
 
 Pass --no-save as the first argument to prevent the component's version from
 being bumped and saved in git, which is useful when you create different
-'flavours' of the image with each version."
+'flavours' of the image with each version. --no-save also prevents the image
+being additionally tagged as 'latest'.
+Use --no-save in all but the last \`$action\` step in a pipeline."
 
     [ "$action" = test ] || [ "$action" = t ] && help "Run the component's tests.
 First, any files named 'test.sh' in the component's directory (and below) are

@@ -57,16 +57,16 @@ docker image tag "$image":latest "$image":"$version"
 log "Pushing $image:$version"
 docker image push "$image":"$version"
 
-# This is important for base components (and harmless for extension components),
-# since the default base image tag sugested in `dg component` is `latest`.
-log "Pushing $image:latest"
-docker image push "$image":latest
-
 [ "$no_save" = true ] && {
     # Undo all changes.
     git reset --hard
     exit
 }
+
+# This is important for base components (and harmless for extension components),
+# since the default base image tag sugested in `dg component` is `latest`.
+log "Pushing $image:latest"
+docker image push "$image":latest
 
 push() {
     if ! git push origin "$@"; then
