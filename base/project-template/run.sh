@@ -29,6 +29,8 @@ authorised_collection_uri=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 # Replace the dev host name with the vssps.dev host name.
 authorised_collection_uri_vssps=${authorised_collection_uri/@dev./@vssps.dev.}
 
+api_version=7.1
+
 # Configure git identity.
 git config --global user.email 'pipeline@azure.com'
 git config --global user.name 'Azure Pipeline'
@@ -133,7 +135,7 @@ create_environments() {
 
         environment_object=$(
             curl --silent -X POST \
-                "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=7.1" \
+                "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/environments?api-version=$api_version" \
                 -H 'Accept: application/json' \
                 -H 'Content-Type: application/json' \
                 -d "{
@@ -152,7 +154,7 @@ create_environments() {
         log Create environment "$environment" Approval check
 
         curl --silent -X POST \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=7.1-preview.1" \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/pipelines/checks/configurations?api-version=$api_version" \
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -d "{
@@ -228,7 +230,7 @@ create_pipelines() {
 
         # Create the pipeline, a.k.a. build definition.
         build_definition=$(curl --silent -X POST \
-            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/build/definitions?api-version=7.1" \
+            "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/build/definitions?api-version=$api_version" \
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -d "{
@@ -286,7 +288,7 @@ pool_id=$(
 )
 
 [ "$pool_id" ] && curl --silent -X POST \
-    "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/distributedtask/queues?api-version=7.1&authorizePipelines=false" \
+    "$authorised_collection_uri$SYSTEM_TEAMPROJECT/_apis/distributedtask/queues?api-version=$api_version&authorizePipelines=false" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
@@ -313,7 +315,7 @@ log Set permissions for the project build service
 # build service, which we want to assign some permissions.
 project_build_service_identity=$(
     curl --silent -X GET \
-        "${authorised_collection_uri_vssps}_apis/identities?api-version=7.1&searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID" \
+        "${authorised_collection_uri_vssps}_apis/identities?api-version=$api_version&searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID" \
         -H 'Accept: application/json'
 )
 project_build_service_descriptor=$(
@@ -335,7 +337,7 @@ security_namespace_git_repositories=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
 # Invoke the REST api manually to allow the GenericRead, GenericContribute,
 # CreateTag, PolicyExemptproject permissions to the project build service.
 curl --silent -X POST \
-    "${authorised_collection_uri}_apis/AccessControlEntries/$security_namespace_git_repositories?api-version=7.1" \
+    "${authorised_collection_uri}_apis/AccessControlEntries/$security_namespace_git_repositories?api-version=$api_version" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
@@ -345,6 +347,45 @@ curl --silent -X POST \
             {
                 \"descriptor\": \"$project_build_service_descriptor\",
                 \"allow\": 166
+            }
+        ]
+    }"
+
+log Create project wiki
+
+number_of_wikis=$(az devops wiki list --query 'length(@)')
+[ "$number_of_wikis" -eq 0 ] &&
+    az devops wiki create
+
+wikis=$(az devops wiki list)
+wiki_repository_id=$(node --print "($wikis)[0].repositoryId")
+wiki_version=$(node --print "($wikis)[0].versions[0].version")
+
+log "For wiki branch $wiki_version, allow Contributors to Bypass policies when pushing"
+
+# Find identities named Contributors.
+all_contributors=$(
+    curl --silent -X GET \
+        "${authorised_collection_uri_vssps}_apis/identities?api-version=$api_version&queryMembership=None&searchFilter=AccountName&filterValue=Contributors" \
+        -H 'Accept: application/json'
+)
+# Get our project's Contributors identity descriptor.
+descriptor=$(
+    find="id => id.properties.LocalScopeId.\$value === '$SYSTEM_TEAMPROJECTID'"
+    node --print "($all_contributors).value.find($find).descriptor"
+)
+
+curl --silent -X POST \
+    "${authorised_collection_uri}_apis/AccessControlEntries/$security_namespace_git_repositories?api-version=$api_version" \
+    -H 'Accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d "{
+        \"token\": \"repoV2/$wiki_repository_id/$wiki_version\",
+        \"merge\": true,
+        \"accessControlEntries\": [
+            {
+                \"descriptor\": \"$descriptor\",
+                \"allow\": 128
             }
         ]
     }"
