@@ -1,6 +1,35 @@
 #!/bin/bash
 
-[ "$1" = test ] && TEST=true
+if [ "$1" = test ]; then
+    TEST=true
+    shift 1
+fi
+
+components=("$@")
+# Make components lowercase.
+components=("${components[@],,}")
+
+# If not "test", add all components if none are specified.
+if [ -z "$TEST" ] && [ ${#components[@]} -eq 0 ]; then
+    components=("${components[@]}" angular)
+    components=("${components[@]}" cron)
+    components=("${components[@]}" dynamic)
+    components=("${components[@]}" geoserver)
+    components=("${components[@]}" postfix)
+    components=("${components[@]}" postgis)
+    components=("${components[@]}" postgrest)
+    components=("${components[@]}" serve)
+    components=("${components[@]}" swagger)
+    components=("${components[@]}" tomcat)
+fi
+
+components_always=(^package proxy)
+# Remove components that are always created.
+for component in "${components_always[@]}"; do
+    components=("${components[@]/$component/}")
+done
+# Add components that are always created.
+components=("${components_always[@]}" "${components[@]}")
 
 # Stop if we're not a pipeline.
 _=${TF_BUILD:?"This only works in an Azure DevOps pipeline."}
@@ -269,8 +298,7 @@ create_pipelines() {
     done
 }
 
-repositories=(^package cron dynamic geoserver postfix postgis postgrest proxy serve swagger tomcat)
-[ "$TEST" ] && repositories=(^package cron)
+repositories=("${components[@]}")
 
 log Repositories: "${repositories[@]}"
 
