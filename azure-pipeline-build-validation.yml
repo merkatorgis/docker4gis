@@ -5,12 +5,9 @@ pr:
 # NOTE: "npm-package" -> "master" after merge
 - npm-package
 
-pool:
-  vmImage: ubuntu-latest
-
 steps:
 # Build the package image.
-- script: |
+- bash: |
     cd base/package
     export DOCKER_BASE=..
     ./build.sh
