@@ -5,40 +5,37 @@ trigger:
 pr:
 - none
 
-pool:
-  vmImage: ubuntu-latest
-
 steps:
 # Allow the pipeline to push directly to the protected branch, by explicitly
 # setting an admin user account, and a Personal Access Token as the password.
 # The token value is stored in our LastPass.
-- script: |
+- bash: |
     git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
   displayName: 'git login'
 
 # Login to the Docker Hub, so that we can push the image we'll build.
-- script: |
+- bash: |
     echo '$(DOCKER_PASSWORD)' | docker login -u=docker4gis --password-stdin docker.io
   displayName: 'docker login'
 
 # Test the authorisation for NPM, so that we know we can publish the package
 # we're updating. Using the environment variable placeholder in .npmrc; see
 # https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#create-and-check-in-a-project-specific-npmrc-file.
-- script: |
+- bash: |
     npm whoami
   displayName: 'npm login'
   env:
     NPM_TOKEN: '$(NPM_TOKEN)'
 
 # Configure git with the pipeline's details.
-- script: |
+- bash: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
   displayName: 'git config'
 
 # Prepare the git repo to accept commits.
 # NOTE: "npm-package" -> "master" (2x) after merge
-- script: |
+- bash: |
     git checkout -b npm-package
     git push --set-upstream origin npm-package
   displayName: 'git undo detached state'
@@ -49,7 +46,7 @@ steps:
 # versioning; we don't actually do that - instead, we just keep incrementing the
 # PATCH version (see https://semver.org). With git-tag-version set to false,
 # apparently npm version not only skips the tag, but also the commit.
-- script: |
+- bash: |
     npm config set git-tag-version false
     version=$(npm version patch)
     git add .
@@ -63,14 +60,14 @@ steps:
   displayName: 'bump version'
 
 # Build the new package image using the bumped docker4gis.
-- script: |
+- bash: |
     cd base/package
     export DOCKER_BASE=..
     ./build.sh
   displayName: 'build package image'
 
 # Push the just built package image to the Docker Hub. 
-- script: |
+- bash: |
     version=$(./docker4gis version pipeline)
     image=docker4gis/package
     latest=$image:latest
@@ -80,7 +77,7 @@ steps:
   displayName: 'push package image'
 
 # Publish the npm package.
-- script: |
+- bash: |
     npm publish
   displayName: 'npm publish'
   env:
@@ -88,7 +85,7 @@ steps:
 
 # Now that everything succeeded, push npm version's and our own changes back to
 # the original repo.
-- script: |
+- bash: |
     git push
     git push --tags
   displayName: 'git push version'
