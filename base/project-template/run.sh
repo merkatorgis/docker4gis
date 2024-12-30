@@ -351,45 +351,6 @@ curl --silent -X POST \
         ]
     }"
 
-log Create project wiki
-
-number_of_wikis=$(az devops wiki list --query 'length(@)')
-[ "$number_of_wikis" -eq 0 ] &&
-    az devops wiki create
-
-wikis=$(az devops wiki list)
-wiki_repository_id=$(node --print "($wikis)[0].repositoryId")
-wiki_version=$(node --print "($wikis)[0].versions[0].version")
-
-log "For wiki branch $wiki_version, allow Contributors to Bypass policies when pushing"
-
-# Find identities named Contributors.
-all_contributors=$(
-    curl --silent -X GET \
-        "${authorised_collection_uri_vssps}_apis/identities?api-version=$api_version&queryMembership=None&searchFilter=AccountName&filterValue=Contributors" \
-        -H 'Accept: application/json'
-)
-# Get our project's Contributors identity descriptor.
-descriptor=$(
-    find="id => id.properties.LocalScopeId.\$value === '$SYSTEM_TEAMPROJECTID'"
-    node --print "($all_contributors).value.find($find).descriptor"
-)
-
-curl --silent -X POST \
-    "${authorised_collection_uri}_apis/AccessControlEntries/$security_namespace_git_repositories?api-version=$api_version" \
-    -H 'Accept: application/json' \
-    -H 'Content-Type: application/json' \
-    -d "{
-        \"token\": \"repoV2/$wiki_repository_id/$wiki_version\",
-        \"merge\": true,
-        \"accessControlEntries\": [
-            {
-                \"descriptor\": \"$descriptor\",
-                \"allow\": 128
-            }
-        ]
-    }"
-
 if [ -z "$TEST" ]; then
     log Delete project template repository
 
