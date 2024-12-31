@@ -51,8 +51,7 @@ steps:
     version=$(npm version patch)
     git add .
     cd base/package
-    ../../docker4gis upgrade
-    ../upgrade_templates.sh "$version" package
+    ../upgrade_templates.sh "$version"
     git add .
     message="$version [skip ci]"
     git commit -m "$message"

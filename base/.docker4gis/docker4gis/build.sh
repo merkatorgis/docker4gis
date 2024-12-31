@@ -26,6 +26,21 @@ buildscript=./build.sh
 # Ensure we have something to run.
 x "$buildscript"
 
+# Side step: also build any additional images, e.g. "builder" images.
+build_dir=$(dirname "$buildscript")
+find "$build_dir" -mindepth 2 -name Dockerfile | while read -r dockerfile; do
+    dir=$(dirname "$dockerfile")
+    sub_name=$(basename "$dir")
+
+    # Skip the template directory.
+    [ "$sub_name" = template ] && continue
+
+    IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo-$sub_name:latest
+    echo
+    echo "Building $IMAGE"
+    docker image build -t "$IMAGE" "$dir" || finish $? "Failed to build $IMAGE."
+done
+
 # Find any Dockerfile to read the FROM clause from.
 dockerfile=Dockerfile
 [ -f "$dockerfile" ] ||

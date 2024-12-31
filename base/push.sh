@@ -44,20 +44,36 @@ echo "$version"
 
 # Base components have templates with Dockerfiles stating the image's version.
 log "Upgrading any templates"
-"$DOCKER_BASE"/upgrade_templates.sh "$version"
+"$DOCKER_BASE"/upgrade_templates.sh "$version" "$tag"
 
 # (Re)build the image, to include any upgraded templates.
-log "Building the image"
-# $DOCKER4GIS_COMMAND without quotes, since it can be a command with parameters.
-$DOCKER4GIS_COMMAND build "$@"
+log "Building the image(s)"
+"$DOCKER4GIS_EXECUTABLE" build "$@"
 
+# Tag and push image and possible sub images.
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
+find . -name Dockerfile | while read -r dockerfile; do
+    dir=$(dirname "$dockerfile")
+    sub_name=$(basename "$dir")
 
-log "Tagging the image"
-docker image tag "$image":latest "$image":"$version"
+    # Skip the template directory.
+    [ "$sub_name" = template ] && continue
 
-log "Pushing $image:$version"
-docker image push "$image":"$version"
+    full_image=$image
+    image_tag=$version
+    if [ "$sub_name" != "." ]; then
+        full_image=$image-$sub_name
+        image_tag=$tag
+    fi
+    full_image_with_tag=$full_image:$image_tag
+
+    echo
+    log "Tagging $full_image"
+    docker image tag "$full_image":latest "$full_image_with_tag"
+
+    log "Pushing $full_image_with_tag"
+    docker image push "$full_image_with_tag"
+done
 
 [ "$no_save" = true ] && {
     # Undo all changes.
