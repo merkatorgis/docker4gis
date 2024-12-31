@@ -36,8 +36,8 @@ steps:
 # Prepare the git repo to accept commits.
 # NOTE: "npm-package" -> "master" (2x) after merge
 - bash: |
-    git checkout -b npm-package
-    git push --set-upstream origin npm-package
+    git checkout -b azure-pipelines
+    git push --set-upstream origin azure-pipelines
   displayName: 'git undo detached state'
 
 
