@@ -67,6 +67,7 @@ steps:
 
 # Push the just built package image to the Docker Hub. 
 - bash: |
+    set -x
     version=$(./docker4gis version pipeline)
     image=docker4gis/package
     latest=$image:latest
