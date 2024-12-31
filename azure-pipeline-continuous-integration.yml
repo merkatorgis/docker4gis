@@ -68,7 +68,8 @@ steps:
 # Push the just built package image to the Docker Hub. 
 - bash: |
     set -x
-    node --print "require('./package.json').version"
+    version=$(node --print "require('./package.json').version")
+    echo "|$version|"
     exit 1
     version=$(./docker4gis version pipeline)
     image=docker4gis/package
