@@ -4,7 +4,7 @@
 version=${1:?"version parameter not set"}
 
 # tag is the "bare" version, which is also used for the git tag.
-tag=$2
+tag=${2:-$version}
 
 DOCKER_REPO=${DOCKER_REPO:-$(basename "$(realpath .)")}
 from="FROM docker4gis/$DOCKER_REPO"
@@ -23,5 +23,5 @@ find . -mindepth 2 -name Dockerfile | while read -r dockerfile; do
     replace "$from:.*" "$from:$version"
 
     # Use the "bare" version for any sub image (note the "-").
-    [ -n "$tag" ] && replace "$from-\(.*\):.*" "$from-\1:$tag"
+    replace "$from-\(.*\):\S\+" "$from-\1:$tag"
 done
