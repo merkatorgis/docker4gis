@@ -32,7 +32,7 @@ for the project-template pipeline):
     - Click OK, then Save.
 
     5.3. Replace all of the starter pipeline code with exactly these five lines
-    (leading whitespace is important):
+    *) (leading whitespace is important):
 steps:
 - bash: npx docker4gis project-template
   env:
@@ -69,3 +69,9 @@ Integration Pipeline aren't run automatically. Edit the Service Connection
 details (Project settings | Pipelines | Service connections), before removing
 the TEST Environment Approval Check (Pipelines | Environments | TEST/PRODUCTION
 | Approvals and checks | {hover} | ⁝ | Delete).
+
+*) On the line `- bash: npx docker4gis project-template`, you can optionally add
+parameters to limit the component repositories created to the ones you list,
+e.g. `- bash: npx docker4gis project-template angular tomcat postgis`. Whether
+listed or not, `^package` and `proxy` are always included. If none are listed,
+all known components are created.

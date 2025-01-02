@@ -1000,7 +1000,7 @@ Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
   test|t [FILE] | unbuild [COMPONENT] | stop | geoserver |  base-component |
   template | alias [NAME] | $docker4gis | base | login [PASSWORD] [USER] |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
-  bats | project-template | all EXECUTABLE|self [ARG...]
+  bats | project-template [COMPONENT...] | all EXECUTABLE|self [ARG...]
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
 For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
