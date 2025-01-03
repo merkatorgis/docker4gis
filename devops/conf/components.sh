@@ -9,6 +9,7 @@ log() {
     sleep 1
     set -x
 }
+export -f log
 
 set -x
 
@@ -25,19 +26,19 @@ elif [[ $project =~ ^--project= ]]; then
 fi
 
 if [ -z "$SYSTEM_TEAMPROJECT" ]; then
-    read -rp \
-        "Enter your DevOps project name : " \
-        SYSTEM_TEAMPROJECT
+    read -rp "Enter your DevOps project name : " SYSTEM_TEAMPROJECT
 fi
 
+# Read in the environment file.
 # shellcheck source=/dev/null
 source /devops/env_file
 
 if [ -z "$PAT" ]; then
     doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
-    read -rp \
-        "Enter a project manager's Personal Access Token - see $doc_url : " \
-        PAT
+    message="Enter a Personal Access Token"
+    message+=" of a user that is allowed to create a project - see $doc_url"
+    read -rp "$message : " PAT
+    # Save the PAT to the environment file.
     /devops/set.sh PAT "$PAT"
 fi
 
@@ -46,8 +47,6 @@ default_value() {
     local default=$2
     # If the value is not set, then set it to the default value.
     if [ -z "${!name}" ]; then
-        # Set the run-time value.
-        eval "export ${!name}=$default"
         # Save the default value to the environment file.
         /devops/set.sh "$name" "$default"
     fi
@@ -57,9 +56,15 @@ default_value VPN_POOL 'VPN Agent'
 default_value DOCKER_REGISTRY docker.merkator.com
 default_value SYSTEM_COLLECTIONURI https://dev.azure.com/merkatordev/
 
+# Re-read the environment file, that now should contain all variables.
+# shellcheck source=/dev/null
+source /devops/env_file
+
+# Set the default project and organisation for the Azure DevOps CLI.
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
 
+# Login to the Azure DevOps CLI.
 echo "$PAT" | az devops login
 
 # Replace string to insert the \"\$PAT@\" value between the (https):// and
@@ -132,8 +137,10 @@ log Components: "${components[@]}"
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
+    local repository_id
+
     log "Create repository $REPOSITORY" &&
-        local repository_id=$(az repos create --name "$REPOSITORY" \
+        repository_id=$(az repos create --name "$REPOSITORY" \
             --query=id --output tsv) || return
 
     log "Initialise repository $REPOSITORY" &&
@@ -192,20 +199,57 @@ variable_group_id=$(/devops/variable_group.sh) || exit
 
 # Create the repositories, components, and pipelines.
 for component_repository in "${components[@]}"; do
+
     # Split component_repository into component and repository, using = as the separator.
     IFS='=' read -r COMPONENT REPOSITORY <<<"$component_repository"
     REPOSITORY=${REPOSITORY:-$COMPONENT}
+
     # Skip if the repository already exists.
     if az repos show --repository "$REPOSITORY" &>/dev/null; then
         log "Repository $REPOSITORY already exists"
         continue
     fi
+
     # Create the repository, its docker4gis component, and its pipelines.
     repository_id=$(create_repository) &&
         git_clone &&
         dg_init_component &&
-        /devops/pipelines.sh "$repository_id" "$variable_group_id"
-done || exit
+        /devops/pipelines.sh \
+            "$REPOSITORY" "$repository_id" "$variable_group_id" ||
+        exit
+done
+
+# Create a cross-repository policy (if it doesn't exist) to require all PR
+# comments to be roseolved before merging.
+comment_requirements_policy='{
+  "isBlocking": true,
+  "isDeleted": false,
+  "isEnabled": true,
+  "isEnterpriseManaged": false,
+  "revision": 1,
+  "settings": {
+      "scope": [
+          {
+              "matchKind": "Exact",
+              "refName": "refs/heads/main",
+              "repositoryId": null
+          }
+      ]
+  },
+  "type": {
+      "displayName": "Comment requirements",
+      "id": "c6a1889d-b943-4856-b76f-9e46bb6b0df2"
+  }
+}'
+policy_query="[?settings.scope[0].repositoryId==null]"
+policy_query+=" | [?type.displayName=='Comment requirements'].id"
+existing_policy=$(az repos policy list --output tsv --query "$policy_query")
+if [ -n "$existing_policy" ]; then
+    log "Policy Comment requirements exists"
+else
+    log "Create Policy Comment requirements"
+    rest_project POST policy/configurations '' "$comment_requirements_policy"
+fi || exit
 
 # Try to create the VPN Agent Pool if it doesn't exist in the project.
 queueNames=$(node --print "encodeURIComponent('$VPN_POOL')")
@@ -213,13 +257,53 @@ queues=$(rest_project GET distributedtask/queues "queueNames=$queueNames")
 if [ "$(node --print "($queues).count")" -gt 0 ]; then
     log Agent Pool "$VPN_POOL" exists in project
 else
-    log Create Agent Pool "$VPN_POOL" in project
-    pool_id=$(az pipelines pool list --output tsv \
-        --query "[?name=='$VPN_POOL'].id") &&
-        rest_project POST distributedtask/queues authorizePipelines=false "{
-        \"name\": \"$VPN_POOL\",
-        \"pool\": {
-            \"id\": $pool_id
-        }
-    }"
+    query="[?name=='$VPN_POOL'].id"
+    if pool_id=$(az pipelines pool list --output tsv --query "$query"); then
+        if rest_project POST distributedtask/queues authorizePipelines=false "{
+            \"name\": \"$VPN_POOL\",
+            \"pool\": {
+                \"id\": $pool_id
+            }
+        }"; then
+            log Agent Pool "$VPN_POOL" added to project
+        else
+            log Failed to add Agent Pool "$VPN_POOL" to project
+        fi
+    else
+        log Pool "$VPN_POOL" not found
+    fi
 fi
+
+log Set permissions for the project build service
+
+# Invoke the REST api manually to get the identity descriptor of the project
+# build service, which we want to assign some permissions.
+project_build_service_identity=$(rest_vssps GET identities \
+    "searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID")
+project_build_service_descriptor=$(node --print \
+    "($project_build_service_identity).value[0].descriptor")
+
+security_namespace_git_repositories=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
+# az devops security permission namespace show --output table \
+#     --namespace-id $security_namespace_git_repositories
+# Name                     Permission Description                                  Permission Bit
+# -----------------------  ------------------------------------------------------  ----------------
+# GenericRead              Read                                                    2
+# GenericContribute        Contribute                                              4
+# CreateTag                Create tag                                              32
+# PolicyExempt             Bypass policies when pushing                            128
+# 2 + 4 + 32 + 128 = 166
+allow=166
+
+# Invoke the REST api manually to allow the GenericRead, GenericContribute,
+# CreateTag, PolicyExemptproject permissions to the project build service.
+rest POST "AccessControlEntries/$security_namespace_git_repositories" '' "{
+    \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
+    \"merge\": true,
+    \"accessControlEntries\": [
+        {
+            \"descriptor\": \"$project_build_service_descriptor\",
+            \"allow\": $allow
+        }
+    ]
+}"
