@@ -1,0 +1,11 @@
+#!/bin/sh
+set -ex
+
+if [ "$1" = 'set' ] || [ "$1" = 'components' ]; then
+	script_basename=$1
+	shift
+	exec /devops/"$script_basename".sh "$@"
+fi
+
+# This allows you to, in rare cases, run a container with a different command.
+exec "$@"
