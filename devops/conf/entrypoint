@@ -1,11 +1,26 @@
-#!/bin/sh
+#!/bin/bash
 set -ex
 
-if [ "$1" = 'set' ] || [ "$1" = 'components' ]; then
-	script_basename=$1
-	shift
-	exec /devops/"$script_basename".sh "$@"
+action=$1
+
+[ "$action" = s ] && action='set'
+[ "$action" = c ] && action='components'
+
+if [ "$action" = -p ] || [ "$action" = --project ] || [[ $action =~ ^--project= ]]; then
+	action='project'
 fi
 
-# This allows you to, in rare cases, run a container with a different command.
-exec "$@"
+case "$action" in
+set | components | project)
+	if [ "$action" = project ]; then
+		action=components
+	else
+		shift
+	fi
+	exec /devops/"$action".sh "$@"
+	;;
+*)
+	# This allows you to, in rare cases, run a container with a different command.
+	exec "$@"
+	;;
+esac

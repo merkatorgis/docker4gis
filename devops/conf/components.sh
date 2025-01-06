@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# FIXME
-export TF_BUILD=True
-
 log() {
     set +x
     echo '---------------------------------------------------------------------'
@@ -48,11 +45,8 @@ set_env() {
         # Save the value to the environment file.
         /devops/set.sh "$name" "$value"
     fi || exit
+    export "${name?}"
 }
-
-# Read in the environment file.
-# shellcheck source=/dev/null
-source /devops/env_file
 
 doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
 message="Enter a Personal Access Token"
@@ -61,22 +55,15 @@ set_env PAT \
 
 set_env VPN_POOL \
     "Enter the name of the Agent Pool to use for Deploy tasks" \
-    "VPN Agent"
+    "$DEVOPS_VPN_POOL"
 
 set_env DOCKER_REGISTRY \
     "Enter the host name of the Docker Registry" \
-    docker.merkator.com
+    "$DEVOPS_DOCKER_REGISTRY"
 
 set_env SYSTEM_COLLECTIONURI \
     "Enter the DevOps Organisation name" \
-    merkatordev
-
-# Re-read the environment file (that should now contain all variables),
-# exporting all variables.
-set -a
-# shellcheck source=/dev/null
-source /devops/env_file
-set +a
+    "$DEVOPS_ORGANISATION"
 
 # Set the default project and organisation for the Azure DevOps CLI.
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
