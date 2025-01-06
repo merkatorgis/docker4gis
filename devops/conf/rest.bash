@@ -6,12 +6,34 @@ _rest_generic() {
     local data=$5
 
     [ -n "$parameters" ] && parameters="&$parameters"
-    local uri="${prefix}_apis/$path?api-version=$API_VERSION$parameters"
-    curl --silent -X "$method" \
-        "$uri" \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        -d "$data"
+    local api_version=${API_VERSION?}
+
+    _curl() {
+        local uri="${prefix}_apis/$path?api-version=$api_version$parameters"
+        curl --silent --fail-with-body -X "$method" \
+            "$uri" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "$data"
+    }
+
+    local result
+    if response=$(_curl); then
+        result=$?
+    else
+        result=$?
+        local typeKey
+        if typeKey=$(node --print "($response).typeKey") &&
+            [ "$typeKey" = VssInvalidPreviewVersionException ]; then
+            # Retry with the preview version.
+            api_version=$api_version-preview
+            response=$(_curl)
+            result=$?
+        fi
+    fi
+
+    echo "$response"
+    return "$result"
 }
 export -f _rest_generic
 

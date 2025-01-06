@@ -5,6 +5,8 @@ value=${2:?Value is required}
 
 env_file=/devops/env_file
 
+set -x
+
 # Lowercase name.
 case ${name,,} in
 r | registry | docker_registry)
@@ -39,7 +41,7 @@ p | pool | vpn_pool)
 esac
 
 # Append new value to file.
-echo "export $name=$value" >>"$env_file"
+echo "$name='$value'" >>"$env_file"
 
 # Read current values from file.
 # shellcheck source=/dev/null
@@ -52,5 +54,5 @@ for var in \
     PAT \
     SYSTEM_COLLECTIONURI \
     VPN_POOL; do
-    echo "export $var=${!var}" >>"$env_file"
+    echo "$var='${!var}'" >>"$env_file"
 done

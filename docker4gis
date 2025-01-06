@@ -558,7 +558,7 @@ you mean base-component?"
         [ "$repo" = app ] && suggestion=angular
     fi
     if ! [ "$suggestion" ]; then
-        pull "$repo" && component=$repo
+        pull "${component:-$repo}" && component=${component:-$repo}
     fi
     while ! [ "$component" ]; do
         if [ "$suggestion" ] || ! [ "$action" = template ]; then

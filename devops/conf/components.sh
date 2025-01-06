@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# FIXME
+export TF_BUILD=True
+
 log() {
     set +x
     echo '---------------------------------------------------------------------'
@@ -16,49 +19,64 @@ set -x
 log Setup
 
 project=$1
-shift
 if [ "$project" = -p ] || [ "$project" = --project ]; then
     SYSTEM_TEAMPROJECT=${2:?Project name is required}
-    shift
+    shift 2
 # If project starts with --project=, then extract the value.
 elif [[ $project =~ ^--project= ]]; then
     SYSTEM_TEAMPROJECT=${project#--project=}
+    shift
 fi
 
 if [ -z "$SYSTEM_TEAMPROJECT" ]; then
-    read -rp "Enter your DevOps project name : " SYSTEM_TEAMPROJECT
+    echo
+    read -rp "Enter your DevOps Project name : " SYSTEM_TEAMPROJECT
 fi
+
+export SYSTEM_TEAMPROJECT
+
+set_env() {
+    local name=$1
+    local message=$2
+    local default=$3
+    [ -n "$default" ] && message+=" (Enter for default: $default)"
+    # If the value is not set, ask for the value.
+    if [ -z "${!name}" ]; then
+        echo
+        read -rp "$message : " input_value
+        value=${input_value:-$default}
+        # Save the value to the environment file.
+        /devops/set.sh "$name" "$value"
+    fi || exit
+}
 
 # Read in the environment file.
 # shellcheck source=/dev/null
 source /devops/env_file
 
-if [ -z "$PAT" ]; then
-    doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
-    message="Enter a Personal Access Token"
-    message+=" of a user that is allowed to create a project - see $doc_url"
-    read -rp "$message : " PAT
-    # Save the PAT to the environment file.
-    /devops/set.sh PAT "$PAT"
-fi
+doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
+message="Enter a Personal Access Token"
+set_env PAT \
+    "$message of a user that is allowed to create a project - see $doc_url"
 
-default_value() {
-    local name=$1
-    local default=$2
-    # If the value is not set, then set it to the default value.
-    if [ -z "${!name}" ]; then
-        # Save the default value to the environment file.
-        /devops/set.sh "$name" "$default"
-    fi
-}
+set_env VPN_POOL \
+    "Enter the name of the Agent Pool to use for Deploy tasks" \
+    "VPN Agent"
 
-default_value VPN_POOL 'VPN Agent'
-default_value DOCKER_REGISTRY docker.merkator.com
-default_value SYSTEM_COLLECTIONURI https://dev.azure.com/merkatordev/
+set_env DOCKER_REGISTRY \
+    "Enter the host name of the Docker Registry" \
+    docker.merkator.com
 
-# Re-read the environment file, that now should contain all variables.
+set_env SYSTEM_COLLECTIONURI \
+    "Enter the DevOps Organisation name" \
+    merkatordev
+
+# Re-read the environment file (that should now contain all variables),
+# exporting all variables.
+set -a
 # shellcheck source=/dev/null
 source /devops/env_file
+set +a
 
 # Set the default project and organisation for the Azure DevOps CLI.
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
@@ -94,18 +112,19 @@ get_project_id() {
         --project "$SYSTEM_TEAMPROJECT" \
         --query id \
         --output tsv)
+    export SYSTEM_TEAMPROJECTID
+    [ -n "$SYSTEM_TEAMPROJECTID" ]
 }
 
 # Get the project id (create the project if it doesn't exist). Exit on failure.
 if get_project_id &>/dev/null; then
     log "Project $SYSTEM_TEAMPROJECT exists"
 else
+    log "Create Project $SYSTEM_TEAMPROJECT"
     az devops project create --name "$SYSTEM_TEAMPROJECT"
+    sleep 5
     get_project_id
-    log "Project $SYSTEM_TEAMPROJECT created"
 fi || exit
-
-export SYSTEM_TEAMPROJECTID
 
 components=("$@")
 # Make components lowercase.
@@ -137,11 +156,12 @@ log Components: "${components[@]}"
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
-    local repository_id
 
     log "Create repository $REPOSITORY" &&
-        repository_id=$(az repos create --name "$REPOSITORY" \
+        REPOSITORY_ID=$(az repos create --name "$REPOSITORY" \
             --query=id --output tsv) || return
+
+    export REPOSITORY_ID
 
     log "Initialise repository $REPOSITORY" &&
         (
@@ -157,8 +177,6 @@ create_repository() {
     log "Update repository $REPOSITORY: set default branch to 'main'" &&
         az repos update --repository="$REPOSITORY" \
             --default-branch main || return
-
-    echo "$repository_id"
 }
 
 # Clone the repo $REPOSITORY.
@@ -190,12 +208,31 @@ dg_init_component() {
 # environments, because that will create them automatically, and in a state that
 # prevents us from adding the approval checks.
 for environment in TEST PRODUCTION; do
-    /devops.environment.sh "$environment"
-done || exit
+    /devops/environment.sh "$environment" || exit
+done
 
-# Get the variable group id (create the variable group if it doesn't exist),
-# which is needed for creating the pipelines.
-variable_group_id=$(/devops/variable_group.sh) || exit
+# Get the Variable Group id (create the Variable Group if it doesn't exist),
+# which is needed for creating the Pipelines.
+VARIABLE_GROUP_ID=$(az pipelines variable-group list \
+    --query "[?name=='docker4gis'].id" \
+    --output tsv)
+if [ -n "$VARIABLE_GROUP_ID" ]; then
+    log "Variable Group docker4gis exists"
+else
+    log Create variable group &&
+        VARIABLE_GROUP_ID=$(az pipelines variable-group create \
+            --name "docker4gis" \
+            --authorize true \
+            --variables "DOCKER_PASSWORD=changeit" \
+            --query=id) || exit
+
+    log Make variable DOCKER_PASSWORD secret &&
+        az pipelines variable-group variable update \
+            --group-id "$VARIABLE_GROUP_ID" \
+            --name DOCKER_PASSWORD \
+            --secret true || exit
+fi
+export VARIABLE_GROUP_ID
 
 # Create the repositories, components, and pipelines.
 for component_repository in "${components[@]}"; do
@@ -203,20 +240,21 @@ for component_repository in "${components[@]}"; do
     # Split component_repository into component and repository, using = as the separator.
     IFS='=' read -r COMPONENT REPOSITORY <<<"$component_repository"
     REPOSITORY=${REPOSITORY:-$COMPONENT}
+    export COMPONENT REPOSITORY
 
     # Skip if the repository already exists.
     if az repos show --repository "$REPOSITORY" &>/dev/null; then
         log "Repository $REPOSITORY already exists"
+        # Need the package directory for creating other components.
+        [ "$REPOSITORY" = ^package ] && git_clone
         continue
     fi
 
     # Create the repository, its docker4gis component, and its pipelines.
-    repository_id=$(create_repository) &&
+    create_repository &&
         git_clone &&
         dg_init_component &&
-        /devops/pipelines.sh \
-            "$REPOSITORY" "$repository_id" "$variable_group_id" ||
-        exit
+        /devops/pipelines.sh || exit
 done
 
 # Create a cross-repository policy (if it doesn't exist) to require all PR

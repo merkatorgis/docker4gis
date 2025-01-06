@@ -1,8 +1,6 @@
 #!/bin/bash
 
-repository_name=$1
-repository_id=$2
-variable_group_id=$3
+set -ex
 
 triggers_definition='"triggers": [{
     "branchFilters": [],
@@ -20,7 +18,7 @@ for yaml in \
     [ "$yaml" = azure-pipeline-build-validation.yml ] &&
         PR=true
 
-    name=$repository_name
+    name=$REPOSITORY
     [ "$PR" ] && name="$name PR"
 
     log Create pipeline "$name"
@@ -32,13 +30,13 @@ for yaml in \
         \"name\": \"$name\",
         \"repository\": {
             \"type\": \"TfsGit\",
-            \"name\": \"$repository_name\"
+            \"name\": \"$REPOSITORY\"
         },
         \"process\": {
             \"yamlFilename\": \"$yaml\",
             \"type\": 2
         },
-        \"variableGroups\": [ { \"id\": $variable_group_id } ],
+        \"variableGroups\": [ { \"id\": $VARIABLE_GROUP_ID } ],
         \"queue\": { \"name\": \"Azure Pipelines\" },
         $triggers
     }")
@@ -51,7 +49,7 @@ for yaml in \
         log Create build policy "$name"
         az repos policy build create --blocking true \
             --build-definition-id "$build_definition_id" \
-            --repository-id "$repository_id" \
+            --repository-id "$REPOSITORY_ID" \
             --branch main \
             --display-name "$name" \
             --enabled true \

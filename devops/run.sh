@@ -13,9 +13,13 @@ touch "$ENV_FILE"
 chown "$USER" "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
+docker_socket=/var/run/docker.sock
+
 docker container run --name "$CONTAINER" \
 	--rm \
+	--privileged \
 	-ti \
 	--env-file "$ENV_FILE" \
-	--mount type=bind,source="$ENV_FILE",target=/env_file \
+	--mount type=bind,source="$ENV_FILE",target=/devops/env_file \
+	--mount type=bind,source="$docker_socket",target="$docker_socket" \
 	"$IMAGE" "$@"

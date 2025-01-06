@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 environment=$1
 
 # 0. Skip if already created.
