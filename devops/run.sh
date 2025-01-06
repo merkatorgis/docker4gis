@@ -19,6 +19,9 @@ docker container run --name "$CONTAINER" \
 	--rm \
 	--privileged \
 	-ti \
+	--env DEVOPS_ORGANISATION "$DEVOPS_ORGANISATION" \
+	--env DEVOPS_DOCKER_REGISTRY "$DEVOPS_DOCKER_REGISTRY" \
+	--env DEVOPS_VPN_POOL "$DEVOPS_VPN_POOL" \
 	--env-file "$ENV_FILE" \
 	--mount type=bind,source="$ENV_FILE",target=/devops/env_file \
 	--mount type=bind,source="$docker_socket",target="$docker_socket" \

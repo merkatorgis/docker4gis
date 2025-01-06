@@ -25,19 +25,27 @@ RUN apt update && \
 RUN az extension add --name azure-devops && \
     az devops --help
 
-# Install prerequisites and Docker CLI.
+# Import the Docker GPG key.
+# Add the Docker repository.
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
     gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
-    > /etc/apt/sources.list.d/docker.list && \
-    apt-get update && \
+    > /etc/apt/sources.list.d/docker.list
+
+# Update the package list.
+# Install the Docker CLI.
+# Verify Installation.
+RUN apt-get update && \
     apt-get install -y docker-ce-cli && \
-    apt-get clean && \
     docker --version
+
+# Remove downloaded packages.
+RUN apt-get clean
 
 WORKDIR /devops
 COPY conf/* .
 ENTRYPOINT [ "/devops/entrypoint" ]
 CMD [ "components" ]
 
-ENV API_VERSION=7.0
+ENV DOCKER4GIS_DEVOPS=true
+ENV API_VERSION=7.1

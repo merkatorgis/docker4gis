@@ -63,8 +63,10 @@ fi
 export PIPELINE=${PIPELINE:-$TF_BUILD}
 export PIPELINE_DOCKER_REPO=${PIPELINE_DOCKER_REPO:-$BUILD_REPOSITORY_NAME}
 export PIPELINE_DOCKER_USER=${PIPELINE_DOCKER_USER:-$SYSTEM_TEAMPROJECT}
-export PIPELINE_DOCKER_REGISTRY=${PIPELINE_DOCKER_REGISTRY:-'docker.merkator.com'}
-export PIPELINE_VPN_POOL=${PIPELINE_VPN_POOL:-'VPN Agent'}
+
+export DEVOPS_ORGANISATION=${DEVOPS_ORGANISATION:-'merkator'}
+export DEVOPS_DOCKER_REGISTRY=${DEVOPS_DOCKER_REGISTRY:-"docker.$DEVOPS_ORGANISATION.com"}
+export DEVOPS_VPN_POOL=${DEVOPS_VPN_POOL:-'VPN Agent'}
 
 package_json() {
     [ -f package.json ] || echo '{
@@ -241,7 +243,7 @@ $steps" >"$file"
   # You probably need to set up a custom pool, with an agent that runs from a
   # location that is whitelisted in your target servers' firewalls. Otherwise,
   # you can comment out the next line.
-  pool: $PIPELINE_VPN_POOL
+  pool: $DEVOPS_VPN_POOL
   jobs:
   - deployment: ${environment}_deploy_job
     displayName: Deploy $environment job
@@ -276,10 +278,11 @@ $(
             done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
         )
                 }" >"$temp"
-        if [ "$PIPELINE" ]; then
-            # We're running from the project-template pipeline, so the
-            # Environments, and their Manual Approval checks are set up as well,
-            # preventing the deployment stages from running automatically.
+        if [ -n "$DOCKER4GIS_DEVOPS" ]; then
+            # We're running from the dg devops command, so the Environments, and
+            # their Manual Approval checks are set up as well, preventing the
+            # deployment stages from running automatically, so we don't have to
+            # comment-out their definiion.
             cat "$temp" >>"$continuous_integration"
         else
             [ "$previous_environment" ] || echo "
@@ -429,7 +432,7 @@ POSTFIX_DOMAIN=" >>.env
     pipeline
 
     # Offer to create the dg alias.
-    if [ -z "$PIPELINE" ] && [ -z "$ALIAS_NAME" ]; then
+    if [ -z "$DOCKER4GIS_DEVOPS" ] && [ -z "$ALIAS_NAME" ]; then
         bash -i "$0" alias TEST
     fi
     ;;
@@ -979,17 +982,64 @@ function setup_file() {
 " >"$file"
     ;;
 
-project-template)
-    help_text="Follow these instructions to provision a $docker4gis template in a fresh
-Azure DevOps project:
+devops)
+    help "Provision a $docker4gis setup in a Azure DevOps project.
 
-$(cat "$DOCKER_BASE/$action/doc.txt")"
-    help "$help_text"
+Usage:
+- $DOCKER4GIS_COMMAND $action [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...]
+- $DOCKER4GIS_COMMAND $action set|s p|pat|r|registry|o|organisation|p|pool VALUE
 
-    [ "$PIPELINE" ] || just_help "$help_text"
+=> You need a Personal Access Token (PAT) of a user that has the right to create
+Projects in Azure DevOps. Create a PAT with scope \"full access\". See for
+instructions:
+https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
 
-    # Only parameter is 'test', which minimalises the number of repositories
-    # created.
+
+The \"components\" action creates a new Project in Azure DevOps, with several
+Repositories (the \"^package\", the \"proxy\", and a number of components) are
+created, each with a Branch Policy set on the \"main\" branch, and each with a
+Build Validation Pipeline (which runs automatically on each new or modified Pull
+Request, and wich has to succeed before the PR can be completed), and a
+Continuous Integration Pipeline, which runs automatically on each PR
+merge/completion. Each \"main\" branch won't allow direct commits, only PR
+merges.
+
+=> Edit the generated \"docker4gis\" Variable Group (Pipelines | Library |
+docker4gis) to set the proper value for the DOCKER_PASSWORD variable, which is
+needed for Pipelines to pull and push images from/to your Docker Registry.
+
+Additionally, a \"TEST\" and \"PRODUCTION\" Environment are created, each with a
+template SSH Service Connection. Both Environments require manual Approval by a
+project Team member, so the respective Deployment Stages of the ^package's
+Continuous Integration Pipeline aren't run automatically. Edit the Service
+Connection details (Project settings | Pipelines | Service connections), before
+removing the TEST Environment Approval Check (Pipelines | Environments |
+TEST/PRODUCTION | Approvals and checks | {hover} | ⁝ | Delete).
+
+\`$DOCKER4GIS_COMMAND $action\` without arguments will run the \"components\"
+action. It will ask you to type in the Project name, unless you specify it
+through the --project|-p option.
+
+Without any further options, it will create a Repository (and its Policies and
+Pipelines) for each known $docker4gis base component. Otherwise, it creates a
+Repository for each component you list. For an existing Project, existing
+Repositories are left untouched, and newly listed ones are added.
+
+A simple name results in a Repository with that name, initialised as an
+extension of the $docker4gis base component with the same name. List a
+component=repository to get a Repository name that is different from the base
+component name; e.g. \"angular=app\", or \"postgrest=api\".
+
+The \"set\" action saves the value of a variable to the local file
+\`~/$docker4gis-$action.env\`. If any of the variables is not set, the
+\"components\" action asks you to type it in the first time.
+- pat|p: Personal Access Token
+- registry|r: Docker Registry, default: $DEVOPS_DOCKER_REGISTRY
+- organisation|o: Organisation, default: $DEVOPS_ORGANISATION
+- pool|p: the Agent Pool name that is used in Deployment Pipeline Tasks,
+  default: $DEVOPS_VPN_POOL
+"
+
     "$DOCKER_BASE/$action/run.sh" "$@"
     ;;
 
@@ -1000,7 +1050,9 @@ Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
   test|t [FILE] | unbuild [COMPONENT] | stop | geoserver |  base-component |
   template | alias [NAME] | $docker4gis | base | login [PASSWORD] [USER] |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
-  bats | project-template [COMPONENT...] | all EXECUTABLE|self [ARG...]
+  bats | all EXECUTABLE|self [ARG...] |
+  devops [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...] |
+  devops set|s p|pat|r|registry|o|organisation|p|pool VALUE
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
 For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
