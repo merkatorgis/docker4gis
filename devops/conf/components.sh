@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Do not echo commands just yet, since the PAT would be printed to the console.
+# Do not echo commands just yet, to prevent printing the PAT to the console.
 # set -x
 
 project=$1
@@ -13,12 +13,19 @@ elif [[ $project =~ ^--project= ]]; then
     shift
 fi
 
-if [ -z "$SYSTEM_TEAMPROJECT" ]; then
-    echo
-    read -rp "Enter your DevOps Project name : " SYSTEM_TEAMPROJECT
-fi
+_=${1:?No components specified}
 
-export SYSTEM_TEAMPROJECT
+components=("$@")
+# Make components lowercase.
+components=("${components[@],,}")
+
+components_always=(^package proxy)
+# Remove components that are always created.
+for component in "${components_always[@]}"; do
+    components=("${components[@]/$component/}")
+done
+# Add components that are always created.
+components=("${components_always[@]}" "${components[@]}")
 
 set_env() {
     local name=$1
@@ -30,9 +37,19 @@ set_env() {
         read -rp "$message : " input_value
         value=${input_value:-$default}
         # Save the value to the environment file.
-        /devops/set.sh "$name" "$value"
+        if [ "$name" != SYSTEM_TEAMPROJECT ]; then
+            SYSTEM_TEAMPROJECT=$value
+        else
+            /devops/set.sh "$name" "$value"
+        fi
     fi || exit
 }
+
+set_env SYSTEM_TEAMPROJECT \
+    "Enter your DevOps Project name" \
+    "$DOCKER_USER"
+
+export SYSTEM_TEAMPROJECT
 
 # Read current values from file.
 # shellcheck source=/dev/null
@@ -66,6 +83,8 @@ export AZURE_DEVOPS_EXT_PAT=$PAT
 # the host name in the URI (e.g. https://dev.azure.com/merkatordev/).
 AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 export AUTHORISED_COLLECTION_URI
+
+export SECURITY_NAMESPACE_GIT_REPOSITORIES=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
 
 log() {
     set +x
@@ -111,33 +130,67 @@ else
     get_project_id
 fi || exit
 
-components=("$@")
-# Make components lowercase.
-components=("${components[@],,}")
+log Check Project Administrators group membership
 
-# Add all components if none are specified.
-if [ ${#components[@]} -eq 0 ]; then
-    components=("${components[@]}" angular)
-    components=("${components[@]}" cron)
-    components=("${components[@]}" dynamic)
-    components=("${components[@]}" geoserver)
-    components=("${components[@]}" postfix)
-    components=("${components[@]}" postgis)
-    components=("${components[@]}" postgrest)
-    components=("${components[@]}" serve)
-    components=("${components[@]}" swagger)
-    components=("${components[@]}" tomcat)
-fi
+project_administrators_group=$(
+    az devops security group list \
+        --query "(graphGroups[?displayName=='Project Administrators'])[0]"
+) &&
+    descriptor=$(
+        node --print "($project_administrators_group).descriptor"
+    ) &&
+    members=$(
+        az devops security group membership list --id "$descriptor"
+    ) &&
+    me=$(
+        /devops/rest.sh vssps GET profile/profiles/me
+    ) &&
+    email_address=$(
+        node --print "($me).emailAddress"
+    ) &&
+    is_member=$(
+        node --print "Object.values(($members)).some(m =>
+            m.principalName === '$email_address' ||
+            m.mailAddress === '$email_address'
+        )"
+    ) &&
+    [ "$is_member" = true ] || exit
 
-components_always=(^package proxy)
-# Remove components that are always created.
-for component in "${components_always[@]}"; do
-    components=("${components[@]/$component/}")
-done
-# Add components that are always created.
-components=("${components_always[@]}" "${components[@]}")
+policy_exemt() {
+    local allow_deny=$1
+    local project_administrators_group=$project_administrators_group
 
-log Components: "${components[@]}"
+    log "$allow_deny PolicyExempt for Project Administrators"
+
+    policy_exemt_originId=${policy_exemt_originId:-$(
+        node --print "($project_administrators_group).originId"
+    )}
+    policy_exemt_identity=${policy_exemt_identity:-$(
+        /devops/rest.sh vssps GET identities \
+            "identityIds=$policy_exemt_originId"
+    )}
+    policy_exemt_descriptor=${policy_exemt_descriptor:-$(
+        node --print "($policy_exemt_identity).value[0].descriptor"
+    )}
+
+    # Name                     Permission Description                                  Permission Bit
+    # -----------------------  ------------------------------------------------------  ----------------
+    # PolicyExempt             Bypass policies when pushing                            128
+    local bit=128
+
+    /devops/rest.sh POST \
+        "AccessControlEntries/$SECURITY_NAMESPACE_GIT_REPOSITORIES" '' \
+        "{
+            \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
+            \"merge\": true,
+            \"accessControlEntries\": [
+                    {
+                        \"descriptor\": \"$policy_exemt_descriptor\",
+                        \"$allow_deny\": $bit
+                    }
+                ]
+        }"
+}
 
 # Steps to create a repo named $REPOSITORY.
 create_repository() {
@@ -219,6 +272,11 @@ else
 fi
 export VARIABLE_GROUP_ID
 
+log Components: "${components[@]}"
+
+# Temporarily allow "Bypass policies when pushing" for "Project Administrators".
+policy_exemt allow || exit
+
 # Create the repositories, components, and pipelines.
 for component_repository in "${components[@]}"; do
 
@@ -226,6 +284,8 @@ for component_repository in "${components[@]}"; do
     IFS='=' read -r COMPONENT REPOSITORY <<<"$component_repository"
     REPOSITORY=${REPOSITORY:-$COMPONENT}
     export COMPONENT REPOSITORY
+
+    repository_result=0
 
     # Skip if the repository already exists.
     if az repos show --repository "$REPOSITORY" &>/dev/null; then
@@ -239,8 +299,17 @@ for component_repository in "${components[@]}"; do
     create_repository &&
         git_clone &&
         dg_init_component &&
-        /devops/pipelines.sh || exit
+        /devops/pipelines.sh
+
+    repository_result=$?
+    [ "$repository_result" = 0 ] || break
 done
+
+# Undo temporarily allow "Bypass policies when pushing" for "Project
+# Administrators".
+policy_exemt deny || exit
+
+[ "$repository_result" = 0 ] || exit
 
 # Create a cross-repository policy (if it doesn't exist) to require all PR
 # comments to be roseolved before merging.
@@ -306,9 +375,9 @@ project_build_service_identity=$(/devops/rest.sh vssps GET identities \
 project_build_service_descriptor=$(node --print \
     "($project_build_service_identity).value[0].descriptor")
 
-security_namespace_git_repositories=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
+SECURITY_NAMESPACE_GIT_REPOSITORIES=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
 # az devops security permission namespace show --output table \
-#     --namespace-id $security_namespace_git_repositories
+#     --namespace-id $SECURITY_NAMESPACE_GIT_REPOSITORIES
 # Name                     Permission Description                                  Permission Bit
 # -----------------------  ------------------------------------------------------  ----------------
 # GenericRead              Read                                                    2
@@ -320,7 +389,7 @@ allow=166
 
 # Invoke the REST api manually to allow the GenericRead, GenericContribute,
 # CreateTag, PolicyExemptproject permissions to the project build service.
-/devops/rest.sh POST "AccessControlEntries/$security_namespace_git_repositories" '' "{
+/devops/rest.sh POST "AccessControlEntries/$SECURITY_NAMESPACE_GIT_REPOSITORIES" '' "{
     \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
     \"merge\": true,
     \"accessControlEntries\": [
@@ -329,4 +398,6 @@ allow=166
             \"allow\": $allow
         }
     ]
-}"
+}" || exit
+
+log OK

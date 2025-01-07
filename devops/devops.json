@@ -1,0 +1,16 @@
+{
+  "aad.MjhiN2VjY2MtMzY0Ny03NDYxLTg2OGUtMjgwMTk1OGFjZjI1": {
+    "descriptor": "aad.MjhiN2VjY2MtMzY0Ny03NDYxLTg2OGUtMjgwMTk1OGFjZjI1",
+    "directoryAlias": "wouter.scherphof_merkator.com#EXT#",
+    "displayName": "Wouter Scherphof",
+    "domain": "a9b3476e-d359-4708-9b96-8eddaff74210",
+    "legacyDescriptor": null,
+    "mailAddress": "wouter.scherphof@merkator.com",
+    "metaType": "guest",
+    "origin": "aad",
+    "originId": "7468b181-1d5b-4203-88ee-73480745bc69",
+    "principalName": "wouter.scherphof@merkator.com",
+    "subjectKind": "user",
+    "url": "https://vssps.dev.azure.com/merkatordev/_apis/Graph/Users/aad.MjhiN2VjY2MtMzY0Ny03NDYxLTg2OGUtMjgwMTk1OGFjZjI1"
+  }
+}
