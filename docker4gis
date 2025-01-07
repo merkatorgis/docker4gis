@@ -64,7 +64,7 @@ export PIPELINE=${PIPELINE:-$TF_BUILD}
 export PIPELINE_DOCKER_REPO=${PIPELINE_DOCKER_REPO:-$BUILD_REPOSITORY_NAME}
 export PIPELINE_DOCKER_USER=${PIPELINE_DOCKER_USER:-$SYSTEM_TEAMPROJECT}
 
-export DEVOPS_ORGANISATION=${DEVOPS_ORGANISATION:-'merkator'}
+export DEVOPS_ORGANISATION=${DEVOPS_ORGANISATION:-'merkatordev'}
 export DEVOPS_DOCKER_REGISTRY=${DEVOPS_DOCKER_REGISTRY:-"docker.$DEVOPS_ORGANISATION.com"}
 export DEVOPS_VPN_POOL=${DEVOPS_VPN_POOL:-'VPN Agent'}
 
@@ -994,7 +994,6 @@ Projects in Azure DevOps. Create a PAT with scope \"full access\". See for
 instructions:
 https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
 
-
 The \"components\" action creates a new Project in Azure DevOps, with several
 Repositories (the \"^package\", the \"proxy\", and a number of components) are
 created, each with a Branch Policy set on the \"main\" branch, and each with a
@@ -1027,8 +1026,8 @@ Repositories are left untouched, and newly listed ones are added.
 
 A simple name results in a Repository with that name, initialised as an
 extension of the $docker4gis base component with the same name. List a
-component=repository to get a Repository name that is different from the base
-component name; e.g. \"angular=app\", or \"postgrest=api\".
+component=repository pair to get a Repository name that is different from the
+base qcomponent name; e.g. \"angular=app\", or \"postgrest=api\".
 
 The \"set\" action saves the value of a variable to the local file
 \`~/$docker4gis-$action.env\`. If any of the variables is not set, the
@@ -1039,8 +1038,7 @@ The \"set\" action saves the value of a variable to the local file
 - pool|p: the Agent Pool name that is used in Deployment Pipeline Tasks,
   default: $DEVOPS_VPN_POOL
 "
-
-    "$DOCKER_BASE/$action/run.sh" "$@"
+    "$DOCKER_BASE/../$action/run.sh" "$@"
     ;;
 
 *)

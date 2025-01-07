@@ -5,15 +5,13 @@ value=${2:?Value is required}
 
 env_file=/devops/env_file
 
-set -x
-
 # Lowercase name.
 case ${name,,} in
-r | registry | docker_registry)
-    name=DOCKER_REGISTRY
-    ;;
 t | pat)
     name=PAT
+    ;;
+r | registry | docker_registry)
+    name=DOCKER_REGISTRY
     ;;
 o | organisation | organization | system_collectionuri)
     name=SYSTEM_COLLECTIONURI
@@ -40,19 +38,20 @@ p | pool | vpn_pool)
     ;;
 esac
 
-# Append new value to file.
-echo "$name='$value'" >>"$env_file"
-
-# Read current values from file.
+# Read stored values from file.
 # shellcheck source=/dev/null
 source "$env_file"
 
+# Set the new value.
+eval "$name='$value'"
+
 # Rewrite all values to file.
 echo -n >"$env_file"
-for var in \
-    DOCKER_REGISTRY \
+for name in \
     PAT \
+    DOCKER_REGISTRY \
     SYSTEM_COLLECTIONURI \
     VPN_POOL; do
-    echo "$var='${!var}'" >>"$env_file"
+    value=${!name}
+    echo "export $name='$value'" >>"$env_file"
 done

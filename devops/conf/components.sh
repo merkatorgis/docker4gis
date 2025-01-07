@@ -1,19 +1,7 @@
 #!/bin/bash
 
-log() {
-    set +x
-    echo '---------------------------------------------------------------------'
-    echo "$@"
-    echo '---------------------------------------------------------------------'
-    # Prevent next commands echoing sooner.
-    sleep 1
-    set -x
-}
-export -f log
-
-set -x
-
-log Setup
+# Do not echo commands just yet, since the PAT would be printed to the console.
+# set -x
 
 project=$1
 if [ "$project" = -p ] || [ "$project" = --project ]; then
@@ -39,14 +27,16 @@ set_env() {
     [ -n "$default" ] && message+=" (Enter for default: $default)"
     # If the value is not set, ask for the value.
     if [ -z "${!name}" ]; then
-        echo
         read -rp "$message : " input_value
         value=${input_value:-$default}
         # Save the value to the environment file.
         /devops/set.sh "$name" "$value"
     fi || exit
-    export "${name?}"
 }
+
+# Read current values from file.
+# shellcheck source=/dev/null
+source /devops/env_file
 
 doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
 message="Enter a Personal Access Token"
@@ -65,34 +55,42 @@ set_env SYSTEM_COLLECTIONURI \
     "Enter the DevOps Organisation name" \
     "$DEVOPS_ORGANISATION"
 
-# Set the default project and organisation for the Azure DevOps CLI.
-az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
-az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+# Read altered values from file.
+# shellcheck source=/dev/null
+source /devops/env_file
 
 # Login to the Azure DevOps CLI.
-echo "$PAT" | az devops login
+export AZURE_DEVOPS_EXT_PAT=$PAT
 
 # Replace string to insert the \"\$PAT@\" value between the (https):// and
 # the host name in the URI (e.g. https://dev.azure.com/merkatordev/).
 AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 export AUTHORISED_COLLECTION_URI
 
+log() {
+    set +x
+    echo '---------------------------------------------------------------------'
+    echo "$@"
+    echo '---------------------------------------------------------------------'
+    # Prevent next commands echoing sooner.
+    sleep 1
+    set -x
+}
+export -f log
+
+log Setup
+
+# Set the default project and organisation for the Azure DevOps CLI.
+az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
+
 # Configure git identity.
 git config --global user.email 'pipeline@azure.com'
 git config --global user.name 'Azure Pipeline'
 
-# Get an authenticated git origin URI for repo $REPOSITORY.
-git_origin() {
-    echo "$AUTHORISED_COLLECTION_URI$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
-}
-
 dg() {
     npx --yes docker4gis@latest "$@"
 }
-
-# Export rest functions.
-# shellcheck source=/dev/null
-source /devops/rest.bash
 
 get_project_id() {
     SYSTEM_TEAMPROJECTID=$(az devops project show \
@@ -157,7 +155,7 @@ create_repository() {
                 git init &&
                 git commit --allow-empty -m "initialise repository" &&
                 git branch -m main &&
-                git remote add origin "$(git_origin)" &&
+                /devops/git_origin.sh remote add origin &&
                 git push origin main
         ) || return
 
@@ -171,7 +169,7 @@ git_clone() {
     log "Clone $REPOSITORY" &&
         mkdir -p ~/"$SYSTEM_TEAMPROJECT" &&
         cd ~/"$SYSTEM_TEAMPROJECT" &&
-        git clone "$(git_origin)"
+        /devops/git_origin.sh clone
 }
 
 # Create a docker4gis component for the repo $REPOSITORY.
@@ -273,18 +271,18 @@ if [ -n "$existing_policy" ]; then
     log "Policy Comment requirements exists"
 else
     log "Create Policy Comment requirements"
-    rest_project POST policy/configurations '' "$comment_requirements_policy"
+    /devops/rest.sh project POST policy/configurations '' "$comment_requirements_policy"
 fi || exit
 
 # Try to create the VPN Agent Pool if it doesn't exist in the project.
 queueNames=$(node --print "encodeURIComponent('$VPN_POOL')")
-queues=$(rest_project GET distributedtask/queues "queueNames=$queueNames")
+queues=$(/devops/rest.sh project GET distributedtask/queues "queueNames=$queueNames")
 if [ "$(node --print "($queues).count")" -gt 0 ]; then
     log Agent Pool "$VPN_POOL" exists in project
 else
     query="[?name=='$VPN_POOL'].id"
     if pool_id=$(az pipelines pool list --output tsv --query "$query"); then
-        if rest_project POST distributedtask/queues authorizePipelines=false "{
+        if /devops/rest.sh project POST distributedtask/queues authorizePipelines=false "{
             \"name\": \"$VPN_POOL\",
             \"pool\": {
                 \"id\": $pool_id
@@ -303,7 +301,7 @@ log Set permissions for the project build service
 
 # Invoke the REST api manually to get the identity descriptor of the project
 # build service, which we want to assign some permissions.
-project_build_service_identity=$(rest_vssps GET identities \
+project_build_service_identity=$(/devops/rest.sh vssps GET identities \
     "searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID")
 project_build_service_descriptor=$(node --print \
     "($project_build_service_identity).value[0].descriptor")
@@ -322,7 +320,7 @@ allow=166
 
 # Invoke the REST api manually to allow the GenericRead, GenericContribute,
 # CreateTag, PolicyExemptproject permissions to the project build service.
-rest POST "AccessControlEntries/$security_namespace_git_repositories" '' "{
+/devops/rest.sh POST "AccessControlEntries/$security_namespace_git_repositories" '' "{
     \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
     \"merge\": true,
     \"accessControlEntries\": [
