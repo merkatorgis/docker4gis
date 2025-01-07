@@ -26,7 +26,7 @@ for yaml in \
     [ "$PR" ] || triggers=$triggers_definition
 
     # Create the pipeline, a.k.a. build definition.
-    build_definition=$(rest_project POST build/definitions '' "{
+    build_definition=$(/devops/rest.sh project POST build/definitions '' "{
         \"name\": \"$name\",
         \"repository\": {
             \"type\": \"TfsGit\",

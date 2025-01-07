@@ -51,7 +51,7 @@ az devops service-endpoint create \
 
 log Create pipeline Environment "$environment"
 
-environment_object=$(rest_project POST pipelines/environments '' "{
+environment_object=$(/devops/rest.sh project POST pipelines/environments '' "{
     \"name\": \"$environment\"
 }")
 environment_id=$(node --print "($environment_object).id")
@@ -65,7 +65,7 @@ fi
 
 log Create environment "$environment" Approval check
 
-rest_project POST pipelines/checks/configurations '' "{
+/devops/rest.sh project POST pipelines/checks/configurations '' "{
     \"type\": {
         \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
         \"name\": \"Approval\"
