@@ -14,6 +14,27 @@ chmod 600 "$ENV_FILE"
 
 docker_socket=/var/run/docker.sock
 
+# Set the DOCKER_USER variable (used as the default value for the DevOps Project
+# Name). Firstly, let's see if a package directory exists.
+for path in . ..; do
+	[ -z "$DOCKER_USER" ] || break
+	path=$(realpath "$path")
+	# Loop over all files named .env in $path and its subdirectories.
+	while read -r env_file; do
+		if grep "^DOCKER_REPO=package$" "$env_file" &>/dev/null; then
+			# This file is in the package directory (though we're not entirely
+			# sure, since the file theoretically may contain subsequent
+			# assignments of DOCKER_REPO). We need the name of the parent of the
+			# package directory.
+			DOCKER_USER=$(basename "$(dirname "$(dirname "$env_file")")")
+			break
+		fi
+	done < <(find "$path" -name ".env" -type f)
+done
+# Otherwise, use the current directory.
+[ -z "$DOCKER_USER" ] &&
+	DOCKER_USER=$(basename "$(realpath .)")
+
 # Tee all stdout & stderr to a log file (from
 # https://superuser.com/a/212436/462952).
 exec > >(tee devops.log) 2>&1

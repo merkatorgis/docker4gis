@@ -42,6 +42,9 @@ RUN apt-get update && \
 # Remove downloaded packages.
 RUN apt-get clean
 
+# Install the latest version of npm.
+RUN npm install -g npm@11.0.0
+
 WORKDIR /devops
 COPY conf/* .
 ENTRYPOINT [ "/devops/entrypoint" ]

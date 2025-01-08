@@ -13,36 +13,34 @@ elif [[ $project =~ ^--project= ]]; then
     shift
 fi
 
-_=${1:?No components specified}
-
-components=("$@")
-# Make components lowercase.
-components=("${components[@],,}")
-
-components_always=(^package proxy)
-# Remove components that are always created.
-for component in "${components_always[@]}"; do
-    components=("${components[@]/$component/}")
-done
-# Add components that are always created.
-components=("${components_always[@]}" "${components[@]}")
-
 set_env() {
     local name=$1
     local message=$2
     local default=$3
     [ -n "$default" ] && message+=" (Enter for default: $default)"
-    # If the value is not set, ask for the value.
-    if [ -z "${!name}" ]; then
-        read -rp "$message : " input_value
+
+    # While the value is not set, ask to provide the value.
+    value=${!name}
+    while [ -z "$value" ]; do
+        if [ "$name" = PAT ]; then
+            # Do not echo the value entered.
+            read -rsp "$message : " input_value
+            echo
+        else
+            read -rp "$message : " input_value
+        fi
         value=${input_value:-$default}
-        # Save the value to the environment file.
-        if [ "$name" != SYSTEM_TEAMPROJECT ]; then
+        [ -z "$value" ] && continue
+        if [ "$name" = SYSTEM_TEAMPROJECT ]; then
+            # Assign the value to the variable.
             SYSTEM_TEAMPROJECT=$value
         else
+            # Call the set.sh script to save the value to the env_file. Since
+            # set.sh may amend the value given, we read the env_file back in
+            # later, to get the proper value for each variable.
             /devops/set.sh "$name" "$value"
         fi
-    fi || exit
+    done
 }
 
 set_env SYSTEM_TEAMPROJECT \
@@ -84,8 +82,6 @@ export AZURE_DEVOPS_EXT_PAT=$PAT
 AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 export AUTHORISED_COLLECTION_URI
 
-export SECURITY_NAMESPACE_GIT_REPOSITORIES=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
-
 log() {
     set +x
     echo '---------------------------------------------------------------------'
@@ -107,6 +103,10 @@ az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 git config --global user.email 'pipeline@azure.com'
 git config --global user.name 'Azure Pipeline'
 
+# Set the default branch name to 'main', to prevent git from printing hints to
+# the console.
+git config --global init.defaultBranch main
+
 dg() {
     npx --yes docker4gis@latest "$@"
 }
@@ -126,8 +126,11 @@ if get_project_id &>/dev/null; then
 else
     log "Create Project $SYSTEM_TEAMPROJECT"
     az devops project create --name "$SYSTEM_TEAMPROJECT"
+    # Make DevOps realise the new project exists.
     sleep 5
-    get_project_id
+    default_repository_id_to_delete=$(az repos show --repository "$SYSTEM_TEAMPROJECT" \
+        --query id --output tsv) &&
+        get_project_id
 fi || exit
 
 log Check Project Administrators group membership
@@ -158,38 +161,22 @@ project_administrators_group=$(
 
 policy_exemt() {
     local allow_deny=$1
-    local project_administrators_group=$project_administrators_group
 
-    log "$allow_deny PolicyExempt for Project Administrators"
+    # This value was set in the group membership check above.
+    local project_administrators_group=$project_administrators_group
 
     policy_exemt_originId=${policy_exemt_originId:-$(
         node --print "($project_administrators_group).originId"
-    )}
-    policy_exemt_identity=${policy_exemt_identity:-$(
-        /devops/rest.sh vssps GET identities \
-            "identityIds=$policy_exemt_originId"
-    )}
-    policy_exemt_descriptor=${policy_exemt_descriptor:-$(
-        node --print "($policy_exemt_identity).value[0].descriptor"
-    )}
-
-    # Name                     Permission Description                                  Permission Bit
-    # -----------------------  ------------------------------------------------------  ----------------
-    # PolicyExempt             Bypass policies when pushing                            128
-    local bit=128
-
-    /devops/rest.sh POST \
-        "AccessControlEntries/$SECURITY_NAMESPACE_GIT_REPOSITORIES" '' \
-        "{
-            \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
-            \"merge\": true,
-            \"accessControlEntries\": [
-                    {
-                        \"descriptor\": \"$policy_exemt_descriptor\",
-                        \"$allow_deny\": $bit
-                    }
-                ]
-        }"
+    )} &&
+        policy_exemt_identity=${policy_exemt_identity:-$(
+            /devops/rest.sh vssps GET identities \
+                "identityIds=$policy_exemt_originId"
+        )} &&
+        policy_exemt_descriptor=${policy_exemt_descriptor:-$(
+            node --print "($policy_exemt_identity).value[0].descriptor"
+        )} &&
+        /devops/set_permissions.sh 'Project Administrators' \
+            "$policy_exemt_descriptor" "$allow_deny" PolicyExempt
 }
 
 # Steps to create a repo named $REPOSITORY.
@@ -272,6 +259,15 @@ else
 fi
 export VARIABLE_GROUP_ID
 
+# ------------------------------------------------------------------------------
+# Begin of the main loop over the components.
+# ------------------------------------------------------------------------------
+
+# Add required components to the ones provided as arguments.
+components=(^package proxy "$@")
+# Make components lowercase.
+components=("${components[@],,}")
+
 log Components: "${components[@]}"
 
 # Temporarily allow "Bypass policies when pushing" for "Project Administrators".
@@ -282,6 +278,13 @@ for component_repository in "${components[@]}"; do
 
     # Split component_repository into component and repository, using = as the separator.
     IFS='=' read -r COMPONENT REPOSITORY <<<"$component_repository"
+    # shellcheck disable=SC2269
+    {
+        # Just to see the values in the log.
+        component_repository="$component_repository"
+        COMPONENT=$COMPONENT
+        REPOSITORY=$REPOSITORY
+    }
     REPOSITORY=${REPOSITORY:-$COMPONENT}
     export COMPONENT REPOSITORY
 
@@ -309,7 +312,19 @@ done
 # Administrators".
 policy_exemt deny || exit
 
+# Exit if any repository creation failed - but only after undoing the policy
+# change.
 [ "$repository_result" = 0 ] || exit
+
+# ------------------------------------------------------------------------------
+# End of the main loop over the components.
+# ------------------------------------------------------------------------------
+
+# Delete the default repository, if we created a new project.
+if [ -n "$default_repository_id_to_delete" ]; then
+    log "Delete default repository $SYSTEM_TEAMPROJECT"
+    az repos delete --yes --id "$default_repository_id_to_delete"
+fi || exit
 
 # Create a cross-repository policy (if it doesn't exist) to require all PR
 # comments to be roseolved before merging.
@@ -343,61 +358,36 @@ else
     /devops/rest.sh project POST policy/configurations '' "$comment_requirements_policy"
 fi || exit
 
+# Set permissions for the Project Build Service.
+project_build_service_identity=$(/devops/rest.sh vssps GET identities \
+    "searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID") &&
+    project_build_service_descriptor=$(node --print \
+        "($project_build_service_identity).value[0].descriptor") &&
+    /devops/set_permissions.sh 'Project Build Service' \
+        "$project_build_service_descriptor" allow \
+        GenericRead GenericContribute CreateTag PolicyExempt || exit
+
 # Try to create the VPN Agent Pool if it doesn't exist in the project.
-queueNames=$(node --print "encodeURIComponent('$VPN_POOL')")
-queues=$(/devops/rest.sh project GET distributedtask/queues "queueNames=$queueNames")
-if [ "$(node --print "($queues).count")" -gt 0 ]; then
-    log Agent Pool "$VPN_POOL" exists in project
-else
-    query="[?name=='$VPN_POOL'].id"
-    if pool_id=$(az pipelines pool list --output tsv --query "$query"); then
-        if /devops/rest.sh project POST distributedtask/queues authorizePipelines=false "{
+queueNames=$(node --print "encodeURIComponent('$VPN_POOL')") &&
+    queues=$(/devops/rest.sh project GET distributedtask/queues "queueNames=$queueNames") &&
+    if [ "$(node --print "($queues).count")" -gt 0 ]; then
+        log Agent Pool "$VPN_POOL" exists in project
+    else
+        query="[?name=='$VPN_POOL'].id"
+        if pool_id=$(az pipelines pool list --output tsv --query "$query"); then
+            if /devops/rest.sh project POST distributedtask/queues authorizePipelines=false "{
             \"name\": \"$VPN_POOL\",
             \"pool\": {
                 \"id\": $pool_id
             }
         }"; then
-            log Agent Pool "$VPN_POOL" added to project
+                log Agent Pool "$VPN_POOL" added to project
+            else
+                log Failed to add Agent Pool "$VPN_POOL" to project
+            fi
         else
-            log Failed to add Agent Pool "$VPN_POOL" to project
+            log Pool "$VPN_POOL" not found
         fi
-    else
-        log Pool "$VPN_POOL" not found
     fi
-fi
-
-log Set permissions for the project build service
-
-# Invoke the REST api manually to get the identity descriptor of the project
-# build service, which we want to assign some permissions.
-project_build_service_identity=$(/devops/rest.sh vssps GET identities \
-    "searchFilter=AccountName&filterValue=$SYSTEM_TEAMPROJECTID")
-project_build_service_descriptor=$(node --print \
-    "($project_build_service_identity).value[0].descriptor")
-
-SECURITY_NAMESPACE_GIT_REPOSITORIES=2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87
-# az devops security permission namespace show --output table \
-#     --namespace-id $SECURITY_NAMESPACE_GIT_REPOSITORIES
-# Name                     Permission Description                                  Permission Bit
-# -----------------------  ------------------------------------------------------  ----------------
-# GenericRead              Read                                                    2
-# GenericContribute        Contribute                                              4
-# CreateTag                Create tag                                              32
-# PolicyExempt             Bypass policies when pushing                            128
-# 2 + 4 + 32 + 128 = 166
-allow=166
-
-# Invoke the REST api manually to allow the GenericRead, GenericContribute,
-# CreateTag, PolicyExemptproject permissions to the project build service.
-/devops/rest.sh POST "AccessControlEntries/$SECURITY_NAMESPACE_GIT_REPOSITORIES" '' "{
-    \"token\": \"repoV2/$SYSTEM_TEAMPROJECTID/\",
-    \"merge\": true,
-    \"accessControlEntries\": [
-        {
-            \"descriptor\": \"$project_build_service_descriptor\",
-            \"allow\": $allow
-        }
-    ]
-}" || exit
 
 log OK
