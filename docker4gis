@@ -68,9 +68,6 @@ export DEVOPS_ORGANISATION=${DEVOPS_ORGANISATION:-'merkatordev'}
 export DEVOPS_DOCKER_REGISTRY=${DEVOPS_DOCKER_REGISTRY:-"docker.$DEVOPS_ORGANISATION.com"}
 export DEVOPS_VPN_POOL=${DEVOPS_VPN_POOL:-'VPN Agent'}
 
-DOCKER_USER=$(basename "$(realpath ..)")
-export DOCKER_USER
-
 package_json() {
     [ -f package.json ] || echo '{
   "version": "0.0.0"
@@ -393,6 +390,7 @@ application's components (using \`$DOCKER4GIS_COMMAND component\`). The name of
 the components'parent directory will be used as the application name."
 
     DOCKER_REGISTRY=$1
+    DOCKER_USER=$(basename "$(realpath ..)")
 
     [ "$DOCKER_REGISTRY" ] && shift 1
     [ "$DOCKER_REGISTRY" ] || read -rp \
@@ -988,11 +986,13 @@ devops)
     help "Provision a $docker4gis setup in a Azure DevOps project.
 
 Usage:
-- $DOCKER4GIS_COMMAND $action components|c [--project|-p PROJECT] COMPONENT[=REPOSITORY]...
+- $DOCKER4GIS_COMMAND $action
+- $DOCKER4GIS_COMMAND $action components|c [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...]
 - $DOCKER4GIS_COMMAND $action set|s p|pat|r|registry|o|organisation|p|pool VALUE
 
 => You need a Personal Access Token (PAT) of a user that has the right to create
-Projects in Azure DevOps. Create a PAT with scope \"full access\". See for
+Projects in Azure DevOps (or, for an existing project, of a user that is a
+Project Administrator). Create a PAT with scope \"full access\". See for
 instructions:
 https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
 
@@ -1021,13 +1021,17 @@ The \"components\" action will ask you to type in the Project name (or accept a
 default value), unless you specify it through the --project|-p option.
 
 A Repository (and its Policies and Pipelines) is created for each component you
-list. For an existing Project, existing Repositories are left untouched, and
-newly listed ones are added.
+list (plus \"^package\" and \"proxy\"). For an existing Project, existing
+Repositories are left untouched, and newly listed ones are added.
 
 A simple name results in a Repository with that name, initialised as an
 extension of the $docker4gis base component with the same name. List a
 component=repository pair to get a Repository name that is different from the
 base component name; e.g. \"angular=app\", or \"postgrest=api\".
+
+Though the \"components\" action (or \"c\") is the default action, you do need
+to specify it when providing any of its arguments. A bare \`$DOCKER4GIS_COMMAND $action\`
+creates (only) the Project, and the \"^package\" and \"proxy\" repositories.
 
 The \"set\" action saves the value of a variable to the local file
 \`~/$docker4gis-$action.env\`. If any of the variables is not set, the
@@ -1049,7 +1053,7 @@ Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
   template | alias [NAME] | $docker4gis | base | login [PASSWORD] [USER] |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
   bats | all EXECUTABLE|self [ARG...] |
-  devops components|c [--project|-p PROJECT] COMPONENT[=REPOSITORY]... |
+  devops components|c [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...] |
   devops set|s p|pat|r|registry|o|organisation|p|pool VALUE
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
