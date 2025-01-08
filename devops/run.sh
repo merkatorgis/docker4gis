@@ -14,10 +14,8 @@ chmod 600 "$ENV_FILE"
 
 docker_socket=/var/run/docker.sock
 
-# Set the DOCKER_USER variable (used as the default value for the DevOps Project
-# Name). Firstly, let's see if a package directory exists.
-for path in . ..; do
-	[ -z "$DOCKER_USER" ] || break
+find_docker_user() {
+	local path=${1:-.}
 	path=$(realpath "$path")
 	# Loop over all files named .env in $path and its subdirectories.
 	while read -r env_file; do
@@ -30,10 +28,21 @@ for path in . ..; do
 			break
 		fi
 	done < <(find "$path" -name ".env" -type f)
-done
-# Otherwise, use the current directory.
-[ -z "$DOCKER_USER" ] &&
-	DOCKER_USER=$(basename "$(realpath .)")
+	[ -z "$DOCKER_USER" ] &&
+		if [ "$1" != .. ] &&
+			grep "^DOCKER4GIS_VERSION=" .env &>/dev/null; then
+			# We're in a Docker4GIS component directory, but not in the package
+			# directory. Let's try the parent directory.
+			find_docker_user ..
+		else
+			# Otherwise, use the current directory.
+			DOCKER_USER=$(basename "$(realpath .)")
+		fi
+}
+
+# Set the DOCKER_USER variable (used as the default value for the DevOps Project
+# Name).
+[ -n "$DOCKER_USER" ] || find_docker_user
 
 # Tee all stdout & stderr to a log file (from
 # https://superuser.com/a/212436/462952).
