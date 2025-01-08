@@ -15,34 +15,24 @@ chmod 600 "$ENV_FILE"
 docker_socket=/var/run/docker.sock
 
 find_docker_user() {
-	local path=${1:-.}
-	path=$(realpath "$path")
-	# Loop over all files named .env in $path and its subdirectories.
 	while read -r env_file; do
-		if grep "^DOCKER_REPO=package$" "$env_file" &>/dev/null; then
-			# This file is in the package directory (though we're not entirely
-			# sure, since the file theoretically may contain subsequent
-			# assignments of DOCKER_REPO). We need the name of the parent of the
-			# package directory.
-			DOCKER_USER=$(basename "$(dirname "$(dirname "$env_file")")")
+		grep "^DOCKER4GIS_VERSION=" "$env_file" &>/dev/null &&
+			# The file is in a docker4gis component directory. We need the name
+			# of the parent directory.
+			DOCKER_USER=$(basename "$(dirname "$(dirname "$env_file")")") &&
 			break
-		fi
-	done < <(find "$path" -name ".env" -type f)
+		# Find .env files in current directory direct subdirectories (using
+		# -print | sort to start with the one in the current directory).
+	done < <(find "$(realpath .)" -maxdepth 2 -name ".env" -type f -print | sort)
 	[ -z "$DOCKER_USER" ] &&
-		if [ "$1" != .. ] &&
-			grep "^DOCKER4GIS_VERSION=" .env &>/dev/null; then
-			# We're in a Docker4GIS component directory, but not in the package
-			# directory. Let's try the parent directory.
-			find_docker_user ..
-		else
-			# Otherwise, use the current directory.
-			DOCKER_USER=$(basename "$(realpath .)")
-		fi
+		# Use the current directory name as a fallback.
+		DOCKER_USER=$(basename "$(realpath .)")
 }
 
 # Set the DOCKER_USER variable (used as the default value for the DevOps Project
 # Name).
-[ -n "$DOCKER_USER" ] || find_docker_user
+[ -n "$DOCKER_USER" ] ||
+	find_docker_user
 
 # Tee all stdout & stderr to a log file (from
 # https://superuser.com/a/212436/462952).
