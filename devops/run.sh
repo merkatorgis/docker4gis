@@ -34,6 +34,16 @@ find_docker_user() {
 [ -n "$DOCKER_USER" ] ||
 	find_docker_user
 
+# Set default action.
+case "$1" in
+components | c | set | s)
+	true
+	;;
+*)
+	set -- components "$@"
+	;;
+esac
+
 # Tee all stdout & stderr to a log file (from
 # https://superuser.com/a/212436/462952).
 exec > >(tee devops.log) 2>&1
