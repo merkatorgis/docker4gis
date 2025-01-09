@@ -50,14 +50,14 @@ log "Upgrading any templates"
 log "Building the image(s)"
 "$DOCKER4GIS_EXECUTABLE" build "$@"
 
-# Tag and push image and possible sub images.
 image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
-find . -name Dockerfile | while read -r dockerfile; do
-    dir=$(dirname "$dockerfile")
+
+tag_and_push() {
+    local dir=$1
     sub_name=$(basename "$dir")
 
     # Skip the template directory.
-    [ "$sub_name" = template ] && continue
+    [ "$sub_name" = template ] && return
 
     full_image=$image
     image_tag=$version
@@ -73,7 +73,14 @@ find . -name Dockerfile | while read -r dockerfile; do
 
     log "Pushing $full_image_with_tag"
     docker image push "$full_image_with_tag"
+}
+
+# Tag and push image and possible sub images.
+find . -name Dockerfile | while read -r dockerfile; do
+    tag_and_push "$(dirname "$dockerfile")"
 done
+# No Dockerfile in package directory.
+[ "$DOCKER_REPO" = package ] && tag_and_push .
 
 [ "$no_save" = true ] && {
     # Undo all changes.
