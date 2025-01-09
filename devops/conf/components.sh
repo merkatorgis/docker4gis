@@ -305,7 +305,10 @@ for component_repository in "${components[@]}"; do
         /devops/pipelines.sh
 
     repository_result=$?
-    [ "$repository_result" = 0 ] || break
+    [ "$repository_result" = 0 ] || {
+        log "Error: non-zero repository_result: $repository_result"
+        break
+    }
 done
 
 # Undo temporarily allow "Bypass policies when pushing" for "Project
@@ -314,7 +317,10 @@ policy_exemt deny || exit
 
 # Exit if any repository creation failed - but only after undoing the policy
 # change.
-[ "$repository_result" = 0 ] || exit
+[ "$repository_result" = 0 ] || {
+    log "Error: non-zero repository_result: $repository_result"
+    exit
+}
 
 # ------------------------------------------------------------------------------
 # End of the main loop over the components.
