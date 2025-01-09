@@ -988,8 +988,7 @@ devops)
     help "Provision a $docker4gis setup in a Azure DevOps project.
 
 Usage:
-- $DOCKER4GIS_COMMAND $action
-- $DOCKER4GIS_COMMAND $action components|c [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...]
+- $DOCKER4GIS_COMMAND $action [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...]
 - $DOCKER4GIS_COMMAND $action set|s p|pat|r|registry|o|organisation|p|pool VALUE
 
 => You need a Personal Access Token (PAT) of a user that has the right to create
@@ -998,13 +997,13 @@ Project Administrator). Create a PAT with scope \"full access\". See for
 instructions:
 https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
 
-The \"components\" action creates a new Project in Azure DevOps, with several
-Repositories (the \"^package\", the \"proxy\", and a number of components) are
-created, each with a Branch Policy set on the \"main\" branch, and each with a
-Build Validation Pipeline (which runs automatically on each new or modified Pull
-Request, and wich has to succeed before the PR can be completed), and a
-Continuous Integration Pipeline, which runs automatically on each PR
-merge/completion. Each \"main\" branch won't allow direct commits, only PR
+The \"components\" action (which is the default) creates a new Project in Azure 
+DevOps, with several Repositories (the \"^package\", the \"proxy\", and a number 
+of components), each with a Branch Policy set on the \"main\" branch, and each 
+with a Build Validation Pipeline (which runs automatically on each new or 
+modified Pull Request, and wich has to succeed before the PR can be completed), 
+and a Continuous Integration Pipeline, which runs automatically on each PR 
+merge/completion. Each \"main\" branch won't allow direct commits, only PR 
 merges.
 
 => Edit the generated \"docker4gis\" Variable Group (Pipelines | Library |
