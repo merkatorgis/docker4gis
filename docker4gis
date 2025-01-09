@@ -24,7 +24,9 @@ shift 1
 default_docker4gis_command="npx --yes $docker4gis@latest"
 DOCKER4GIS_COMMAND=${DOCKER4GIS_COMMAND:-${ALIAS_NAME:-$default_docker4gis_command}}
 export DOCKER4GIS_COMMAND
-DOCKER4GIS_EXECUTABLE=$(realpath "$0")
+
+# Don't use realpath here, to prevent resolving symlinks.
+DOCKER4GIS_EXECUTABLE=$0
 export DOCKER4GIS_EXECUTABLE
 
 # Set the INSTALLED variable.
