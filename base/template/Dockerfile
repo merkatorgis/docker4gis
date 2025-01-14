@@ -13,5 +13,6 @@ RUN /tmp/bats/install.sh
 COPY conf/.plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
 
+# Make this image work with dg build & dg push.
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh run.sh /.docker4gis/
