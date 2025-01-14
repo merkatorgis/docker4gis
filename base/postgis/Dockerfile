@@ -49,6 +49,7 @@ ENV BUILD_TOOLS="${BUILD_TOOLS} libssl-dev"
 ENV BUILD_TOOLS="${BUILD_TOOLS} libsnappy-dev"
 ENV BUILD_TOOLS="${BUILD_TOOLS} zlib1g-dev"
 ENV BUILD_TOOLS="${BUILD_TOOLS} libzstd-dev"
+ENV BUILD_TOOLS="${BUILD_TOOLS} clang-13"
 RUN apt install -y ${BUILD_TOOLS} \
 	wget \
 	openssl \
@@ -216,15 +217,10 @@ RUN [ "$POSTGRESQL_VERSION" -le 11 ] \
 	&& echo 'hostssl all             all             all                     md5       clientcert=1' >> /etc/postgresql/pg_hba.conf \
 	|| echo 'hostssl all             all             all                     cert' >> /etc/postgresql/pg_hba.conf
 
-# include a "client" image's conf scripts where onstart.sh will find them
-ONBUILD COPY conf /tmp/conf
-
 ENTRYPOINT ["/entrypoint"]
 CMD ["postgis"]
 
 # have docker4gis contained in this image
 COPY conf/.docker4gis /.docker4gis
-COPY build.sh /.docker4gis/build.sh
-COPY run.sh /.docker4gis/run.sh
-ONBUILD RUN touch /tmp/conf/args; \
-	cp /tmp/conf/args /.docker4gis
+COPY build.sh run.sh /.docker4gis/
+ONBUILD COPY conf/args /.docker4gis/
