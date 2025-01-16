@@ -373,7 +373,7 @@ rename_replace() {
 
     # 1. Replace text in files.
     find_no_git . -type f \
-        -exec sed -i "s|\b$old_value\b|$new_value|g" {} \;
+        -exec sed -i "s|$old_value|$new_value|g" {} \;
 
     # 2. Rename files and directories. See
     # https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
