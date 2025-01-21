@@ -1046,12 +1046,12 @@ The \"set\" action saves the value of a variable to the local file
 *)
     echo "Manage $docker4gis applications and their components and base components.
 Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
-  run|r | br [COMPONENT] | push|p [COMPONENT] [--no-save] [ARG...] |
-  test|t [FILE] | unbuild [COMPONENT] | stop | geoserver |  base-component |
+  run|r | br [COMPONENT] [ARG...] | push|p [COMPONENT] [--no-save] [ARG...] |
+  test|t [FILE] | unbuild [COMPONENT] | stop | geoserver | base-component |
   template | alias [NAME] | $docker4gis | base | login [PASSWORD] [USER] |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
   bats | all EXECUTABLE|self [ARG...] |
-  devops components|c [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...] |
+  devops [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...] |
   devops set|s p|pat|r|registry|o|organisation|p|pool VALUE
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
