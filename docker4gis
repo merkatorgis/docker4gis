@@ -802,10 +802,9 @@ Without NAME, you'll be asked to type one, or accept the default."
     # https://serverfault.com/a/146747
     [[ $- == *i* ]] && interactive=true
     [ "$interactive" ] || {
-        # rerun this action with bash in interactive mode, so that aliases are
-        # loaded
-        bash -i "$0" alias "$@"
-        exit 0
+        # Rerun this action with bash in interactive mode, so that aliases are
+        # loaded and recognised by the `type` command.
+        exec bash -i "$0" alias "$@"
     }
 
     dg=dg
@@ -825,21 +824,17 @@ Without NAME, you'll be asked to type one, or accept the default."
     [ "$name" ] || read -rp "Enter the name for the alias (default is $dg) : " name
     [ "$name" ] || name=$dg
 
-    command_type=$(type -t "$name" 2>/dev/null) && {
-        if [ "$command_type" = "alias" ] && [ "$($name "$docker4gis")" = "$docker4gis" ]; then
-            : # This name was already an alias for docker4gis; nothing to do.
-        else
-            echo "$name is occupied; choose another name"
-            "$0" alias
-        fi
+    type -t "$name" &>/dev/null && {
+        echo "$name is occupied; choose another name"
+        "$0" alias
         exit
     }
 
+    # Add the alias to the .bashrc file.
     echo "alias $name='ALIAS_NAME=$name $default_docker4gis_command'" >>~/.bashrc
 
-    shopt -s expand_aliases
-    # shellcheck source=/dev/null
-    . ~/.bashrc
+    # Start a new shell, to load the new alias.
+    exec bash
     ;;
 
 git-push | gp)
