@@ -5,21 +5,39 @@
 # In some cases, we're run from an "empty" environment. In that case, a
 # workaround to get the DOCKER_USER value is to run a thus-named copy of this
 # script.
-DOCKER_USER=${DOCKER_USER:-$(basename "$0")}
+export DOCKER_USER=${DOCKER_USER:-$(basename "$0")}
 
-which "$1" >/dev/null || {
+script_path=$(which "$1") || {
     echo "No executable command: $1"
     exit 127
 }
-script=$(which "$1")
 shift 1
 
-log="/runner/$(whoami)$script.$(date -I).log"
-mkdir -p "$(dirname "$log")"
+file=/runner/$(whoami)$script_path
+dir=$(dirname "$file")
+mkdir -p "$dir"
 
-echo "$$ > $(date -Ins)" >>"$log"
-"$script" "$@" >>"$log" 2>&1
-err=$?
+days=${DOCKER4GIS_RUNNER_DAYS:-90}
+[ -f "$file.days" ] ||
+    echo "# Number of days to keep log files:
+$days" >"$file.days"
+# Read the number of days from the file, skipping lines starting with a #.
+days=$(grep -v '^#' "$file.days")
+# Test if $days is a number.
+[[ $days =~ ^[0-9]+$ ]] || {
+    echo "Invalid number of days: $days"
+    exit 1
+}
 
-echo "$$ < $(date -Ins)" >>"$log"
-exit "$err"
+# Delete files older than $days days.
+script_name=$(basename "$script_path")
+find "$dir" -name "$script_name.*" ! -name "$script_name.days" -mtime "+$days" -delete
+
+log_file="$file.$(date -I).log"
+
+echo "$$ > $(date -Ins)" >>"$log_file"
+"$script_path" "$@" >>"$log_file" 2>&1
+result=$?
+
+echo "$$ < $(date -Ins)" >>"$log_file"
+exit "$result"
