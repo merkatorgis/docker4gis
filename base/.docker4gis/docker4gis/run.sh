@@ -14,9 +14,6 @@ export DOCKER_ENV
     RESTART=always
 export RESTART
 
-export FILEPORT=$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$repo
-export RUNNER=$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$repo
-
 IMAGE=$DOCKER_REGISTRY$DOCKER_USER/$repo:$tag
 export IMAGE
 [ "$repo" = proxy ] &&
@@ -105,8 +102,13 @@ for var in $(compgen -e); do
         name=${var:$len}
         # Print name and value to the --env-file file.
         echo "$name=${!var}" >>"$ENV_FILE"
+        # Also export the variable, to make it available in the run.sh itself.
+        export "$name"="${!var}"
     fi
 done
+
+export FILEPORT=${FILEPORT:-$DOCKER_BINDS_DIR/fileport/$DOCKER_USER/$repo}
+export RUNNER=${RUNNER:-$DOCKER_BINDS_DIR/runner/$DOCKER_USER/$repo}
 
 docker4gis/network.sh &&
     IP=$(iptables) &&
