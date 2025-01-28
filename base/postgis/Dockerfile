@@ -150,6 +150,8 @@ RUN apt install -y lsb-release wget; \
 	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
 	apt update; \
 	apt install -y mysql-connector-odbc
+# Install the mysql client.
+RUN apt install -y default-mysql-client
 
 # Install the runner plugin.
 COPY conf/.plugins/runner /tmp/runner
