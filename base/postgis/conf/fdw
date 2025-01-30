@@ -1,0 +1,188 @@
+#!/bin/bash
+
+log() {
+    echo 'LOG: ' "$@"
+}
+
+notice() {
+    echo 'NOTICE: ' "$@"
+}
+
+error() {
+    code=$?
+    echo 'ERROR: ' "$@"
+    [ "$code" -eq 0 ] && code=1
+    exit "$code"
+}
+
+create_ogr_server_if_not_exists() {
+    local srvname=$1
+    local datasource=$2
+    local format=$3
+    local ogr_fdw_connected_tables=$4
+
+    # This will drop the server and all foreign tables connected to it, if the
+    # server exists, but with a different FDW.
+    drop_server_cascade_if_other_fdw "$srvname" ogr_fdw
+
+    if server_exists "$srvname"; then
+        notice "server \"$srvname\" already exists, skipping"
+        return
+    fi
+
+    if [ "$datasource" != "$OGR_DUMMY_DATASOURCE" ]; then
+        # Test the connection to the server; create a dummy server if it fails.
+        if ! ogr_connected "$datasource" "$ogr_fdw_connected_tables"; then
+            datasource=$OGR_DUMMY_DATASOURCE
+            format=$OGR_DUMMY_FORMAT
+            notice "no connection for \"$srvname\", creating a dummy server"
+        fi
+    fi
+
+    psql -c "
+        CREATE SERVER $srvname
+        FOREIGN DATA WRAPPER ogr_fdw
+        OPTIONS
+            ( datasource '$datasource'
+            , format '$format'
+            )
+    "
+}
+
+ogr_connect() {
+    local srvname=${1?:'srvname is required'}
+    local datasource=${2?:'datasource is required'}
+    local format=${3?:'format is required'}
+    set_option "$srvname" datasource "$datasource"
+    set_option "$srvname" format "$format"
+}
+
+ogr_disconnect() {
+    local srvname=$1
+    ogr_connect "$srvname" "$OGR_DUMMY_DATASOURCE" \
+        "$OGR_DUMMY_FORMAT"
+}
+
+ogr_info() {
+    local datasource=$1
+    shift 1
+    local layers=()
+    local layer
+    if [ "$1" = all ]; then
+        for layer in $(
+            ogr_fdw_info -s "$datasource" |
+                grep -v "Format:" |
+                grep -v "Layers:"
+        ); do
+            layers+=("$layer")
+        done
+    else
+        layers=("$@")
+    fi &&
+        if [ ${#layers[@]} -gt 0 ]; then
+            for layer in "${layers[@]}"; do
+                ogr_fdw_info -s "$datasource" -l "$layer"
+            done
+        else
+            ogr_fdw_info -s "$datasource"
+        fi
+}
+
+ogr_connected() {
+    local datasource=$1
+    local tables=$2
+    [ -n "$tables" ] && datasource+=",tables=$tables"
+    ogr_fdw_info -s "$datasource" &>/dev/null
+}
+
+server_exists() {
+    local srvname=$1
+    found=$(psql -Atc "
+        SELECT 1
+        FROM pg_foreign_server
+        WHERE srvname ilike '$srvname'
+    ")
+    [ "$found" = 1 ]
+}
+
+drop_server_cascade_if_other_fdw() {
+    local srvname=$1
+    local fdwname=$2
+    if server_exists "$srvname"; then
+        found=$(psql -Atc "
+            select 1
+            FROM pg_foreign_server as s
+            , pg_foreign_data_wrapper as w
+            where w.oid = s.srvfdw
+            and s.srvname ilike '$srvname'
+            and w.fdwname ilike '$fdwname'
+        ")
+        if [ "$found" != 1 ]; then
+            psql -c "DROP SERVER $srvname CASCADE"
+        fi
+    fi
+}
+
+install_dsn() {
+    local dsn=$1
+    local driver=$2
+    local content=$3
+    echo "[$dsn]
+Driver=$driver
+$content" |
+        # -i is for install, -s is for Source (as opposed to -d for Driver), -l
+        # is to make it a system DSN (as opposed to a user DSN), -r is to read
+        # from stdin instead of -f for a file.
+        odbcinst -i -s -l -r
+}
+
+set_option() {
+    local srvname=$1
+    local option=$2
+    local value=$3
+    if _option_exists "$srvname" "$option"; then
+        _options "$srvname" set "$option" "$value"
+    else
+        _options "$srvname" add "$option" "$value"
+    fi
+}
+
+drop_option() {
+    local srvname=$1
+    local option=$2
+    _option_exists "$srvname" "$option" &&
+        _options "$srvname" drop "$option"
+}
+
+_options() {
+    local srvname=$1
+    local action=$2
+    local option=$3
+    local value=$4
+    [ "$value" ] && value="'$value'"
+    psql -c "alter server $srvname options($action $option $value)"
+}
+
+_option_exists() {
+    local srvname=$1
+    local option=$2
+    local result
+    result=$(psql -Atc "
+            with options as (
+                select unnest(srvoptions) as option
+                from pg_catalog.pg_foreign_server
+                where srvname ilike '$srvname'
+            )
+            select exists (
+                select from options
+                where option ilike '$option=%'
+            )
+        ")
+    [ "$result" = t ]
+}
+
+OGR_DUMMY_DATASOURCE=/tmp/conf/ogr_dummy.json
+OGR_DUMMY_FORMAT=GeoJSON
+
+# Just run the given function with the given arguments.
+"$@"
