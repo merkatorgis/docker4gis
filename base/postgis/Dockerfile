@@ -127,29 +127,10 @@ RUN ACCEPT_EULA=Y apt-get install -y mssql-tools; \
 # https://github.com/microsoft/msphpsql/issues/1021
 RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/g' /etc/ssl/openssl.cnf
 
-ARG ODBC_FDW_VERSION
-# compile & install odbc_fdw
-ENV ODBC_FDW_VERSION=${ODBC_FDW_VERSION}
-# https://github.com/CartoDB/odbc_fdw/archive/0.5.1.tar.gz
-ADD conf/src/odbc_fdw-${ODBC_FDW_VERSION}.tar.gz /
-RUN cd /odbc_fdw-${ODBC_FDW_VERSION}; \
-	make; \
-	make install
-
 # remove packages used for building several components
 RUN apt remove -y ${BUILD_TOOLS}; \
 	apt autoremove -y
 
-ARG MYSQL_VERSION
-# install mysql repository to
-# install package mysql-connector-odbc
-ENV MYSQL_VERSION=${MYSQL_VERSION}
-# https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb
-COPY conf/src/mysql-apt-config_${MYSQL_VERSION}_all.deb /
-RUN apt install -y lsb-release wget; \
-	dpkg -i /mysql-apt-config_${MYSQL_VERSION}_all.deb; \
-	apt update; \
-	apt install -y mysql-connector-odbc
 # Install the mysql client.
 RUN apt install -y default-mysql-client
 
@@ -204,12 +185,18 @@ COPY conf/admin /tmp/admin
 COPY ["conf/entrypoint", "conf/conf.sh", "conf/onstart.sh", "conf/subconf.sh", "/"]
 
 # install tools
+
 COPY conf/last.sh /usr/local/bin/
+
 COPY conf/dump_restore /usr/local/bin/dump
 COPY conf/dump_restore /usr/local/bin/restore
 COPY conf/dump_restore /usr/local/bin/upgrade
 COPY conf/dump_restore /usr/local/bin/dump_schema
 COPY conf/dump_restore /usr/local/bin/restore_schema
+
+COPY conf/ogr_dummy.json /tmp/conf/
+RUN chown postgres:postgres /tmp/conf/ogr_dummy.json
+COPY conf/fdw /usr/local/bin/
 
 # copy custom postgres configuration files
 COPY conf/postgres /etc/postgresql
@@ -226,3 +213,6 @@ CMD ["postgis"]
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh run.sh /.docker4gis/
 ONBUILD COPY conf/args /.docker4gis/
+
+ONBUILD ARG DOCKER_USER
+ONBUILD ENV DOCKER_USER=${DOCKER_USER}
