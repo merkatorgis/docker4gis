@@ -2,6 +2,8 @@
 # set -x
 
 EXCLUDE_SCHEMA=$EXCLUDE_SCHEMA
+DOCKER_TAG=$DOCKER_TAG
+
 cores=$(nproc --all)
 jobs=$cores
 
@@ -27,10 +29,11 @@ roles=$dir/roles
 backup=$dir/backup
 lst=$backup.lst
 err=$dir/err
+docker_tag=$dir/docker_tag
 
 tag() {
     tag=$(date -I'seconds')
-    for f in "$roles" "$backup" "$lst" "$err"; do
+    for f in "$roles" "$backup" "$lst" "$err" "$docker_tag"; do
         [ -e "$f" ] &&
             mv "$f" "$f.$tag"
     done
@@ -99,6 +102,7 @@ dump() {
                 --blobs \
                 --verbose \
                 --file="$backup" &&
+            echo "$DOCKER_TAG" >"$docker_tag" &&
             # we don't need this in the database anymore; it just needed to be
             # included in the dump
             sql "
@@ -196,6 +200,7 @@ dump_schema() {
                 --file="$backup" &&
             echo "Dump created: '$backup'" &&
             chmod +rx "$backup" &&
+            echo "$DOCKER_TAG" >"$backup/__docker_tag" &&
             if version=$(sql "select $schema.__version()" -At 2>/dev/null); then
                 echo "$version" >"$backup/__version"
             fi
