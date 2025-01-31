@@ -497,10 +497,6 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
 
         cp -r "$DOCKER_BASE"/template/. .
         echo "
-# This may come in handy.
-ONBUILD ARG DOCKER_USER
-ONBUILD ENV DOCKER_USER=\$DOCKER_USER
-
 # Make this an extensible base component; see
 # https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
 ONBUILD COPY conf/args /.docker4gis/
