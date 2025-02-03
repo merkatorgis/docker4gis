@@ -43,7 +43,7 @@ RUN apt-get update && \
 RUN apt-get clean
 
 # Install the latest version of npm.
-RUN npm install -g npm@11.0.0
+RUN npm install -g npm@11.1.0
 
 WORKDIR /devops
 COPY conf/* .

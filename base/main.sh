@@ -1,15 +1,11 @@
 #!/bin/bash
 
-# Uncomment next lines for debugging the commands that are issued:
-# echo
-# echo " -- main.sh $* --"
-# echo
-# set -x
-
 DOCKER_BASE=$(realpath "$(dirname "$0")")
 export DOCKER_BASE
 
-DOCKER_BINDS_DIR=$(realpath ~)/docker-binds
+DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR:-~/docker-binds}
+mkdir -p "$DOCKER_BINDS_DIR"
+DOCKER_BINDS_DIR=$(realpath "$DOCKER_BINDS_DIR")
 export DOCKER_BINDS_DIR
 
 export DOCKER_REGISTRY=$DOCKER_REGISTRY
