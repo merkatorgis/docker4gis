@@ -1,15 +1,19 @@
 #!/bin/bash
 
-DOCKER_REPO=$1
-tag=$2
+DOCKER_REPO=${1:?Missing first argument: DOCKER_REPO}
+tag=${2:?Missing second argument: tag}
 shift 2
 
 export DOCKER_REPO
 
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
+DOCKER_REGISTRY=${DOCKER_REGISTRY:?Missing DOCKER_REGISTRY}
+DOCKER_USER=${DOCKER_USER:?Missing DOCKER_USER}
 
-export DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR:-$(realpath ~)/docker-binds}
+DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR:-~/docker-binds}
+mkdir -p "$DOCKER_BINDS_DIR"
+DOCKER_BINDS_DIR=$(realpath "$DOCKER_BINDS_DIR")
+export DOCKER_BINDS_DIR
+
 export DOCKER_ENV=${DOCKER_ENV:-DEVELOPMENT}
 
 [ "$DOCKER_ENV" = DEVELOPMENT ] &&

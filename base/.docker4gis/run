@@ -1,14 +1,26 @@
 #!/bin/bash
 
-image=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO
+statement='docker container run --rm'
+statement+=' [DOCKER_REGISTRY/]DOCKER_USER/DOCKER_REPO[:DOCKER_TAG]'
+statement+=' /.docker4gis/run'
+statement+=' [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY]'
 
-if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
-    echo "Usage: eval \"\$(docker container run --rm $image:<TAG> /.docker4gis/run <TAG>)\""
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "h" ] || [ "$1" = "help" ]; then
+    echo "Usage: eval \"\$($statement)\""
     exit 1
 fi
 
-DOCKER_TAG=$1
-DOCKER_IMAGE=$image:$DOCKER_TAG
+DOCKER_TAG=${1:-$DOCKER_TAG}
+DOCKER_REPO=${2:-$DOCKER_REPO}
+DOCKER_USER=${3:-$DOCKER_USER}
+DOCKER_REGISTRY=${4:-$DOCKER_REGISTRY}
+
+DOCKER_TAG=${DOCKER_TAG:-latest}
+DOCKER_REPO=${DOCKER_REPO:?Missing DOCKER_REPO}
+DOCKER_USER=${DOCKER_USER:?Missing DOCKER_USER}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
+
+DOCKER_IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$DOCKER_REPO:$DOCKER_TAG
 
 echo "
 # Start the container using the docker4gis framework embedded in the image,

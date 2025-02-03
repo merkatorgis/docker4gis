@@ -29,7 +29,7 @@ fi
 
 echo "{
     \"data\": {
-        \"Host\": \"$subdomain.example.com\",
+        \"Host\": \"$subdomain.$SYSTEM_TEAMPROJECT.com\",
         \"Port\": \"22\",
         \"PrivateKey\": null
     },
@@ -47,39 +47,46 @@ echo "{
 az devops service-endpoint create \
     --service-endpoint-configuration ./ssh_service_endpoint.json
 
-# 2. Create the Environment.
+bare_environment=$environment
+for suffix in '' _SINGLE; do
+    environment=$bare_environment$suffix
 
-log Create pipeline Environment "$environment"
+    # 2. Create the Environment.
 
-environment_object=$(/devops/rest.sh project POST pipelines/environments '' "{
-    \"name\": \"$environment\"
-}")
-environment_id=$(node --print "($environment_object).id")
+    log Create pipeline Environment "$environment"
 
-if [ -z "$team_id" ]; then
-    log Query id of "$SYSTEM_TEAMPROJECT Team" group
-    team_id=$(az devops team list --query=[0].id --output tsv)
-fi
+    environment_object=$(
+        /devops/rest.sh project POST pipelines/environments '' "{
+            \"name\": \"$environment\"
+        }"
+    )
+    environment_id=$(node --print "($environment_object).id")
 
-# 3. Create the Approval check.
+    if [ -z "$team_id" ]; then
+        log Query id of "$SYSTEM_TEAMPROJECT Team" group
+        team_id=$(az devops team list --query=[0].id --output tsv)
+    fi
 
-log Create environment "$environment" Approval check
+    # 3. Create the Approval check.
 
-/devops/rest.sh project POST pipelines/checks/configurations '' "{
-    \"type\": {
-        \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
-        \"name\": \"Approval\"
-    },
-    \"resource\": {
-        \"type\": \"environment\",
-        \"id\": \"$environment_id\"
-    },
-    \"timeout\": 60,
-    \"settings\": {
-        \"approvers\": [
-            {
-                \"id\": \"$team_id\"
-            }
-        ]
-    }
-}"
+    log Create environment "$environment" Approval check
+
+    /devops/rest.sh project POST pipelines/checks/configurations '' "{
+        \"type\": {
+            \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
+            \"name\": \"Approval\"
+        },
+        \"resource\": {
+            \"type\": \"environment\",
+            \"id\": \"$environment_id\"
+        },
+        \"timeout\": 60,
+        \"settings\": {
+            \"approvers\": [
+                {
+                    \"id\": \"$team_id\"
+                }
+            ]
+        }
+    }"
+done

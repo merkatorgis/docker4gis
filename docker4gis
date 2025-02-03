@@ -232,11 +232,13 @@ $steps" >"$file"
     local continuous_integration=azure-pipeline-continuous-integration.yml
     write "$continuous_integration"
 
-    # For a package image, append deployment stages.
-    [ "$is_package" ] && for environment in TEST PRODUCTION; do
+    # Append deployment stages.
+    for environment in TEST PRODUCTION; do
+        local temp
         temp=$(mktemp)
-        [ "$previous_environment" ] && extra_dependency="
+        [ "$previous_environment" ] && local extra_dependency="
   - ${previous_environment}_deploy_stage"
+        [ "$is_package" ] || local suffix=_SINGLE
         echo "
 - stage: ${environment}_deploy_stage
   displayName: Deploy $environment stage
@@ -249,7 +251,7 @@ $steps" >"$file"
   jobs:
   - deployment: ${environment}_deploy_job
     displayName: Deploy $environment job
-    environment: $environment
+    environment: $environment$suffix
     variables:
       DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
     strategy:
@@ -270,16 +272,31 @@ $steps" >"$file"
                 cd \$app_dir || exit
 
                 tag=\$(DOCKER4GIS_VERSION)
-                echo '' | {
 $(
-            # Loop over each line in the output of command $DOCKER_BASE/package/setup_pipeline.sh
-            export DOCKER_REGISTRY
-            export DOCKER_USER
-            while IFS= read -r line; do
-                echo "                  $line"
-            done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
-        )
-                }" >"$temp"
+            if [ "$is_package" ]; then
+                export DOCKER_REGISTRY
+                export DOCKER_USER
+                echo "                echo '' | {"
+                # Loop over each line in the output of command $DOCKER_BASE/package/setup_pipeline.sh.
+                while IFS= read -r line; do
+                    echo "                  $line"
+                done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
+                echo "                }"
+            else
+                echo "                export DOCKER_ENV=$environment"
+                if [ "$repo" = proxy ]; then
+                    local subdomain=tst
+                    [ "$environment" = PRODUCTION ] && subdomain=www
+                    echo "                export PROXY_HOST=$subdomain.$DOCKER_USER.com"
+                    echo "                # Set to true to get a certificate through LetsEncrypt."
+                    echo "                export AUTOCERT=false"
+                fi
+                local image=$DOCKER_REGISTRY/$DOCKER_USER/$repo:\$tag
+                local dcr="docker container run --rm \"$image\""
+                dcr+=" /.docker4gis/run \"\$tag\""
+                echo "                eval \"\$($dcr)\""
+            fi
+        )" >"$temp"
         if [ -n "$DOCKER4GIS_DEVOPS" ]; then
             # We're running from the dg devops command, so the Environments, and
             # their Manual Approval checks are set up as well, preventing the
@@ -488,6 +505,7 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
     # Up until a possible first `.` character (to support forked repos named
     # component.name.surname).
     repo=${repo%%.*}
+    export repo
 
     [ "$action" = base-component ] && {
         # Creating a generic docker4gis base component.
@@ -661,7 +679,7 @@ After all components' containers are started, any/all (integration) tests are
 run (see \`$DOCKER4GIS_COMMAND help test\`.)"
 
     [ "$action" = br ] && help "First build, then run.
-Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT]\` from a sibling directory."
+Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT] [ARG...]\` from a sibling directory."
 
     [ "$action" = push ] || [ "$action" = p ] && help "Increment the component's version, build its image, push it to the Docker
 registry, commit and push git changes.
@@ -750,6 +768,18 @@ container, to the geoserver component repository in the current directory."
     [ "$action" = t ] && action='test'
 
     "$DOCKER_BASE/main.sh" . "$action" "$@"
+    ;;
+
+run-single | rs)
+    help "Run a single container.
+Usage: $DOCKER4GIS_COMMAND $action [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY]"
+
+    dotenv forgiving
+    export DOCKER_TAG=${1:-$DOCKER_TAG}
+    export DOCKER_REPO=${2:-$DOCKER_REPO}
+    export DOCKER_USER=${3:-$DOCKER_USER}
+    export DOCKER_REGISTRY=${4:-$DOCKER_REGISTRY}
+    eval "$("$DOCKER_BASE"/.docker4gis/run)"
     ;;
 
 "$docker4gis")
@@ -986,13 +1016,13 @@ instructions:
 https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
 
 The \"components\" action (which is the default) creates a new Project in Azure 
-DevOps, with several Repositories (the \"^package\", the \"proxy\", and a number 
-of components), each with a Branch Policy set on the \"main\" branch, and each 
-with a Build Validation Pipeline (which runs automatically on each new or 
-modified Pull Request, and wich has to succeed before the PR can be completed), 
-and a Continuous Integration Pipeline, which runs automatically on each PR 
-merge/completion. Each \"main\" branch won't allow direct commits, only PR 
-merges.
+DevOps, with several Repositories (the \"^package\", the \"proxy\", and
+components additionally specified), each with a Branch Policy set on the \"main\"
+branch, and each with a Build Validation Pipeline (which runs automatically on
+each new or modified Pull Request, and wich has to succeed before the PR can be
+completed), and a Continuous Integration Pipeline, which runs automatically on
+each PR merge/completion. Each \"main\" branch won't allow direct commits, only
+PR merges.
 
 => Edit the generated \"docker4gis\" Variable Group (Pipelines | Library |
 docker4gis) to set the proper value for the DOCKER_PASSWORD variable, which is
@@ -1018,10 +1048,6 @@ extension of the $docker4gis base component with the same name. List a
 component=repository pair to get a Repository name that is different from the
 base component name; e.g. \"angular=app\", or \"postgrest=api\".
 
-Though the \"components\" action (or \"c\") is the default action, you do need
-to specify it when providing any of its arguments. A bare \`$DOCKER4GIS_COMMAND $action\`
-creates (only) the Project, and the \"^package\" and \"proxy\" repositories.
-
 The \"set\" action saves the value of a variable to the local file
 \`~/$docker4gis-$action.env\`. If any of the variables is not set, the
 \"components\" action asks you to type it in the first time.
@@ -1041,6 +1067,7 @@ Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
   test|t [FILE] | unbuild [COMPONENT] | stop | geoserver | base-component |
   template | alias [NAME] | $docker4gis | base | login [PASSWORD] [USER] |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
+  run-single|rs [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY] |
   bats | all EXECUTABLE|self [ARG...] |
   devops [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...] |
   devops set|s p|pat|r|registry|o|organisation|p|pool VALUE
