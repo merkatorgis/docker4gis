@@ -381,7 +381,7 @@ queueNames=$(node --print "encodeURIComponent('$VPN_POOL')") &&
     else
         query="[?name=='$VPN_POOL'].id"
         if pool_id=$(az pipelines pool list --output tsv --query "$query"); then
-            if /devops/rest.sh project POST distributedtask/queues authorizePipelines=false "{
+            if /devops/rest.sh project POST distributedtask/queues authorizePipelines=true "{
             \"name\": \"$VPN_POOL\",
             \"pool\": {
                 \"id\": $pool_id
