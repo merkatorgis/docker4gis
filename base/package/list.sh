@@ -148,21 +148,8 @@ add_repo() {
     if [ "$tag" ]; then
         echo "$image:$tag" >&2
         echo >&2
-        # Use .docker4gis.sh to copy the image's own version of docker4gis out
-        # of the image.
-        echo "
-            temp=\$(mktemp -d)
-            dotdocker4gis=$BASE
-            dotdocker4gis=\${dotdocker4gis:-\$(dirname \"\$0\")}
-            dotdocker4gis=\$(\"\$dotdocker4gis\"/docker4gis/.docker4gis.sh \$temp '$image:$tag')
-            (
-                cd \"\$dotdocker4gis\"
-                docker4gis/run.sh '$repo' '$tag'
-            ) && result=\$?
-            rm -rf \$temp
-            [ \"\$result\" = 0 ] || exit \"\$result\"
-            echo
-        "
+        echo "$("$DOCKER_BASE/.docker4gis/run" "$tag" "$repo") || exit"
+        echo "echo"
     else
         error "no tag for '$image'"
     fi

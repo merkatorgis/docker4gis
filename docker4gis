@@ -233,12 +233,27 @@ $steps" >"$file"
     write "$continuous_integration"
 
     # Append deployment stages.
+    [ "$is_package" ] || {
+        local suffix=_SINGLE
+        [ -n "$DOCKER4GIS_DEVOPS" ] && echo -n"
+# The deployment jobs depend on environments named with a $suffix suffix, which
+# are configured with a manual approval check to prevent the jobs from running
+# automatically." >>"$continuous_integration"
+        echo -n "
+# Note that the deployment jobs only run the container of a single component,
+# which is a different deployment model than letting the ^package pipeline
+# manage which version of each component is to be run." >>"$continuous_integration"
+        [ -n "$DOCKER4GIS_DEVOPS" ] && echo -n "
+# The ^package model uses the environments without the $suffix suffix, so you
+# choose the deployment model to use by removing the manual approval check from
+# either the \"plain\" or the $suffix environments." >>"$continuous_integration"
+        echo >>"$continuous_integration"
+    }
     for environment in TEST PRODUCTION; do
         local temp
         temp=$(mktemp)
         [ "$previous_environment" ] && local extra_dependency="
   - ${previous_environment}_deploy_stage"
-        [ "$is_package" ] || local suffix=_SINGLE
         echo "
 - stage: ${environment}_deploy_stage
   displayName: Deploy $environment stage

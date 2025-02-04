@@ -30,7 +30,7 @@ echo "
     export DOCKER_USER=$DOCKER_USER
     temp=\$(mktemp -d) &&
         dummy=\$(docker container create '$DOCKER_IMAGE') &&
-        docker container cp \"\$dummy\":/.docker4gis \"\$temp\" &&
+        docker container cp \"\$dummy\":/.docker4gis \"\$temp\" >/dev/null &&
         docker container rm \"\$dummy\" >/dev/null &&
         cd \"\$temp\"/.docker4gis &&
         docker4gis/run.sh '$DOCKER_REPO' '$DOCKER_TAG'

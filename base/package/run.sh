@@ -4,8 +4,7 @@ echo "export DOCKER_USER=$DOCKER_USER"
 echo "export DOCKER_REGISTRY=$DOCKER_REGISTRY"
 # shellcheck disable=SC2016
 echo '
-[ "$tag" ] || echo "Please pass a specific tag."
-[ "$tag" ] || exit 1
+tag=${tag:?Please pass a specific tag}
 
 export DOCKER_BINDS_DIR=$DOCKER_BINDS_DIR
 if [ ! "$DOCKER_BINDS_DIR" ]; then
@@ -61,15 +60,9 @@ read -rn 1 -p "Press any key to continue..."
 echo "
 Executing $DOCKER_REGISTRY/$DOCKER_USER/package:$tag
 "
-
-temp=$(mktemp -d)
-container=$(docker container create "$DOCKER_REGISTRY/$DOCKER_USER/package:$tag")
-docker container cp "$container":/.docker4gis "$temp"
-docker container rm "$container" >/dev/null
-"$temp"/.docker4gis/run.sh && result=$?
-rm -rf "$temp"
-
-echo "$(docker container ls)"
-
-[ "$result" = 0 ]
 '
+
+cat /.docker4gis/run.sh
+
+echo '
+docker container ls'

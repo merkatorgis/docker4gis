@@ -9,7 +9,7 @@ COPY setup.sh setup_pipeline.sh run.sh /
 
 CMD [ "/setup.sh" ]
 
-ONBUILD COPY conf/run.sh /.docker4gis/run.sh
+ONBUILD COPY conf/run.sh /.docker4gis/
 
 ONBUILD ARG DOCKER_USER
 ONBUILD ENV DOCKER_USER=$DOCKER_USER
