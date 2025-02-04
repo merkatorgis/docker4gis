@@ -235,7 +235,7 @@ $steps" >"$file"
     # Append deployment stages.
     [ "$is_package" ] || {
         local suffix=_SINGLE
-        [ -n "$DOCKER4GIS_DEVOPS" ] && echo -n"
+        [ -n "$DOCKER4GIS_DEVOPS" ] && echo -n "
 # The deployment jobs depend on environments named with a $suffix suffix, which
 # are configured with a manual approval check to prevent the jobs from running
 # automatically." >>"$continuous_integration"
