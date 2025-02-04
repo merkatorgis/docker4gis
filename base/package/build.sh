@@ -31,7 +31,7 @@ finish() {
     chmod +x "$runscript"
     here=$(realpath "$(dirname "$0")")
     BASE='' "$here"/list.sh >>"$runscript" || finish "$?"
-    if [ "$DOCKER4GIS_VERSION" = latest ]; then
+    if [ "$DOCKER4GIS_VERSION" = development ]; then
         # This would just be a debugging/testing situation.
         tag=latest
     else
