@@ -4,8 +4,13 @@ DOCKER_REPO=$(basename "$(realpath "$(dirname "$0")")")
 IMAGE=docker4gis/$DOCKER_REPO
 CONTAINER=docker4gis-$DOCKER_REPO
 
-# FIXME: properly `dg push` this image (from the pipeline).
+here=$(realpath "$(dirname "$0")")
+docker4gis_dir=$here/conf/docker4gis
+mkdir -p "$docker4gis_dir"
+
+cp -r "$here"/../* "$docker4gis_dir"
 docker image build -t "$IMAGE" "$(dirname "$0")"
+rm -rf "$docker4gis_dir"
 
 ENV_FILE=$HOME/.$CONTAINER.env
 touch "$ENV_FILE"

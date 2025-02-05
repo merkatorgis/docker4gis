@@ -46,7 +46,7 @@ RUN apt-get clean
 RUN npm install -g npm@11.1.0
 
 WORKDIR /devops
-COPY conf/* .
+COPY conf .
 ENTRYPOINT [ "/devops/entrypoint" ]
 CMD [ "components" ]
 
