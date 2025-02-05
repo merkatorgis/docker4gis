@@ -108,7 +108,7 @@ git config --global user.name 'Azure Pipeline'
 git config --global init.defaultBranch main
 
 dg() {
-    npx --yes docker4gis@latest "$@"
+    /devops/docker4gis/docker4gis "$@"
 }
 
 get_project_id() {
