@@ -107,10 +107,6 @@ git config --global user.name 'Azure Pipeline'
 # the console.
 git config --global init.defaultBranch main
 
-dg() {
-    /devops/docker4gis/docker4gis "$@"
-}
-
 get_project_id() {
     SYSTEM_TEAMPROJECTID=$(az devops project show \
         --project "$SYSTEM_TEAMPROJECT" \

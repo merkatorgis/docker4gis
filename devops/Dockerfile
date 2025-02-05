@@ -47,6 +47,10 @@ RUN npm install -g npm@11.1.0
 
 WORKDIR /devops
 COPY conf .
+
+RUN (cd /devops/docker4gis && npm install)
+COPY conf/dg /usr/local/bin/
+
 ENTRYPOINT [ "/devops/entrypoint" ]
 CMD [ "components" ]
 
