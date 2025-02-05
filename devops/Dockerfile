@@ -48,11 +48,13 @@ RUN npm install -g npm@11.1.0
 WORKDIR /devops
 COPY conf .
 
+# Install the Docker4GIS CLI (as `dg`).
 RUN (cd /devops/docker4gis && npm install)
 COPY conf/dg /usr/local/bin/
 
 ENTRYPOINT [ "/devops/entrypoint" ]
 CMD [ "components" ]
 
+# Set global devops environment variables.
 ENV DOCKER4GIS_DEVOPS=true
 ENV API_VERSION=7.1
