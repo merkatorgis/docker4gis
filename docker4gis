@@ -343,7 +343,7 @@ version() {
         dotenv &&
             echo "$DOCKER4GIS_VERSION"
     else
-        if [ "$INSTALLED" ]; then
+        if [ "$INSTALLED" ] || [ "$DOCKER4GIS_DEVOPS" ]; then
             node --print "require('$DOCKER_BASE/../package.json').version"
         else
             echo "$version_development"
