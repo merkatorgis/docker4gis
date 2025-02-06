@@ -44,8 +44,8 @@ echo "{
     }
 }" >./ssh_service_endpoint.json
 
-az devops service-endpoint create \
-    --service-endpoint-configuration ./ssh_service_endpoint.json
+response=$(az devops service-endpoint create \
+    --service-endpoint-configuration ./ssh_service_endpoint.json)
 
 bare_environment=$environment
 for suffix in '' _SINGLE; do
@@ -71,7 +71,7 @@ for suffix in '' _SINGLE; do
 
     log Create environment "$environment" Approval check
 
-    /devops/rest.sh project POST pipelines/checks/configurations '' "{
+    response=$(/devops/rest.sh project POST pipelines/checks/configurations '' "{
         \"type\": {
             \"id\": \"8C6F20A7-A545-4486-9777-F762FAFE0D4D\",
             \"name\": \"Approval\"
@@ -88,5 +88,9 @@ for suffix in '' _SINGLE; do
                 }
             ]
         }
-    }"
+    }")
 done
+
+# We use `response=$(...)` to prevent the resonse from being echoed to the
+# console.
+response=${response:-}

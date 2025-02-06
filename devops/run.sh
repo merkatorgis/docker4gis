@@ -1,8 +1,9 @@
 #!/bin/bash
 
+DEBUG=${DEBUG:-}
+
 here=$(realpath "$(dirname "$0")")
 
-DEBUG=${DEBUG:-}
 DOCKER_REPO=$(basename "$here")
 IMAGE=docker4gis/$DOCKER_REPO
 CONTAINER=docker4gis-$DOCKER_REPO
@@ -36,8 +37,15 @@ find "$here"/.. -maxdepth 1 \
 	! -name devops \
 	-exec cp -r {} "$docker4gis_dir" \;
 
-# Build the image.
-docker image build -t "$IMAGE" "$(dirname "$0")"
+# Build the image, preventing output if the DEBUG variable is not set (but
+# capturing errors).
+out=/dev/stdout
+[ -z "$DEBUG" ] && out=/dev/null
+err=/dev/stderr
+[ -z "$DEBUG" ] && err=$(mktemp)
+docker image build -t "$IMAGE" "$(dirname "$0")" >"$out" 2>"$err" || failed=true
+[ -f "$err" ] && rm "$err"
+[ -z "$failed" ] || exit 1
 
 # Clean up.
 rm -rf "$docker4gis_dir"

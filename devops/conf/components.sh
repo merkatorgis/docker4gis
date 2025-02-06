@@ -84,7 +84,7 @@ export AUTHORISED_COLLECTION_URI
 
 if [ -z "$DEBUG" ]; then
     log() {
-        echo • "$@"
+        echo '• ' "$@"
         sleep 1
     }
 else
@@ -128,7 +128,10 @@ if get_project_id &>/dev/null; then
     log "Project $SYSTEM_TEAMPROJECT exists"
 else
     log "Create Project $SYSTEM_TEAMPROJECT"
-    az devops project create --name "$SYSTEM_TEAMPROJECT"
+    # 2>/dev/null to prevent printing of harmless ERROR: VS800075: The project
+    # with id 'vstfs:///Classification/TeamProject/f5e...87' does not exist, or
+    # you do not have permission to access it.
+    response=$(az devops project create --name "$SYSTEM_TEAMPROJECT" 2>/dev/null)
     # Make DevOps realise the new project exists.
     sleep 5
     default_repository_id_to_delete=$(az repos show --repository "$SYSTEM_TEAMPROJECT" \
@@ -203,8 +206,8 @@ create_repository() {
         ) || return
 
     log "Update repository $REPOSITORY: set default branch to 'main'" &&
-        az repos update --repository="$REPOSITORY" \
-            --default-branch main || return
+        response=$(az repos update --repository="$REPOSITORY" \
+            --default-branch main) || return
 }
 
 # Clone the repo $REPOSITORY.
@@ -255,10 +258,10 @@ else
             --query=id) || exit
 
     log Make variable DOCKER_PASSWORD secret &&
-        az pipelines variable-group variable update \
+        response=$(az pipelines variable-group variable update \
             --group-id "$VARIABLE_GROUP_ID" \
             --name DOCKER_PASSWORD \
-            --secret true || exit
+            --secret true) || exit
 fi
 export VARIABLE_GROUP_ID
 
@@ -332,7 +335,7 @@ policy_exemt deny || exit
 # Delete the default repository, if we created a new project.
 if [ -n "$default_repository_id_to_delete" ]; then
     log "Delete default repository $SYSTEM_TEAMPROJECT"
-    az repos delete --yes --id "$default_repository_id_to_delete"
+    response=$(az repos delete --yes --id "$default_repository_id_to_delete")
 fi || exit
 
 # Create a cross-repository policy (if it doesn't exist) to require all PR
@@ -364,7 +367,8 @@ if [ -n "$existing_policy" ]; then
     log "Policy Comment requirements exists"
 else
     log "Create Policy Comment requirements"
-    /devops/rest.sh project POST policy/configurations '' "$comment_requirements_policy"
+    response=$(/devops/rest.sh project POST policy/configurations '' \
+        "$comment_requirements_policy")
 fi || exit
 
 # Set permissions for the Project Build Service.
@@ -378,18 +382,20 @@ project_build_service_identity=$(/devops/rest.sh vssps GET identities \
 
 # Try to create the VPN Agent Pool if it doesn't exist in the project.
 queueNames=$(node --print "encodeURIComponent('$VPN_POOL')") &&
-    queues=$(/devops/rest.sh project GET distributedtask/queues "queueNames=$queueNames") &&
+    queues=$(/devops/rest.sh project GET distributedtask/queues \
+        "queueNames=$queueNames") &&
     if [ "$(node --print "($queues).count")" -gt 0 ]; then
         log Agent Pool "$VPN_POOL" exists in project
     else
         query="[?name=='$VPN_POOL'].id"
         if pool_id=$(az pipelines pool list --output tsv --query "$query"); then
-            if /devops/rest.sh project POST distributedtask/queues authorizePipelines=true "{
-            \"name\": \"$VPN_POOL\",
-            \"pool\": {
-                \"id\": $pool_id
-            }
-        }"; then
+            if response=$(/devops/rest.sh project POST distributedtask/queues \
+                authorizePipelines=true "{
+                    \"name\": \"$VPN_POOL\",
+                    \"pool\": {
+                        \"id\": $pool_id
+                    }
+                }"); then
                 log Agent Pool "$VPN_POOL" added to project
             else
                 log Failed to add Agent Pool "$VPN_POOL" to project
@@ -398,5 +404,9 @@ queueNames=$(node --print "encodeURIComponent('$VPN_POOL')") &&
             log Pool "$VPN_POOL" not found
         fi
     fi
+
+# We use `response=$(...)` to prevent the resonse from being echoed to the
+# console.
+response=${response:-}
 
 log OK
