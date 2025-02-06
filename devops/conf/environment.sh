@@ -80,7 +80,7 @@ for suffix in '' _SINGLE; do
             \"type\": \"environment\",
             \"id\": \"$environment_id\"
         },
-        \"timeout\": 60,
+        \"timeout\": 1,
         \"settings\": {
             \"approvers\": [
                 {

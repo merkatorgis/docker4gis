@@ -1,9 +1,9 @@
 #!/bin/bash
 
-name=${1:?Name is required}
-value=${2:?Value is required}
+name=${1:?Name parameter is required}
+value=${2:?Value parameter is required}
 
-env_file=/devops/env_file
+ENV_FILE=${ENV_FILE:?ENV_FILE value is required}
 
 # Lowercase name.
 case ${name,,} in
@@ -40,18 +40,18 @@ esac
 
 # Read stored values from file.
 # shellcheck source=/dev/null
-source "$env_file"
+source "$ENV_FILE"
 
 # Set the new value.
 eval "$name='$value'"
 
 # Rewrite all values to file.
-echo -n >"$env_file"
+echo -n >"$ENV_FILE"
 for name in \
     PAT \
     DOCKER_REGISTRY \
     SYSTEM_COLLECTIONURI \
     VPN_POOL; do
     value=${!name}
-    echo "export $name='$value'" >>"$env_file"
+    echo "export $name='$value'" >>"$ENV_FILE"
 done

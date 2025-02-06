@@ -1,14 +1,9 @@
 #!/bin/bash
 set -e
 
-action=$1
-
-[ "$action" = s ] && action='set'
-[ "$action" = c ] && action='components'
-
-if [ "$action" = set ] || [ "$action" = components ]; then
+if [ "$1" = components ]; then
 	shift
-	exec /devops/"$action".sh "$@"
+	exec /devops/components.sh "$@"
 fi
 
 # This allows you to, in rare cases, run a container with a different command.
