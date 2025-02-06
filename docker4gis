@@ -80,8 +80,8 @@ package_json() {
 pipeline() {
     local main=main
 
-    local is_package
-    [ "$action" = init ] && is_package=true
+    [ "$action" = init ] && local is_package=true
+    [ "$action" = base-component ] && local is_base_component=true
 
     local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
 
@@ -218,9 +218,9 @@ $steps" >"$file"
     $default_docker4gis_command push
   displayName: $docker4gis push"
 
-    # For a package image, set the DOCKER4GIS_VERSION variable for use in the
-    # deployment stage.
-    [ "$is_package" ] && steps+="
+    # For a non-base-component, set the DOCKER4GIS_VERSION variable for use in
+    # the deployment stages.
+    [ "$is_base_component" ] || steps+="
 
 - bash: |
     DOCKER4GIS_VERSION=v\$(node --print \"require('./package.json').version\")
@@ -231,6 +231,9 @@ $steps" >"$file"
     # Write the file.
     local continuous_integration=azure-pipeline-continuous-integration.yml
     write "$continuous_integration"
+
+    # For a base-component, skip the deployment stages.
+    [ "$is_base_component" ] && return
 
     # Append deployment stages.
     [ "$is_package" ] || {
