@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -ex
+set -e
+[ -n "$DEBUG" ] && set -x
 
 triggers_definition='"triggers": [{
     "branchFilters": [],
@@ -45,14 +46,13 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
         \"queue\": { \"name\": \"Azure Pipelines\" },
         $triggers
     }")
-    echo "$build_definition"
 
     build_definition_id=$(node --print "($build_definition).id")
 
     if [ "$PR" ]; then
         # Create a policy to require a successful build before merging.
         log Create build policy "$name"
-        az repos policy build create --blocking true \
+        response=$(az repos policy build create --blocking true \
             --build-definition-id "$build_definition_id" \
             --repository-id "$REPOSITORY_ID" \
             --branch main \
@@ -60,7 +60,7 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
             --enabled true \
             --manual-queue-only false \
             --queue-on-source-update-only false \
-            --valid-duration 0
+            --valid-duration 0)
     else
         # Permit the continuous integration pipeline to use the deployment
         # environments and service connections.
@@ -89,13 +89,13 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
                 resource_id=$(node --print "($object).value[0].id")
 
                 area=pipelines/pipelinePermissions
-                /devops/rest.sh project PATCH \
+                response=$(/devops/rest.sh project PATCH \
                     "$area/$resource/$resource_id" '' "{
                         \"pipelines\": [{
                             \"id\": $build_definition_id,
                             \"authorized\": true
                         }]
-                    }"
+                    }")
             }
 
             pipelinePermissions endpoint
@@ -105,3 +105,7 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
         done
     fi
 done
+
+# We use `response=$(...)` to prevent the resonse from being echoed to the
+# console.
+response=${response:-}
