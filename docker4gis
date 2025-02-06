@@ -1022,7 +1022,7 @@ devops)
 
 Usage:
 - $DOCKER4GIS_COMMAND $action [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...]
-- $DOCKER4GIS_COMMAND $action set|s p|pat|r|registry|o|organisation|p|pool VALUE
+- $DOCKER4GIS_COMMAND $action set|s pat|t|registry|r|organisation|o|pool|p VALUE
 
 => You need a Personal Access Token (PAT) of a user that has the right to create
 Projects in Azure DevOps (or, for an existing project, of a user that is a
@@ -1085,7 +1085,7 @@ Usage: $DOCKER4GIS_COMMAND init | component | build|b [COMPONENT] [ARG...] |
   run-single|rs [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY] |
   bats | all EXECUTABLE|self [ARG...] |
   devops [components|c] [--project|-p PROJECT] [COMPONENT[=REPOSITORY]...] |
-  devops set|s p|pat|r|registry|o|organisation|p|pool VALUE
+  devops set|s pat|t|registry|r|organisation|o|pool|p VALUE
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
   $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
 For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
