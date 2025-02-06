@@ -2,6 +2,7 @@
 
 here=$(realpath "$(dirname "$0")")
 
+DEBUG=${DEBUG:-}
 DOCKER_REPO=$(basename "$here")
 IMAGE=docker4gis/$DOCKER_REPO
 CONTAINER=docker4gis-$DOCKER_REPO
@@ -66,7 +67,7 @@ container_env_file=/devops/env_file
 
 # Tee all stdout & stderr to a log file (from
 # https://superuser.com/a/212436/462952).
-exec > >(tee devops.log) 2>&1
+[ -n "$DEBUG" ] && exec > >(tee devops.log) 2>&1
 
 # We don't use the --env-file Docker option because it's tricky writing a value
 # with spaces back to the file, and then getting it read back in correctly on
@@ -75,6 +76,7 @@ docker container run --name "$CONTAINER" \
 	--rm \
 	--privileged \
 	-ti \
+	--env DEBUG="$DEBUG" \
 	--env DOCKER_USER="$DOCKER_USER" \
 	--env DEVOPS_ORGANISATION="$DEVOPS_ORGANISATION" \
 	--env DEVOPS_DOCKER_REGISTRY="$DEVOPS_DOCKER_REGISTRY" \

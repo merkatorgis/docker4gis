@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Do not echo commands just yet, to prevent printing the PAT to the console.
-# set -x
+# [ -n "$DEBUG" ] && set -x
 
 project=$1
 if [ "$project" = -p ] || [ "$project" = --project ]; then
@@ -82,15 +82,22 @@ export AZURE_DEVOPS_EXT_PAT=$PAT
 AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 export AUTHORISED_COLLECTION_URI
 
-log() {
-    set +x
-    echo '---------------------------------------------------------------------'
-    echo "$@"
-    echo '---------------------------------------------------------------------'
-    # Prevent next commands echoing sooner.
-    sleep 1
-    set -x
-}
+if [ -z "$DEBUG" ]; then
+    log() {
+        echo • "$@"
+        sleep 1
+    }
+else
+    log() {
+        set +x
+        echo '---------------------------------------------------------------------'
+        echo "$@"
+        echo '---------------------------------------------------------------------'
+        # Prevent next commands echoing sooner.
+        sleep 1
+        set -x
+    }
+fi
 export -f log
 
 log Setup
