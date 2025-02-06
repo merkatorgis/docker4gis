@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+[ -n "$DEBUG" ] && set -x
 
 environment=$1
 

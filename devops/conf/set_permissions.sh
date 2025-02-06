@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+[ -n "$DEBUG" ] && set -x
 
 display_name=$1
 descriptor=$2
