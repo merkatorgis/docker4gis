@@ -533,6 +533,14 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
 
         cp -r "$DOCKER_BASE"/template/. .
         echo "
+# Set environment variables.
+ONBUILD ARG DOCKER_REGISTRY
+ONBUILD ENV DOCKER_REGISTRY=\$DOCKER_REGISTRY
+ONBUILD ARG DOCKER_USER
+ONBUILD ENV DOCKER_USER=\$DOCKER_USER
+ONBUILD ARG DOCKER_REPO
+ONBUILD ENV DOCKER_REPO=\$DOCKER_REPO
+
 # Make this an extensible base component; see
 # https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
 ONBUILD COPY conf/args /.docker4gis/
@@ -624,9 +632,13 @@ you mean base-component?"
         cp -r "$DOCKER_BASE"/template/. .
         rm -rf template
         echo "
-# This may come in handy.
+# Set environment variables.
+ARG DOCKER_REGISTRY
+ENV DOCKER_REGISTRY=\$DOCKER_REGISTRY
 ARG DOCKER_USER
 ENV DOCKER_USER=\$DOCKER_USER
+ARG DOCKER_REPO
+ENV DOCKER_REPO=\$DOCKER_REPO
 " >>Dockerfile
         pipeline
     }
