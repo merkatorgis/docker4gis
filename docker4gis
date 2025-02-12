@@ -342,15 +342,14 @@ $(
 
 version() {
     local local=$1
+    local actual=$1
     if [ "$local" = local ]; then
         dotenv &&
             echo "$DOCKER4GIS_VERSION"
+    elif [ "$actual" = actual ] || [ "$INSTALLED" ] || [ "$DOCKER4GIS_DEVOPS" ]; then
+        node --print "require('$DOCKER_BASE/../package.json').version"
     else
-        if [ "$INSTALLED" ] || [ "$DOCKER4GIS_DEVOPS" ]; then
-            node --print "require('$DOCKER_BASE/../package.json').version"
-        else
-            echo "$version_development"
-        fi
+        echo "$version_development"
     fi
 }
 
@@ -491,21 +490,23 @@ component."
 
     write_dotenv() {
         local docker_user=$1
+
+        DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:-$(version actual)}
+
         echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
 DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
         [ "$docker_user" ] && echo "DOCKER_USER=$DOCKER_USER" >>.env
     }
 
     replace_component() {
-        search='{{COMPONENT}}'
-        replace=$repo
-        find . -type f -exec sed -i "s|$search|$replace|ig" {} \;
+        rename_replace '{{COMPONENT}}' "$repo"
     }
 
     finish() {
         local message=${1:-"$action initialised ✅"}
         local code=${2:-0}
         echo "$message"
+        [ -n "$container" ] && docker container rm "$container" >/dev/null
         exit "$code"
     }
 
@@ -527,7 +528,6 @@ DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
 
     [ "$action" = base-component ] && {
         # Creating a generic docker4gis base component.
-        DOCKER4GIS_VERSION=$(version)
         DOCKER_REGISTRY=docker.io
         DOCKER_USER=$docker4gis
 
@@ -573,8 +573,6 @@ COPY template /template/
     [ "$inited" ] ||
         error "Package directory not foud; to create one, run $DOCKER4GIS_COMMAND init. Or did
 you mean base-component?"
-
-    write_dotenv
 
     pull() {
         local component=$1
@@ -643,6 +641,7 @@ ENV DOCKER_REPO=\$DOCKER_REPO
     }
 
     [ "$action" = template ] || [ "$component" = n ] && {
+        write_dotenv
         replace_component
         # And we're done!
         finish
@@ -652,13 +651,16 @@ ENV DOCKER_REPO=\$DOCKER_REPO
 
     pipeline
 
+    DOCKER4GIS_VERSION=$(docker container run --rm "$image" \
+        cat /.docker4gis/docker4gis/VERSION)
+    write_dotenv
+
     container=$(docker container create "$image") ||
         error "Failed to create container from image $image"
 
     docker container cp "$container":/template . ||
-        error "$image doesn't seem a $docker4gis component"
+        error "$image doesn't seem a $docker4gis base component"
 
-    docker container rm "$container" >/dev/null
     if ! [ "$template" ]; then
         # Test if there are multiple templates, by checking the existence of the
         # '.default' file.
