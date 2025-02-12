@@ -79,14 +79,6 @@ cp -r "$DOCKER_BASE"/.plugins "$DOCKER_BASE"/.docker4gis conf
 # Tag the version of docker4gis that ends up inside the image.
 echo "$DOCKER4GIS_VERSION" >conf/.docker4gis/docker4gis/VERSION
 
-if [ -z "$DOCKER4GIS_STANDALONE" ]; then
-    [ -f conf/args ] || echo "##
-# List any arguments to pass to the container's run.sh script.
-# Environment variables are respected.
-# Lines _starting with_ # are ignored.
-##" >conf/args
-fi
-
 # Execute the actual build script,
 # which may or may not execute "$BASE"/build.sh,
 # which may or may not be set.
