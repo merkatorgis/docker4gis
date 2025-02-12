@@ -1,9 +1,9 @@
 #!/bin/bash
 
-DOCKER_BASE=$DOCKER_BASE
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
-DOCKER_REPO=$DOCKER_REPO
+DOCKER_BASE=${DOCKER_BASE:?}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:?}
+DOCKER_USER=${DOCKER_USER:?}
+DOCKER_REPO=${DOCKER_REPO:?}
 
 # Put in a new variable, to prevent overwriting the original.
 repo=$DOCKER_REPO
@@ -35,10 +35,10 @@ find "$build_dir" -mindepth 2 -name Dockerfile | while read -r dockerfile; do
     # Skip the template directory.
     [ "$sub_name" = template ] && continue
 
-    IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo-$sub_name:latest
+    DOCKER_IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo-$sub_name:latest
     echo
-    echo "Building $IMAGE"
-    docker image build -t "$IMAGE" "$dir" || finish $? "Failed to build $IMAGE."
+    echo "Building $DOCKER_IMAGE"
+    docker image build -t "$DOCKER_IMAGE" "$dir" || finish $? "Failed to build $DOCKER_IMAGE."
 done
 
 # Find any Dockerfile to read the FROM clause from.
@@ -67,10 +67,10 @@ if [ "$docker4gis_base_image" ]; then
     export BASE
 fi
 
-IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
-export IMAGE
+DOCKER_IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
+export DOCKER_IMAGE
 echo
-echo "Building $IMAGE"
+echo "Building $DOCKER_IMAGE"
 
 # Ensure a conf directory for the Dockerfile to ADD or COPY from, and provision
 # it temporarily with the .docker4gis and .plugins directories.

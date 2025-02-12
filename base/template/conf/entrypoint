@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = '{{COMPONENT}}' ]; then
-	shift 1
+	shift
 
 	# Here you can configure stuff, if needed, before starting the original
 	# ENTRYPOINT/CMD (which you can find by `inspect`ing the image you're
