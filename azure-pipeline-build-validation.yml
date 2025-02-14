@@ -9,6 +9,5 @@ steps:
 # Build the package image.
 - bash: |
     cd base/package
-    export DOCKER_BASE=..
     ./build.sh
   displayName: 'build package image'

@@ -1,12 +1,15 @@
 #!/bin/bash
 
-DOCKER_IMAGE=${DOCKER_IMAGE:-docker4gis/package}
-DOCKER_BASE=${DOCKER_BASE:?}
-DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:?}
-DOCKER_REGISTRY=${DOCKER_REGISTRY:?}
-DOCKER_USER=${DOCKER_USER:?}
-
-[ "$DOCKER_IMAGE" = docker4gis/package ] || extension=true
+if [ -z "$DOCKER_IMAGE" ]; then
+    DOCKER_BASE=${DOCKER_BASE:-$(dirname "$0")/..}
+    DOCKER_IMAGE=${DOCKER_IMAGE:-docker4gis/package}
+else
+    extension=true
+    DOCKER_BASE=${DOCKER_BASE:?}
+    DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:?}
+    DOCKER_REGISTRY=${DOCKER_REGISTRY:?}
+    DOCKER_USER=${DOCKER_USER:?}
+fi
 
 mkdir -p conf
 
