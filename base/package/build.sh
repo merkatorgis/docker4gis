@@ -1,17 +1,20 @@
 #!/bin/bash
 
-IMAGE=${IMAGE:-docker4gis/package}
-DOCKER_BASE=$DOCKER_BASE
-DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION
-DOCKER_REGISTRY=$DOCKER_REGISTRY
-DOCKER_USER=$DOCKER_USER
-
-[ "$IMAGE" = docker4gis/package ] || extension=true
+if [ -z "$DOCKER_IMAGE" ]; then
+    DOCKER_BASE=${DOCKER_BASE:-$(dirname "$0")/..}
+    DOCKER_IMAGE=${DOCKER_IMAGE:-docker4gis/package}
+else
+    extension=true
+    DOCKER_BASE=${DOCKER_BASE:?}
+    DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:?}
+    DOCKER_REGISTRY=${DOCKER_REGISTRY:?}
+    DOCKER_USER=${DOCKER_USER:?}
+fi
 
 mkdir -p conf
 
 finish() {
-    local exit_code=${1:-0}
+    local exit_code=$?
     [ "$exit_code" = 127 ] && exit_code=0
 
     rm -rf conf
@@ -30,7 +33,7 @@ finish() {
     # echo 'find .' >>"$runscript"
     chmod +x "$runscript"
     here=$(realpath "$(dirname "$0")")
-    BASE='' "$here"/list.sh >>"$runscript" || finish "$?"
+    BASE='' "$here"/list.sh >>"$runscript" || finish
     if [ "$DOCKER4GIS_VERSION" = development ]; then
         # This would just be a debugging/testing situation.
         tag=latest
@@ -46,6 +49,6 @@ cp -r "$DOCKER_BASE"/.docker4gis conf
 docker image build \
     --build-arg DOCKER_USER="$DOCKER_USER" \
     --build-arg DOCKER_REGISTRY="$DOCKER_REGISTRY" \
-    -t "$IMAGE" .
+    -t "$DOCKER_IMAGE" .
 
 finish

@@ -5,7 +5,7 @@ DEBUG=${DEBUG:-}
 here=$(realpath "$(dirname "$0")")
 
 DOCKER_REPO=$(basename "$here")
-IMAGE=docker4gis/$DOCKER_REPO
+DOCKER_IMAGE=docker4gis/$DOCKER_REPO
 CONTAINER=docker4gis-$DOCKER_REPO
 
 export ENV_FILE=$HOME/.$CONTAINER.env
@@ -43,7 +43,7 @@ out=/dev/stdout
 [ -z "$DEBUG" ] && out=/dev/null
 err=/dev/stderr
 [ -z "$DEBUG" ] && err=$(mktemp)
-docker image build -t "$IMAGE" "$(dirname "$0")" >"$out" 2>"$err" || failed=true
+docker image build -t "$DOCKER_IMAGE" "$(dirname "$0")" >"$out" 2>"$err" || failed=true
 [ -f "$err" ] && rm "$err"
 [ -z "$failed" ] || exit 1
 
@@ -92,4 +92,4 @@ docker container run --name "$CONTAINER" \
 	--env ENV_FILE="$container_env_file" \
 	--mount type=bind,source="$ENV_FILE",target="$container_env_file" \
 	--mount type=bind,source="$docker_socket",target="$docker_socket" \
-	"$IMAGE" "$@"
+	"$DOCKER_IMAGE" "$@"
