@@ -134,6 +134,11 @@ RUN apt remove -y ${BUILD_TOOLS}; \
 # Install the mysql client.
 RUN apt install -y default-mysql-client
 
+# Prevent "ERROR:  UPDATE requires a WHERE clause" when running
+# update-postgis.sh.
+RUN script=$(which update-postgis.sh) && \
+	sed -i 's/psql/psql -1 -c "SET safeupdate.enabled=0"/' "$script"
+
 # Install the runner plugin.
 COPY conf/.plugins/runner /tmp/runner
 RUN /tmp/runner/install.sh
