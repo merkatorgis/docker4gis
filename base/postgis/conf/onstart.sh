@@ -23,7 +23,6 @@ time {
     update-postgis.sh
 
     extension ogr_fdw
-    extension odbc_fdw
     extension plsh
     extension pgcrypto
     extension pgjwt

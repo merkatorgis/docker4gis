@@ -1,8 +1,10 @@
 #!/bin/bash
+
 # set -x
 
-EXCLUDE_SCHEMA=$EXCLUDE_SCHEMA
-DOCKER_TAG=$DOCKER_TAG
+DOCKER_USER=${DOCKER_USER:?}
+DOCKER_TAG=${DOCKER_TAG:?}
+EXCLUDE_SCHEMA=${EXCLUDE_SCHEMA:?}
 
 cores=$(nproc --all)
 jobs=$cores
@@ -21,9 +23,9 @@ for _ in '-n' '-d'; do
     esac
 done
 
-dir=/fileport/$database
+dir=${1:-/fileport/$database}
 [ "$schema" ] && dir=$dir/$schema
-mkdir -p "$dir"
+mkdir -p "$dir" || exit
 
 roles=$dir/roles
 backup=$dir/backup
@@ -165,15 +167,21 @@ restore() {
     }
 
     # if the database was not yet provisioned, try to restore a dump, if present
-    sql "select current_setting('app.provisioned')" ||
+    [ "$(sql "select current_setting('app.provisioned')")" = true ] ||
         if [ -f "$roles" ] && [ -f "$backup" ]; then
+            echo "LOG:  RESTORING DUMP FROM '$backup'..."
             time do_restore && analyze
         fi
 
-    # mark the database as provisioned in all cases, since if we weren't
-    # restoring a dump, we're expected to be provisioning the database from DDL
-    # instead, see onstart.sh
-    sql "alter database $database set app.provisioned to true"
+    [ "$DOCKER_USER" = "$(sql "
+        select schema_name
+        from information_schema.schemata
+        where schema_name = '$DOCKER_USER'
+    ")" ] &&
+        # Mark the database as provisioned if it contains a schema named
+        # $DOCKER_USER, coming either from do_restore, or from loading the
+        # extension image's DDL, see onstart.sh.
+        sql "alter database $database set app.provisioned to true"
 }
 
 schema() {
