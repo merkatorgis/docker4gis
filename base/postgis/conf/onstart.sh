@@ -9,9 +9,13 @@ postgis_major_major=$(echo "$POSTGIS_MAJOR" | cut -d'.' -f1)
 # from PostGIS 3, postgis_raster is a separate extension
 [ "$postgis_major_major" -ge 3 ] && extension postgis_raster
 
-# if the database is unprovisioned, and there is a dump file: restore it; see
-# dump_restore
+# If a schema named $DOCKER_USER already exists, restore doesn't do anything.
+
+# First try if a database dump was left in the usual dump location.
 restore
+
+# Maybe the image contains a "snaphot" dump to provide an initial setup.
+restore snapshot
 
 # run the DDL to either provision the database from scratch, or migrate the
 # existing database to the latest version
@@ -37,8 +41,8 @@ time {
     /subconf.sh /tmp/web/conf.sh
     /subconf.sh /tmp/admin/conf.sh
 
-    # This corresponds to the Dockerfile's ONBUILD COPY conf /tmp/conf
-    find /tmp/conf -name "conf.sh" -exec /subconf.sh {} \;
+    # This corresponds to the extension's Dockerfile's COPY conf/ddl /ddl
+    /subconf.sh /ddl/conf.sh
 
     # see last.sh
     # shellcheck disable=SC1091

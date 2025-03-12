@@ -199,9 +199,14 @@ COPY conf/dump_restore /usr/local/bin/upgrade
 COPY conf/dump_restore /usr/local/bin/dump_schema
 COPY conf/dump_restore /usr/local/bin/restore_schema
 
-COPY conf/ogr_dummy.json /tmp/conf/
-RUN chown postgres:postgres /tmp/conf/ogr_dummy.json
+COPY conf/ogr_dummy.json /
+RUN chown postgres:postgres /ogr_dummy.json
 COPY conf/fdw /usr/local/bin/
+
+# Support legacy ogr_dummy configuration.
+RUN mkdir -p /tmp/conf && \
+	ln -s /ogr_dummy.json /tmp/conf/ogr_dummy.json && \
+	chown postgres:postgres /tmp/conf/ogr_dummy.json
 
 # copy custom postgres configuration files
 COPY conf/postgres /etc/postgresql

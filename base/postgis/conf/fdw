@@ -26,7 +26,12 @@ create_ogr_server_if_not_exists() {
     drop_server_cascade_if_other_fdw "$srvname" ogr_fdw
 
     if server_exists "$srvname"; then
-        notice "server \"$srvname\" already exists, skipping"
+        if [ "$(get_option "$srvname" datasource)" = "$OGR_DUMMY_DATASOURCE_LEGACY" ]; then
+            set_option "$srvname" datasource "$OGR_DUMMY_DATASOURCE" &&
+                notice "server \"$srvname\" upgraded to non-legacy ogr dummy datasource"
+        else
+            notice "server \"$srvname\" already exists, skipping"
+        fi
         return
     fi
 
@@ -136,6 +141,18 @@ $content" |
         odbcinst -i -s -l -r
 }
 
+get_option() {
+    local srvname=$1
+    local option=$2
+    psql -Atc "
+        SELECT (string_to_array(options, '='))[2]
+        FROM pg_foreign_server
+        , unnest(srvoptions) AS options
+        WHERE srvname ILIKE '$srvname'
+        AND options ILIKE '$option=%';
+    "
+}
+
 set_option() {
     local srvname=$1
     local option=$2
@@ -181,7 +198,8 @@ _option_exists() {
     [ "$result" = t ]
 }
 
-OGR_DUMMY_DATASOURCE=/tmp/conf/ogr_dummy.json
+OGR_DUMMY_DATASOURCE=/ogr_dummy.json
+OGR_DUMMY_DATASOURCE_LEGACY=/tmp/conf$OGR_DUMMY_DATASOURCE
 OGR_DUMMY_FORMAT=GeoJSON
 
 # Just run the given function with the given arguments.

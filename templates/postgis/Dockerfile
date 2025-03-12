@@ -1,4 +1,4 @@
-FROM docker4gis/postgis:656-16-3.4
+FROM docker4gis/postgis:657-16-3.4
 
 ENV POSTFIX_DOMAIN=template.example.com
 
@@ -12,5 +12,9 @@ RUN addmailbox.sh noreply 'Example.com Template Service'
 # ENV EXCLUDE_SCHEMA=(interpolatie|utils)
 ENV EXCLUDE_SCHEMA=
 
-# On container start, all /tmp/conf/$DOCKER_USER/*/conf.sh scripts are executed.
-COPY conf/$DOCKER_USER /tmp/conf/$DOCKER_USER
+# Optionally include dump files in this directory to kickstart an empty database
+# instead of fully building it from the ddl scripts.
+COPY conf/snapshot /snapshot
+
+# On container start, /ddl/conf.sh is executed.
+COPY conf/ddl /ddl
