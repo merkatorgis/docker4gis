@@ -23,19 +23,22 @@ for _ in '-n' '-d'; do
     esac
 done
 
+SNAPSHOT_DIR=${SNAPSHOT_DIR:-/snapshot}
 dir=${1:-/fileport/$database}
+[ "$dir" = snapshot ] && dir=$SNAPSHOT_DIR
+
 [ "$schema" ] && dir=$dir/$schema
 mkdir -p "$dir" || exit
 
 roles=$dir/roles
 backup=$dir/backup
+log=$dir/log
 lst=$backup.lst
-err=$dir/err
 docker_tag=$dir/docker_tag
 
 tag() {
     tag=$(date -I'seconds')
-    for f in "$roles" "$backup" "$lst" "$err" "$docker_tag"; do
+    for f in "$roles" "$backup" "$log" "$lst" "$docker_tag"; do
         [ -e "$f" ] &&
             mv "$f" "$f.$tag"
     done
@@ -103,7 +106,7 @@ dump() {
                 --format=custom \
                 --blobs \
                 --verbose \
-                --file="$backup" &&
+                --file="$backup" 2>&1 | tee "$log" &&
             echo "$DOCKER_TAG" >"$docker_tag" &&
             # we don't need this in the database anymore; it just needed to be
             # included in the dump
@@ -126,6 +129,7 @@ analyze() {
             analyze;
         "
     }
+    echo
 }
 
 restore() {
@@ -146,7 +150,7 @@ restore() {
             # Use postgis_restore_pl if it exists, see
             # https://postgis.net/docs/manual-dev/postgis_administration.html#hard_upgrade
             echo "Restoring using '$postgis_restore_pl'..."
-            "$postgis_restore_pl" "$backup" | sql 2>"$err"
+            "$postgis_restore_pl" "$backup" | sql 2>&1 | tee "$log"
         else
             echo "Restoring using pg_restore..."
             pg_restore \
@@ -154,41 +158,52 @@ restore() {
                 --dbname="$database" \
                 --verbose \
                 --jobs="$jobs" \
-                "$backup" 2>"$err"
+                "$backup" 2>&1 | tee "$log"
         fi
         # restore database settings
         sql "select __restore_settings()"
         # tag the current dump files as done
         tag
         echo "Restored: '$backup.$tag'"
-        echo "> Listing '$err.$tag':"
-        cat "$err.$tag"
-        echo "< Listing '$err.$tag' completed"
     }
 
-    # if the database was not yet provisioned, try to restore a dump, if present
-    [ "$(sql "select current_setting('app.provisioned')")" = true ] ||
-        if [ -f "$roles" ] && [ -f "$backup" ]; then
-            echo "LOG:  RESTORING DUMP FROM '$backup'..."
-            time do_restore && analyze
-        fi
-
-    [ "$DOCKER_USER" = "$(sql "
-        select schema_name
+    # If the database does not yet contain a schema named $DOCKER_USER, and a
+    # database dump is present, restore the dump.
+    if [ -z "$(sql "
+        select true
         from information_schema.schemata
         where schema_name = '$DOCKER_USER'
-    ")" ] &&
-        # Mark the database as provisioned if it contains a schema named
-        # $DOCKER_USER, coming either from do_restore, or from loading the
-        # extension image's DDL, see onstart.sh.
-        sql "alter database $database set app.provisioned to true"
+    ")" ] && [ -f "$roles" ] && [ -f "$backup" ]; then
+        echo "LOG:  Restoring dump from '$backup'..."
+        time do_restore && analyze
+
+        # In case we're restoring a snapshot, providing the initial DDL.
+        if [ "$dir" = "$SNAPSHOT_DIR" ]; then
+            # Loop over any subdirectories to restore the respective schemas.
+            while IFS= read -r -d '' snapshot_subdirectory; do
+                snapshot_schema=$(basename "$snapshot_subdirectory")
+                /usr/local/bin/restore_schema -n "$snapshot_schema" "$dir"
+            done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0)
+
+            # Run post-snapshot script, if it exists.
+            post_snapshot_script="$dir"/post_snapshot.sh
+            if [ -x "$post_snapshot_script" ]; then
+                echo "LOG:  Running post-snapshot script..."
+                (cd "$dir" &&
+                    "$post_snapshot_script")
+                echo
+            fi
+        fi
+
+    fi
 }
 
 schema() {
-    # ensure a schema name is specified
-    [ "$schema" ] && return
-    echo "Must specify schema, e.g. dump_schema -n <schema-name>" &&
+    # Ensure a schema name is specified.
+    if [ -z "$schema" ]; then
+        echo "Must specify schema, e.g. $action -n <schema-name>"
         exit 22
+    fi
 }
 
 dump_schema() {
@@ -205,7 +220,7 @@ dump_schema() {
                 --blobs \
                 --verbose \
                 --jobs="$jobs" \
-                --file="$backup" &&
+                --file="$backup" 2>&1 | tee "$log" &&
             echo "Dump created: '$backup'" &&
             chmod +rx "$backup" &&
             echo "$DOCKER_TAG" >"$backup/__docker_tag" &&
@@ -225,7 +240,7 @@ restore_schema() {
                 --schema="$schema" \
                 --verbose \
                 --jobs="$jobs" \
-                "$backup" &&
+                "$backup" 2>&1 | tee "$log" &&
             sql "
                 grant usage on schema $schema to public;
                 grant select on all tables in schema $schema to public;
