@@ -177,22 +177,21 @@ restore() {
         echo "LOG:  Restoring dump from '$backup'..."
         time do_restore && analyze
 
-        # In case we're restoring a snapshot, providing the initial DDL.
-        if [ "$dir" = "$SNAPSHOT_DIR" ]; then
-            # Loop over any subdirectories to restore the respective schemas.
-            while IFS= read -r -d '' snapshot_subdirectory; do
-                snapshot_schema=$(basename "$snapshot_subdirectory")
-                /usr/local/bin/restore_schema -n "$snapshot_schema" "$dir"
-            done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -print0)
+        # Loop over any subdirectories of $SNAPSHOT_DIR to restore the
+        # respective "excluded schemas".
+        while IFS= read -r -d '' snapshot_subdirectory; do
+            snapshot_schema=$(basename "$snapshot_subdirectory")
+            /usr/local/bin/restore_schema -n "$snapshot_schema" "$SNAPSHOT_DIR"
+        done < <(find "$SNAPSHOT_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
 
-            # Run post-snapshot script, if it exists.
-            post_snapshot_script="$dir"/post_snapshot.sh
-            if [ -x "$post_snapshot_script" ]; then
-                echo "LOG:  Running post-snapshot script..."
-                (cd "$dir" &&
-                    "$post_snapshot_script")
-                echo
-            fi
+        # In case we're restoring a snapshot (providing the initial DDL), run
+        # the post-snapshot script, if it exists.
+        post_snapshot_script="$dir"/post_snapshot.sh
+        if [ "$dir" = "$SNAPSHOT_DIR" ] && [ -x "$post_snapshot_script" ]; then
+            echo "LOG:  Running post-snapshot script..."
+            (cd "$dir" &&
+                "$post_snapshot_script")
+            echo
         fi
 
     fi
