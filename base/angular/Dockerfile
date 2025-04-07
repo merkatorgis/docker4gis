@@ -1,4 +1,4 @@
-FROM node:18.2.0
+FROM node:22.14.0-bookworm
 
 RUN mkdir /src
 WORKDIR /src
