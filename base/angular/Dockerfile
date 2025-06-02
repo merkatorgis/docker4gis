@@ -1,7 +1,7 @@
-FROM node:22.14.0-bookworm
+FROM node:24.1.0-bookworm
 
 RUN mkdir /src
 WORKDIR /src
 ONBUILD COPY . .
-ONBUILD RUN npm install
+ONBUILD RUN npm ci
 ONBUILD RUN npm run build
