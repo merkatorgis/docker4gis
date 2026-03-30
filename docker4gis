@@ -466,7 +466,10 @@ DOCKER4GIS_ROOT=true
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER" >>.env
     # Write DEVOPS vars single-quoted (right after DOCKER_USER) so spaces are preserved.
-    _write_env_quoted() { local k=$1 v=$2; printf "%s='%s'\n" "$k" "${v//\'/\'\\\'\'}" >>.env; }
+    _write_env_quoted() {
+        local k=$1 v=$2
+        printf "%s='%s'\n" "$k" "${v//\'/\'\\\'\'}" >>.env
+    }
     _write_env_quoted DEVOPS_ORGANISATION "${DEVOPS_ORGANISATION:-}"
     _write_env_quoted DEVOPS_DEFAULT_POOL "${DEVOPS_DEFAULT_POOL:-}"
     _write_env_quoted DEVOPS_VPN_POOL "${DEVOPS_VPN_POOL:-}"
@@ -961,6 +964,12 @@ base)
     echo "$DOCKER_BASE"
     ;;
 
+pwd | where)
+    help "Echo the directory that this $docker4gis command runs from."
+
+    echo "$dg_dir"
+    ;;
+
 version | v)
     help "Echo the $docker4gis version.
 \`$DOCKER4GIS_COMMAND $action\` gives the version of that $docker4gis command
@@ -1219,7 +1228,7 @@ Usage: $DOCKER4GIS_COMMAND init | component [local] | build|b [COMPONENT] [ARG..
   template | $docker4gis | base | login [PASSWORD] [USER] | run-env|env |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
   run-single|rs [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY] |
-  bats | all EXECUTABLE|self [ARG...] |
+  pwd|where | bats | all EXECUTABLE|self [ARG...] |
   devops [components|c] [--project|-p PROJECT] [COMPONENT...] |
   devops set|s pat|p|registry|r|organisation|o|default|d|vpn|v VALUE
 Note that build, run, br, push, test, stop, unbuild, and geoserver run with the

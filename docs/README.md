@@ -22,6 +22,39 @@ npm install -g docker4gis
 
 This will install a command `dg` that you will use to run docker4gis actions.
 
+## Developer command (`dgn`) without npm-global setup
+
+When developing the `docker4gis` command itself, use `dgn` to run the local
+script from your current worktree.
+
+Add this Bash function to your shell config (for example `~/.bashrc`):
+
+```
+dgn() {
+   local dir="$PWD"
+   while [ "$dir" != "/" ]; do
+      if [ -x "$dir/docker4gis" ]; then
+         "$dir/docker4gis" "$@"
+         return $?
+      fi
+      dir=$(dirname "$dir")
+   done
+   echo "dgn: could not find a docker4gis script in this directory tree" >&2
+   return 127
+}
+```
+
+Then reload your shell:
+
+```
+source ~/.bashrc
+```
+
+In this repository, Copilot is instructed to automate this setup for you:
+when you ask about docker4gis command development, it first checks whether
+`dgn` exists, sets it up in `~/.bashrc` if needed, verifies with
+`dgn pwd`, and tells you that `dgn` is available.
+
 ## Setup new project
 
 ### Package

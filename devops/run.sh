@@ -108,4 +108,3 @@ docker container run --name "$CONTAINER" \
 	--mount type=bind,source="$ENV_FILE",target="$container_env_file" \
 	--mount type=bind,source="$docker_socket",target="$docker_socket" \
 	"$DOCKER_IMAGE" "$@" || exit
-
