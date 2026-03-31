@@ -443,6 +443,33 @@ version() {
     fi
 }
 
+find_monorepo_root() {
+    local dir
+    dir=$(realpath .)
+    while [ "$dir" != "/" ]; do
+        if grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null; then
+            echo "$dir"
+            return 0
+        fi
+        dir=$(dirname "$dir")
+    done
+    return 1
+}
+
+normalise_repo_name() {
+    local value=$1
+    value=$(basename "$value")
+    # Without a possible `docker4gis-` prefix.
+    value=${value#"$docker4gis"-}
+    # Up until a possible first `.` character (to support forked repos named
+    # component.name.surname).
+    value=${value%%.*}
+    # Strip a leading `^` (used in directory names like `^package` to sort
+    # them to the top, but invalid in Docker image names).
+    value=${value#^}
+    echo "$value"
+}
+
 case "$action" in
 
 init)
@@ -530,13 +557,15 @@ DOCKER4GIS_VERSION=$(version)" >.env
     ;;
 
 component | base-component | template)
-    [ "$action" = component ] && help "Initialise a new $docker4gis application component in the current directory.
-Do this in a subdirectory of \`components/\` inside the application package
-directory (where you ran \`$DOCKER4GIS_COMMAND init\`), e.g. components/proxy/.
-(During development of the base component, you can do
-\`$DOCKER4GIS_COMMAND $action local\`
-to prevent the locally built base image from being overwritten from the
-Docker registry.)"
+    [ "$action" = component ] && help "Initialise a new $docker4gis application component.
+Usage: \`$DOCKER4GIS_COMMAND $action [local] [COMPONENT_NAME] [TEMPLATE]\`.
+If COMPONENT_NAME is supplied, that name is used for the new directory under
+\`components/\`. If a base image with that same name exists, it is used
+automatically; otherwise you'll be asked which base image to extend, with
+\`n\` to create a component without extending a base image.
+When COMPONENT_NAME is omitted, you'll be prompted for it first.
+(During development of a base component, you can pass \`local\` first to
+prevent pulling images and use only local images.)"
 
     [ "$action" = base-component ] && help "Initialise a new $docker4gis base component in the current directory.
 Base components are the repositories in https://hub.docker.com/u/$docker4gis.
@@ -579,17 +608,47 @@ component."
         finish "$message" "$code"
     }
 
+    if [ "$action" = component ] && [ "$1" = local ]; then
+        shift 1
+        local=true
+    fi
+
+    if [ "$action" = component ]; then
+        monorepo_root=$(find_monorepo_root) ||
+            error "Could not find monorepo root (no .env with DOCKER4GIS_ROOT=true found). Run $DOCKER4GIS_COMMAND init in the monorepo root first."
+
+        components_dir=$monorepo_root/components
+        [ -d "$components_dir" ] || mkdir -p "$components_dir"
+
+        component_name=$1
+        [ "$component_name" ] && shift 1
+
+        if ! [ "$component_name" ]; then
+            cwd=$(realpath .)
+            default_component_name=
+            if [ "$(dirname "$cwd")" = "$components_dir" ] &&
+                ! grep -q "^DOCKER4GIS_VERSION=" "$cwd/.env" 2>/dev/null; then
+                default_component_name=$(basename "$cwd")
+            fi
+
+            name_question="Enter the component name"
+            [ "$default_component_name" ] &&
+                name_question+=" (default is $default_component_name)"
+            read -rp "$name_question : " component_name
+            [ "$component_name" ] || component_name=$default_component_name
+            [ "$component_name" ] ||
+                error "Component name not set."
+        fi
+
+        target_dir=$components_dir/$component_name
+        [ -d "$target_dir" ] || mkdir -p "$target_dir" ||
+            error "Failed to create directory: $target_dir"
+        cd "$target_dir" || error "Failed to enter directory: $target_dir"
+    fi
+
     package_json
 
-    repo=$(basename "$(realpath "$PWD")")
-    # Without a possible `docker4gis-` prefix.
-    repo=${repo#"$docker4gis"-}
-    # Up until a possible first `.` character (to support forked repos named
-    # component.name.surname).
-    repo=${repo%%.*}
-    # Strip a leading `^` (used in directory names like `^package` to sort
-    # them to the top, but invalid in Docker image names).
-    repo=${repo#^}
+    repo=$(normalise_repo_name "$PWD")
     export repo
 
     [ "$action" = base-component ] && {
@@ -638,11 +697,6 @@ COPY template /template/
     [ "$inited" ] ||
         error "Package directory not found at ../../; to create one, run $DOCKER4GIS_COMMAND init in the monorepo root, then cd into components/<name>/. Or did you mean base-component?"
 
-    if [ "$1" = local ]; then
-        shift 1
-        local=true
-    fi
-
     pull() {
         local component=$1
         local stderr=$2
@@ -653,7 +707,7 @@ COPY template /template/
             # Don't pull, but check if the image exists locally.
             if ! docker image inspect "$image" >/dev/null 2>&1; then
                 echo "Image not found locally: $image" >&2
-                exit 1
+                return 1
             fi
             return 0
         fi
@@ -666,16 +720,22 @@ COPY template /template/
         fi
     }
 
-    [ "$1" ] || interactive=true
-    component=$1
-    template=$2
+    if [ "$action" = component ]; then
+        template=$1
+        component=$repo
+        pull "$component" || component=
+    else
+        [ "$1" ] || interactive=true
+        component=$1
+        template=$2
+    fi
 
     if ! [ "$component" ]; then
         [ "$repo" = api ] && suggestion=postgrest
         [ "$repo" = app ] && suggestion=angular
     fi
-    if ! [ "$suggestion" ]; then
-        pull "${component:-$repo}" && component=${component:-$repo}
+    if ! [ "$suggestion" ] && ! [ "$component" ]; then
+        pull "$repo" && component=$repo
     fi
     while ! [ "$component" ]; do
         if [ "$suggestion" ] || ! [ "$action" = template ]; then
@@ -1113,22 +1173,7 @@ If \`$DOCKER4GIS_COMMAND\` should be executed, use \`self\` instead, e.g.
         fi
     }
 
-    # Find the monorepo root from any subdirectory: look for a .env with
-    # DOCKER4GIS_ROOT=true, walking up from the current directory.
-    find_root() {
-        local dir
-        dir=$(realpath .)
-        while [ "$dir" != "/" ]; do
-            if grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null; then
-                echo "$dir"
-                return 0
-            fi
-            dir=$(dirname "$dir")
-        done
-        return 1
-    }
-
-    root=$(find_root) || {
+    root=$(find_monorepo_root) || {
         echo "Could not find monorepo root (no .env with DOCKER4GIS_ROOT=true found)." >&2
         exit 1
     }
@@ -1222,7 +1267,7 @@ The \"set\" action saves the value of a variable to the local file
 
 *)
     echo "Manage $docker4gis applications and their components and base components.
-Usage: $DOCKER4GIS_COMMAND init | component [local] | build|b [COMPONENT] [ARG...] |
+Usage: $DOCKER4GIS_COMMAND init | component [local] [COMPONENT_NAME] [TEMPLATE] | build|b [COMPONENT] [ARG...] |
   run|r | br [COMPONENT] [ARG...] | push|p [COMPONENT] [--no-save] [ARG...] |
   test|t [FILE] | unbuild [COMPONENT] | stop | geoserver | base-component |
   template | $docker4gis | base | login [PASSWORD] [USER] | run-env|env |
