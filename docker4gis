@@ -492,15 +492,6 @@ The name of the current directory will be used as the application name."
 DOCKER4GIS_ROOT=true
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER" >>.env
-    # Write DEVOPS vars single-quoted (right after DOCKER_USER) so spaces are preserved.
-    _write_env_quoted() {
-        local k=$1 v=$2
-        printf "%s='%s'\n" "$k" "${v//\'/\'\\\'\'}" >>.env
-    }
-    _write_env_quoted DEVOPS_ORGANISATION "${DEVOPS_ORGANISATION:-}"
-    _write_env_quoted DEVOPS_DEFAULT_POOL "${DEVOPS_DEFAULT_POOL:-}"
-    _write_env_quoted DEVOPS_VPN_POOL "${DEVOPS_VPN_POOL:-}"
-    unset -f _write_env_quoted
     echo "DEBUG=false
 PROXY_HOST=
 PROXY_PORT=

@@ -387,6 +387,28 @@ if [ "$repository_result" = 0 ]; then
             needs_push=true
         fi
 
+        # Write/update DEVOPS_* vars in the clone's .env so they stay current
+        # across runs, without relying on dg init to set them.
+        write_env() {
+            local key=$1 value=$2
+            local quoted_value="'${value//\'/\'\\\'\'}'"
+            if grep -q "^$key=" .env 2>/dev/null; then
+                local current
+                current=$(grep "^$key=" .env | cut -d= -f2-)
+                if [ "$current" != "$quoted_value" ]; then
+                    sed -i "s|^$key=.*|$key=$quoted_value|" .env
+                    needs_push=true
+                fi
+            else
+                printf '%s=%s\n' "$key" "$quoted_value" >>.env
+                needs_push=true
+            fi
+        }
+        write_env DEVOPS_ORGANISATION "$SYSTEM_COLLECTIONURI"
+        write_env DEVOPS_DEFAULT_POOL "$DEFAULT_POOL"
+        write_env DEVOPS_VPN_POOL "$VPN_POOL"
+        unset -f write_env
+
         # Initialise each component in components/<name>/.
         for component in "${non_package_components[@]}"; do
             if ! [ -d "components/$component" ]; then
