@@ -20,7 +20,13 @@ write_root_env() {
     # Single-quote the value so spaces are safe and cut-based readers get the raw value.
     local quoted_value="'${value//\'/\'\\\'\'}'"
     if grep -q "^$key=" "$ROOT_ENV_FILE"; then
-        sed -i "s|^$key=.*|$key=$quoted_value|" "$ROOT_ENV_FILE"
+        # Use a temp file + cp (not sed -i) to avoid "Device or resource busy"
+        # on Docker bind-mounted files, where rename(2) fails across mounts.
+        local tmp
+        tmp=$(mktemp)
+        sed "s|^$key=.*|$key=$quoted_value|" "$ROOT_ENV_FILE" >"$tmp"
+        cp "$tmp" "$ROOT_ENV_FILE"
+        rm "$tmp"
     else
         printf '%s=%s\n' "$key" "$quoted_value" >>"$ROOT_ENV_FILE"
     fi
@@ -104,9 +110,14 @@ export SYSTEM_TEAMPROJECT
 # shellcheck source=/dev/null
 source /devops/env_file
 
-# Ask for DEVOPS_ORGANISATION upfront (before DevOps connectivity checks),
-# suggesting env_file value first, then the root .env value, then default.
-set_env SYSTEM_COLLECTIONURI "DevOps Organisation" "${DEVOPS_ORGANISATION:-merkatordev}"
+# DEVOPS_ORGANISATION: when present in the current project's root .env, use it
+# silently; otherwise ask upfront (before DevOps connectivity checks).
+if [ "$ROOT_HAS_DEVOPS_ORGANISATION" = true ] && [ -n "$DEVOPS_ORGANISATION" ]; then
+    /devops/set.sh organisation "$DEVOPS_ORGANISATION"
+else
+    # Suggest env_file value first, then root .env value, then default.
+    set_env SYSTEM_COLLECTIONURI "DevOps Organisation" "${DEVOPS_ORGANISATION:-merkatordev}"
+fi
 source /devops/env_file
 
 # Keep the root .env aligned with the selected organisation.
@@ -352,6 +363,8 @@ cloned_vpn_pool=$(read_cloned_env DEVOPS_VPN_POOL)
 
 if [ -n "$cloned_docker_registry" ]; then
     /devops/set.sh registry "$cloned_docker_registry"
+elif [ "$ROOT_HAS_DOCKER_REGISTRY" = true ] && [ -n "$DOCKER_REGISTRY" ]; then
+    /devops/set.sh registry "$DOCKER_REGISTRY"
 else
     set_env DOCKER_REGISTRY "Docker Registry" "${DOCKER_REGISTRY:-docker.io}"
 fi
