@@ -75,6 +75,17 @@ if [ -n "$root_env_file" ]; then
 	DEVOPS_ORGANISATION=$(read_root_env DEVOPS_ORGANISATION)
 	DEVOPS_DEFAULT_POOL=$(read_root_env DEVOPS_DEFAULT_POOL)
 	DEVOPS_VPN_POOL=$(read_root_env DEVOPS_VPN_POOL)
+
+	root_has_devops_organisation=false
+	grep -q '^DEVOPS_ORGANISATION=' "$root_env_file" && root_has_devops_organisation=true
+	root_has_devops_default_pool=false
+	grep -q '^DEVOPS_DEFAULT_POOL=' "$root_env_file" && root_has_devops_default_pool=true
+	root_has_devops_vpn_pool=false
+	grep -q '^DEVOPS_VPN_POOL=' "$root_env_file" && root_has_devops_vpn_pool=true
+else
+	root_has_devops_organisation=false
+	root_has_devops_default_pool=false
+	root_has_devops_vpn_pool=false
 fi
 
 root_env_mount=()
@@ -103,6 +114,9 @@ docker container run --name "$CONTAINER" \
 	--env DEVOPS_ORGANISATION="$DEVOPS_ORGANISATION" \
 	--env DEVOPS_DEFAULT_POOL="$DEVOPS_DEFAULT_POOL" \
 	--env DEVOPS_VPN_POOL="$DEVOPS_VPN_POOL" \
+	--env ROOT_HAS_DEVOPS_ORGANISATION="$root_has_devops_organisation" \
+	--env ROOT_HAS_DEVOPS_DEFAULT_POOL="$root_has_devops_default_pool" \
+	--env ROOT_HAS_DEVOPS_VPN_POOL="$root_has_devops_vpn_pool" \
 	--env ROOT_ENV_FILE="${root_env_file:+/devops/root_env_file}" \
 	--env ENV_FILE="$container_env_file" \
 	--mount type=bind,source="$ENV_FILE",target="$container_env_file" \

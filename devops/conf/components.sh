@@ -59,10 +59,10 @@ set_env() {
     while true; do
         if [ "$name" = PAT ]; then
             # Do not echo the value entered.
-            read -rsp "$message : " input_value
+            read -rsp "→  $message : " input_value
             echo
         else
-            read -rp "$message : " input_value
+            read -rp "→  $message : " input_value
         fi
 
         # When no input: use the displayed default, which is current_value if
@@ -99,9 +99,18 @@ fi
 
 export SYSTEM_TEAMPROJECT
 
-# Read stored values from env_file.
+# Source env_file to pick up previously stored values (e.g. SYSTEM_COLLECTIONURI
+# from a prior `dg devops set organisation ...`).
 # shellcheck source=/dev/null
 source /devops/env_file
+
+# Ask for DEVOPS_ORGANISATION upfront (before DevOps connectivity checks),
+# suggesting env_file value first, then the root .env value, then default.
+set_env SYSTEM_COLLECTIONURI "DevOps Organisation" "${DEVOPS_ORGANISATION:-merkatordev}"
+source /devops/env_file
+
+# Keep the root .env aligned with the selected organisation.
+write_root_env DEVOPS_ORGANISATION "$SYSTEM_COLLECTIONURI"
 
 doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
 message="Personal Access Token (full access, incl. project creation)"
@@ -110,55 +119,23 @@ message="Personal Access Token (full access, incl. project creation)"
 set_env PAT \
     "$message - see $doc_url"
 
-# For all other config values: if already known from root .env (passed via env),
-# apply directly without prompting; otherwise ask and write back to root .env.
-
-if [ -n "$DOCKER_REGISTRY" ]; then
-    /devops/set.sh registry "$DOCKER_REGISTRY"
-else
-    set_env DOCKER_REGISTRY "Docker Registry"
-fi
-
-if [ -n "$DEVOPS_DEFAULT_POOL" ]; then
-    /devops/set.sh default "$DEVOPS_DEFAULT_POOL"
-else
-    set_env DEFAULT_POOL "Pipeline Agent Pool for general jobs"
-    source /devops/env_file
-    write_root_env DEVOPS_DEFAULT_POOL "$DEFAULT_POOL"
-fi
-
-if [ -n "$DEVOPS_VPN_POOL" ]; then
-    /devops/set.sh vpn "$DEVOPS_VPN_POOL"
-else
-    set_env VPN_POOL "Pipeline Agent Pool for deployment jobs"
-    source /devops/env_file
-    write_root_env DEVOPS_VPN_POOL "$VPN_POOL"
-fi
-
-if [ -n "$DEVOPS_ORGANISATION" ]; then
-    /devops/set.sh organisation "$DEVOPS_ORGANISATION"
-else
-    set_env SYSTEM_COLLECTIONURI "DevOps Organisation"
-    source /devops/env_file
-    write_root_env DEVOPS_ORGANISATION "$SYSTEM_COLLECTIONURI"
-fi
-
-# Read altered values from file.
-# shellcheck source=/dev/null
-source /devops/env_file
-
-# Map stored pool names to the DEVOPS_ variables that docker4gis pipeline()
-# uses when generating pipeline YAML files.
-export DEVOPS_DEFAULT_POOL=$DEFAULT_POOL
-export DEVOPS_VPN_POOL=$VPN_POOL
-
 # Login to the Azure DevOps CLI.
 export AZURE_DEVOPS_EXT_PAT=$PAT
 
-# Replace string to insert the \"\$PAT@\" value between the (https):// and the
+# Replace string to insert the "$PAT@" value between the (https):// and the
 # host name in the URI (e.g. https://dev.azure.com/merkatordev/).
 AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 export AUTHORISED_COLLECTION_URI
+
+refresh_org_settings() {
+    # Keep authorised URI and Azure CLI defaults aligned with the selected org.
+    AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
+    export AUTHORISED_COLLECTION_URI
+    az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+}
+
+# DOCKER_REGISTRY, DEFAULT_POOL, and VPN_POOL are deferred to after the project
+# clone; see the post-clone configuration block below.
 
 if [ -z "$DEBUG" ]; then
     log() {
@@ -181,7 +158,7 @@ export -f log
 log Setup
 
 # Set the default project and organisation for the Azure DevOps CLI.
-az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+refresh_org_settings
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 
 # Configure git identity.
@@ -360,6 +337,52 @@ if [ "$repository_result" = 0 ] && ! [ -d ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" ];
     git_clone || repository_result=$?
 fi
 
+# Post-clone configuration determination.
+# Priority for repo-backed values: (1) cloned project .env, (2) current root
+# .env passed in via run.sh, (3) prompt with defaults from /devops/env_file or
+# built-in defaults.
+cloned_env=~/"$SYSTEM_TEAMPROJECT/$REPOSITORY/.env"
+read_cloned_env() {
+    [ -f "$cloned_env" ] || return
+    grep "^$1=" "$cloned_env" 2>/dev/null | cut -d= -f2- | sed "s/^'//;s/'$//"
+}
+cloned_docker_registry=$(read_cloned_env DOCKER_REGISTRY)
+cloned_default_pool=$(read_cloned_env DEVOPS_DEFAULT_POOL)
+cloned_vpn_pool=$(read_cloned_env DEVOPS_VPN_POOL)
+
+if [ -n "$cloned_docker_registry" ]; then
+    /devops/set.sh registry "$cloned_docker_registry"
+else
+    set_env DOCKER_REGISTRY "Docker Registry" "${DOCKER_REGISTRY:-docker.io}"
+fi
+source /devops/env_file
+write_root_env DOCKER_REGISTRY "$DOCKER_REGISTRY"
+
+if [ -n "$cloned_default_pool" ]; then
+    /devops/set.sh default "$cloned_default_pool"
+elif [ "$ROOT_HAS_DEVOPS_DEFAULT_POOL" = true ] && [ -n "$DEVOPS_DEFAULT_POOL" ]; then
+    /devops/set.sh default "$DEVOPS_DEFAULT_POOL"
+else
+    set_env DEFAULT_POOL "Pipeline Agent Pool for general jobs" "${DEVOPS_DEFAULT_POOL:-Azure Pipelines}"
+fi
+source /devops/env_file
+[ "$ROOT_HAS_DEVOPS_DEFAULT_POOL" != true ] && write_root_env DEVOPS_DEFAULT_POOL "$DEFAULT_POOL"
+
+if [ -n "$cloned_vpn_pool" ]; then
+    /devops/set.sh vpn "$cloned_vpn_pool"
+elif [ "$ROOT_HAS_DEVOPS_VPN_POOL" = true ] && [ -n "$DEVOPS_VPN_POOL" ]; then
+    /devops/set.sh vpn "$DEVOPS_VPN_POOL"
+else
+    set_env VPN_POOL "Pipeline Agent Pool for deployment jobs" "${DEVOPS_VPN_POOL:-VPN}"
+fi
+source /devops/env_file
+[ "$ROOT_HAS_DEVOPS_VPN_POOL" != true ] && write_root_env DEVOPS_VPN_POOL "$VPN_POOL"
+
+# Map stored pool names to the DEVOPS_ variables that docker4gis pipeline()
+# uses when generating pipeline YAML files.
+export DEVOPS_DEFAULT_POOL=$DEFAULT_POOL
+export DEVOPS_VPN_POOL=$VPN_POOL
+
 # Discover existing components from the cloned repo and add to the list.
 if [ "$repository_result" = 0 ]; then
     repo_components_dir=~/"$SYSTEM_TEAMPROJECT/$REPOSITORY/components"
@@ -387,35 +410,56 @@ if [ "$repository_result" = 0 ]; then
             needs_push=true
         fi
 
-        # Write/update DEVOPS_* vars in the clone's .env so they stay current
-        # across runs, without relying on dg init to set them.
-        write_env() {
-            local key=$1 value=$2
-            local quoted_value="'${value//\'/\'\\\'\'}'"
-            if grep -q "^$key=" .env 2>/dev/null; then
-                local current
-                current=$(grep "^$key=" .env | cut -d= -f2-)
-                if [ "$current" != "$quoted_value" ]; then
-                    sed -i "s|^$key=.*|$key=$quoted_value|" .env
-                    needs_push=true
+        # Write/update DEVOPS_* vars near the top of .env, directly below
+        # DOCKER_USER, so dg devops keeps this block ordered and current.
+        write_devops_env_block() {
+            local env_file=.env
+            local org pool_default pool_vpn
+            org="'${SYSTEM_COLLECTIONURI//\'/\'\\\'\'}'"
+            pool_default="'${DEFAULT_POOL//\'/\'\\\'\'}'"
+            pool_vpn="'${VPN_POOL//\'/\'\\\'\'}'"
+            local temp
+            temp=$(mktemp) || return 1
+
+            local inserted=
+            while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                DEVOPS_ORGANISATION=* | DEVOPS_DEFAULT_POOL=* | DEVOPS_VPN_POOL=*)
+                    continue
+                    ;;
+                esac
+
+                printf '%s\n' "$line" >>"$temp"
+
+                if [ -z "$inserted" ] && [[ "$line" == DOCKER_USER=* ]]; then
+                    printf '%s\n' "DEVOPS_ORGANISATION=$org" >>"$temp"
+                    printf '%s\n' "DEVOPS_DEFAULT_POOL=$pool_default" >>"$temp"
+                    printf '%s\n' "DEVOPS_VPN_POOL=$pool_vpn" >>"$temp"
+                    inserted=true
                 fi
+            done <"$env_file"
+
+            if [ -z "$inserted" ]; then
+                printf '%s\n' "DEVOPS_ORGANISATION=$org" >>"$temp"
+                printf '%s\n' "DEVOPS_DEFAULT_POOL=$pool_default" >>"$temp"
+                printf '%s\n' "DEVOPS_VPN_POOL=$pool_vpn" >>"$temp"
+            fi
+
+            if cmp -s "$env_file" "$temp"; then
+                rm "$temp"
             else
-                printf '%s=%s\n' "$key" "$quoted_value" >>.env
+                mv "$temp" "$env_file"
                 needs_push=true
             fi
         }
-        write_env DEVOPS_ORGANISATION "$SYSTEM_COLLECTIONURI"
-        write_env DEVOPS_DEFAULT_POOL "$DEFAULT_POOL"
-        write_env DEVOPS_VPN_POOL "$VPN_POOL"
-        unset -f write_env
+        write_devops_env_block || exit 1
+        unset -f write_devops_env_block
 
         # Initialise each component in components/<name>/.
         for component in "${non_package_components[@]}"; do
             if ! [ -d "components/$component" ]; then
                 log "dg component $component in $REPOSITORY"
-                mkdir -p "components/$component" &&
-                    cd "components/$component" &&
-                    dg component &&
+                dg component "$component" &&
                     cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" || exit 1
                 needs_push=true
             fi
