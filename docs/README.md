@@ -177,7 +177,7 @@ Just run `dg devops` to get started. Run `dg help devops` for more information.
 
 So, in short, what you typically do is:
 
-1. Install docker4gis if you haven't got it yet: `mpm install -g docker4gis`.
+1. Install docker4gis if you haven't got it yet: `npm install -g docker4gis`.
 1. Run `dg init [PROJECT_NAME] [DOCKER_REGISTRY]` to create a new project,
    initialised with its package component.
 1. `cd [PROJECT_NAME]`
