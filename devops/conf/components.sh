@@ -419,7 +419,7 @@ if [ "$repository_result" = 0 ]; then
         # Initialise the package at the repo root.
         if ! [ -f .env ]; then
             log "dg init in $REPOSITORY"
-            dg init "$DOCKER_REGISTRY" || exit 1
+            (cd .. && dg init "$REPOSITORY" "$DOCKER_REGISTRY") || exit 1
             needs_push=true
         fi
 

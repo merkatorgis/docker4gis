@@ -473,26 +473,40 @@ normalise_repo_name() {
 case "$action" in
 
 init)
-    help "Initialise a new $docker4gis monorepo application in the current directory.
-The current directory becomes the package root. Components are added as
-subdirectories inside \`components/\` (using \`$DOCKER4GIS_COMMAND component\`).
-The name of the current directory will be used as the application name."
+    help "Initialise a new $docker4gis monorepo application.
+A new directory with the given name is created as the package root. Components
+are added as subdirectories inside \`components/\` (using
+\`$DOCKER4GIS_COMMAND component\`).
+Usage: $DOCKER4GIS_COMMAND $action [PROJECT_NAME] [DOCKER_REGISTRY]"
 
-    DOCKER_REGISTRY=$1
-    DOCKER_USER=$(basename "$(realpath .)")
+    project_name=$1
+    [ "$project_name" ] && shift 1
+    [ "$project_name" ] || read -rp \
+        "Enter the project name : " \
+        project_name
+    [ "$project_name" ] || {
+        echo "Project name not set." >&2
+        exit 1
+    }
+    mkdir -p "$project_name" || exit
+    (
+        cd "$project_name" || exit
 
-    [ "$DOCKER_REGISTRY" ] && shift 1
-    [ "$DOCKER_REGISTRY" ] || read -rp \
-        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com) : " \
-        DOCKER_REGISTRY
-    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
-    [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
+        DOCKER_REGISTRY=$1
+        DOCKER_USER=$(basename "$(realpath .)")
 
-    echo "DOCKER4GIS_VERSION=$(version)
+        [ "$DOCKER_REGISTRY" ] && shift 1
+        [ "$DOCKER_REGISTRY" ] || read -rp \
+            "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com) : " \
+            DOCKER_REGISTRY
+        [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
+        [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
+
+        echo "DOCKER4GIS_VERSION=$(version)
 DOCKER4GIS_ROOT=true
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER" >>.env
-    echo "DEBUG=false
+        echo "DEBUG=false
 PROXY_HOST=
 PROXY_PORT=
 PROXY_PORT_HTTP=
@@ -516,35 +530,38 @@ MYSQL_ROOT_PASSWORD=
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
-    mkdir -p "components/^package"
+        mkdir -p "components/^package"
 
-    # Initialise the ^package component in its directory.
-    # Note: docker4gis/package has no /template; we create the files directly.
-    (
-        cd "components/^package" || exit 1
+        # Initialise the ^package component in its directory.
+        # Note: docker4gis/package has no /template; we create the files directly.
+        (
+            cd "components/^package" || exit
 
-        # Write the component's .env (no DOCKER_REGISTRY - inherited from root).
-        echo "DOCKER_REPO=package
+            # Write the component's .env (no DOCKER_REGISTRY - inherited from root).
+            echo "DOCKER_REPO=package
 DOCKER4GIS_VERSION=$(version)" >.env
 
-        # Build script delegates to the package base-image build.
-        {
-            echo '#!/bin/bash'
-            echo '"$DOCKER_BASE/package/build.sh"'
-        } >build.sh
-        chmod +x build.sh
+            # Build script delegates to the package base-image build.
+            {
+                echo '#!/bin/bash'
+                # shellcheck disable=SC2016
+                echo '"$DOCKER_BASE/package/build.sh"'
+            } >build.sh
+            chmod +x build.sh
 
-        # Create pipeline YAML files (action=init → is_package=true in pipeline()).
-        pipeline
+            # Create pipeline YAML files (action=init → is_package=true in pipeline()).
+            pipeline
 
-        # Create package.json for version tracking.
+            # Create package.json for version tracking.
+            package_json
+        ) || exit 1
+
+        # Create the version-tracking directory inside ^package.
+        mkdir -p "components/^package/components"
+
         package_json
     ) || exit 1
-
-    # Create the version-tracking directory inside ^package.
-    mkdir -p "components/^package/components"
-
-    package_json
+    echo "Project $project_name initialised ✅"
     ;;
 
 component | base-component | template)
