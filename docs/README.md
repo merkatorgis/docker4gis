@@ -33,12 +33,12 @@ dg init [PROJECT_NAME] [DOCKER_REGISTRY]
 If `PROJECT_NAME` is omitted, you'll be asked for it. If `DOCKER_REGISTRY` is
 omitted, you'll be asked for it as well.
 
-`dg init` creates the project directory and initialises the package there.
+`dg init` creates the project directory, and a _package_ component is
+initialised in `components/^package`.
 
-The project directory becomes the monorepo root, and a _package_ component is
-initialised in `/components/^package`. The package image is used to
-deterministically run a specific version of the application, with all the
-specific versions of the application's different components.
+The package image is used to deterministically run a specific version of the
+application, with all the specific versions of the application's different
+components.
 
 ### Components
 
