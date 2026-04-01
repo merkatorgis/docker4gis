@@ -7,7 +7,7 @@ New as in:
 - docker4gis as an npm package (automatic installation through
   [npx](https://www.npmjs.com/package/npx));
 - monorepo: all components in a single git repo;
-  - supporting pipelines in the git hosting environment.
+- supporting pipelines in the git hosting environment.
 
 # Getting started
 
