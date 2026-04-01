@@ -561,7 +561,7 @@ DOCKER4GIS_VERSION=$(version)" >.env
 
         package_json
     ) || exit 1
-    echo "Project $project_name initialised ✅"
+    echo "$project_name initialised ✅"
     ;;
 
 component | base-component | template)

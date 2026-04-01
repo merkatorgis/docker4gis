@@ -22,42 +22,7 @@ npm install -g docker4gis
 
 This will install a command `dg` that you will use to run docker4gis actions.
 
-## Developer command (`dgn`) without npm-global setup
-
-When developing the `docker4gis` command itself, use `dgn` to run the local
-script from your current worktree.
-
-Add this Bash function to your shell config (for example `~/.bashrc`):
-
-```
-dgn() {
-   local dir="$PWD"
-   while [ "$dir" != "/" ]; do
-      if [ -x "$dir/docker4gis" ]; then
-         "$dir/docker4gis" "$@"
-         return $?
-      fi
-      dir=$(dirname "$dir")
-   done
-   echo "dgn: could not find a docker4gis script in this directory tree" >&2
-   return 127
-}
-```
-
-Then reload your shell:
-
-```
-source ~/.bashrc
-```
-
-In this repository, Copilot is instructed to automate this setup for you:
-when you ask about docker4gis command development, it first checks whether
-`dgn` exists, sets it up in `~/.bashrc` if needed, verifies with
-`dgn pwd`, and tells you that `dgn` is available.
-
 ## Setup new project
-
-### Package
 
 From the directory where you want to create your new monorepo, run
 
@@ -80,17 +45,15 @@ specific versions of the application's different components.
 The application's "components" are the different containers that comprise the
 running application: proxy, app, api, database, geoserver, etc.
 
-To add a component: create a subdirectory in `components/`, cd into it, and run
+To add a component: from somewhere inside the project's directory tree, run
 
 ```
-mkdir -p components/proxy && cd components/proxy
-dg component
+dg component [NAME]
 ```
 
-(assuming you had the docker4gis alias created with its default name). It will
-ask you which base docker4gis component it should extend, and which version of
-the base component to use (default is `latest`). If the base component has
-multiple "flavours", the flavours are listed, and you're asked to choose one.
+It will ask you which base docker4gis component it should extend. If the base
+component has multiple "flavours", the flavours are listed, and you're asked to
+choose one.
 
 The available docker4gis base components all reside in their proper repo under
 [https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis/docker4gis-{name}),
@@ -102,12 +65,15 @@ when the application is run, run `dg standalone` after `dg component`.
 The resulting monorepo structure looks like:
 
 ```
-myapp/                   ← monorepo root = package directory
-  .env                   ← DOCKER_REPO=package, DOCKER_USER=myapp, …
-  package.json
+myapp/                   ← monorepo root
+  .env                   ← DOCKER_USER=myapp, DOCKER_REGISTRY=…
   components/
+    ^package/            ← package component
+      .env               ← DOCKER_REPO=package
+      package.json       ← "version": "0.0.0"
+      Dockerfile
     proxy/               ← proxy component
-      .env               ← DOCKER_REPO=proxy
+      .env
       package.json
       Dockerfile
     app/                 ← app component
@@ -124,19 +90,18 @@ When you make a change to a component, and want to see its effect, you can build
 the component's image and run the application with the new image in one go,
 using `dg br` (for build & run).
 
-Note that you can pass the component name (or `package`) to build the image from
-the package root, e.g. `dg build app`, or `dg br proxy`.
+Note that you can pass the component name to build that component's image from
+another directory inside the project, e.g. `dg build app`, or `dg br proxy`.
 
 ## Push
 
 When you're happy with the changes you made to a component, and you've seen it
-running successfully, you should _push_ it by running `dg push` from the
-component directory (`components/<name>/`).
+running successfully, you should _push_ it by running `dg push [COMPONENT]`.
 
 This will push the new image to the Docker registry (presuming you have logged
-in using `docker login`), write a version to the component's `package.json`,
-tag the git repo with `v-{version_number}`, commit the changes, and push them
-to `origin`.
+in using `docker login`), write a version to the component's `package.json`, tag
+the git repo with `{COMPONENT} v-{version_number}`, commit the changes, and push
+them to `origin`.
 
 ## Build the package
 
@@ -144,15 +109,15 @@ Each time you `dg run` the application, component versions are read from each
 component's `package.json`. For components that haven't been pushed yet, a
 version `latest` is used.
 
-Once all components are pushed, you can issue `dg build` from the package
+Once all components are pushed, you can issue `dg build` from the ^package
 directory to create a new package image. The package image includes the list of
 component versions, so that running a certain version of the package
 deterministically results in component containers of those specific versions.
 
 When the package image is built, it can be pushed as well using `dg push`. Just
-like with a component, this will result in a new version of the package in the
-registry, and a corresponding tag in the git repo. You can try it out locally
-with `dg run {version_number}`.
+like with a normal component, this will result in a new version of the package
+image in the registry, and a corresponding tag in the git repo. You can try the
+new image out locally with `dg run {version_number}`.
 
 ## Run the package
 
@@ -212,22 +177,21 @@ Just run `dg devops` to get started. Run `dg help devops` for more information.
 
 So, in short, what you typically do is:
 
-1. In the parent directory where you want the monorepo: run
-   `npx --yes docker4gis@latest init [PROJECT_NAME] [DOCKER_REGISTRY]` (or
-   `dg init [PROJECT_NAME] [DOCKER_REGISTRY]`, if you already have the
-   _alias_) to create and initialise your application's _package_.
-1. For each _component_: create `components/<name>/`, cd into it, and `dg
-   component` to initialise it. The available base components are found as repos
-   at
+1. Install docker4gis if you haven't got it yet: `mpm install -g docker4gis`.
+1. Run `dg init [PROJECT_NAME] [DOCKER_REGISTRY]` to create a new project,
+   initialised with its package component.
+1. `cd [PROJECT_NAME]`
+1. For each _component_: `dg component [NAME]` to initialise it. The available
+   base components are found as repos at
    [https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis?tab=repositories).
-1. Build each component using `dg build` (from within `components/<name>/`).
-1. Run the application using `dg run` (from the package root or any component).
+1. Build each component using `dg build [COMPONENT]`, or use `dg all self build` to
+   build all components initially.
+1. Run the application using `dg run`.
    1. As a convenience, to build one component, and run the new image, you can
-      use `dg br` ("build & run").
+      use `dg br [COMPONENT]` ("build & run").
 1. Tag a component's version, and push the versioned image to the Docker
-   registry, using `dg push` (from `components/<name>/`).
-1. Once all components are pushed, `dg build` and `dg push` the package as well
-   (from the package root).
+   registry, using `dg push [COMPONENT]`.
+1. Once all components are pushed, `dg build` and `dg push` the package as well.
 1. On the server:
    1. Run the package image (once) to echo the script that runs the application:
       `docker container run --rm {DOCKER_REGISTRY}/{DOCKER_USER}/package:{tag} >
@@ -295,8 +259,8 @@ image you reference (`FROM`) in your `Dockerfile`.
 
 ## Development
 
-Each base docker4gis component resides in its own public repository as a
-sibbling of https://github.com/merkatorgis/docker4gis, e.g.
+Each base docker4gis component resides in its own public repository as a sibling
+of https://github.com/merkatorgis/docker4gis, e.g.
 https://github.com/merkatorgis/docker4gis-proxy.
 
 Any GitHub user can fork a component's repo, make changes, confirm things still
@@ -310,6 +274,10 @@ can still be built.
 When a PR gets merged, another trigger automatically starts a pipeline that
 creates the component's new version, as described
 [above](#base-component-versions).
+
+To try out your local changes to a base component, you can `dg build` it
+locally, and then run `dg component local` to create an application component
+from it that uses your newly built local base image.
 
 ### New base components
 
