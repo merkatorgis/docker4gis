@@ -17,6 +17,11 @@ if [ "$1" = trace ]; then
     export SHELLOPTS
 fi
 
+# Ignore the first argument if it's "generate" or "g".
+if [ "$1" = generate ] || [ "$1" = g ]; then
+    shift 1
+fi
+
 # Set the action variable.
 action=$1
 shift 1
@@ -477,12 +482,14 @@ normalise_repo_name() {
 
 case "$action" in
 
-init)
+init | new)
     help "Initialise a new $docker4gis monorepo application.
 A new directory with the given name is created, and initialised as a $docker4gis
 project. Components are added as subdirectories inside \`components/\` (using
 \`$DOCKER4GIS_COMMAND component\`).
 Usage: $DOCKER4GIS_COMMAND $action [PROJECT_NAME] [DOCKER_REGISTRY]"
+
+    [ "$action" = new ] && action=init
 
     project_name=$1
     [ "$project_name" ] && shift 1
@@ -579,7 +586,8 @@ POSTFIX_DOMAIN=" >>.env
     echo "$project_name initialised ✅"
     ;;
 
-component | base-component | template)
+component | c | base-component | template)
+    [ "$action" = c ] && action=component
     [ "$action" = component ] && help "Initialise a new $docker4gis application component.
 Usage: \`$DOCKER4GIS_COMMAND $action [local] [COMPONENT_NAME] [TEMPLATE]\`.
 If COMPONENT_NAME is supplied, that name is used for the new directory under
@@ -1298,10 +1306,10 @@ The \"set\" action saves the value of a variable to the local file
 
 *)
     echo "Manage $docker4gis applications and their components and base components.
-Usage: $DOCKER4GIS_COMMAND init |
-  component [local] [COMPONENT_NAME] [TEMPLATE] | build|b [COMPONENT] [ARG...] |
-  run|r | br [COMPONENT] [ARG...] | push|p [COMPONENT] [--no-save] [ARG...] |
-  test|t [FILE] | unbuild [COMPONENT] | stop | geoserver | base-component |
+Usage: $DOCKER4GIS_COMMAND init|new | [generate|g] component|c [local] [COMPONENT_NAME] [TEMPLATE] |
+  build|b [COMPONENT] [ARG...] | run|r | br [COMPONENT] [ARG...] |
+  push|p [COMPONENT] [--no-save] [ARG...] | test|t [FILE] |
+  unbuild [COMPONENT] | stop | geoserver | base-component |
   template | $docker4gis | base | login [PASSWORD] [USER] | run-env|env |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
   run-single|rs [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY] |
