@@ -70,11 +70,12 @@ myapp/                   ← monorepo root
   components/
     ^package/            ← package component
       .env               ← DOCKER_REPO=package
-      package.json       ← "version": "0.0.0"
+      package.json       ← package version
       Dockerfile
+      components/        ← list component versions
     proxy/               ← proxy component
       .env
-      package.json
+      package.json       ← component version
       Dockerfile
     app/                 ← app component
       …
