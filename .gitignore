@@ -1,3 +1,6 @@
 node_modules
 *.log
 dgtest
+
+.vscode/
+!.vscode/settings.json
