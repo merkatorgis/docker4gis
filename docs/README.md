@@ -83,16 +83,16 @@ myapp/                   ← monorepo root
 
 ## Build and run
 
-From a component directory (`components/<name>/`), you can build its image by
-issuing `dg build`. When all components are built, you can run the application
-with `dg run` (from either the package root or a component directory).
+You can build a component's image by issuing `dg build` from its component
+directory (or `dg build COMPONENT` from anywhere else in the project).
+
+When all components are built, you can run the application with `dg run`.
 
 When you make a change to a component, and want to see its effect, you can build
 the component's image and run the application with the new image in one go,
 using `dg br` (for build & run).
 
-Note that you can pass the component name to build that component's image from
-another directory inside the project, e.g. `dg build app`, or `dg br proxy`.
+There's also `dg b` as short for `dg build`, and `dg r` for `dg run`.
 
 ## Push
 
@@ -210,6 +210,10 @@ docker.example.com/theapp/package:237 > theapp`.
       can be merged.
 1. Optionally, if you have Azure DevOps, have all above steps carried out
    automatically, using `dg devops`.
+
+To list all available commands, run `dg` without any arguments.
+
+To read instructions for a specific command, run `dg help COMMAND`.
 
 ## Background: version management
 
