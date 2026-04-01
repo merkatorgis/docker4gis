@@ -86,7 +86,9 @@ pipeline() {
     [ "$action" = init ] && local is_package=true
     [ "$action" = base-component ] && local is_base_component=true
 
-    local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login -u=$DOCKER_USER --password-stdin $DOCKER_REGISTRY"
+    local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login"
+    docker_login_command+=" --username=$DOCKER_USER"
+    docker_login_command+=" --password-stdin $DOCKER_REGISTRY"
 
     # For monorepo components, pipeline steps that run docker4gis commands must
     # run in the component's subdirectory (Azure Pipelines checks out at root).
@@ -321,7 +323,8 @@ $(
                 export DOCKER_REGISTRY
                 export DOCKER_USER
                 echo "                echo '' | {"
-                # Loop over each line in the output of command $DOCKER_BASE/package/setup_pipeline.sh.
+                # Loop over each line in the output of command
+                # $DOCKER_BASE/package/setup_pipeline.sh.
                 while IFS= read -r line; do
                     echo "                  $line"
                 done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
@@ -373,9 +376,11 @@ assert_docker4gis_directory() {
     dotenv
 }
 
-# shellcheck disable=SC2317  # It's correct that the function is never called in this script.
+# shellcheck disable=SC2317  # It's correct that the function is never called in
+# this script.
 self() {
-    # Command given to the "all" action may use `self` to run docker4gis actions.
+    # Command given to the "all" action may use `self` to run docker4gis
+    # actions.
     "$0" "$@"
 }
 
@@ -490,11 +495,12 @@ Usage: $DOCKER4GIS_COMMAND $action [PROJECT_NAME] [DOCKER_REGISTRY]"
     }
 
     DOCKER_REGISTRY=$1
+    merkator_registry=docker.merkator.com
     [ "$DOCKER_REGISTRY" ] && shift 1
     [ "$DOCKER_REGISTRY" ] || read -rp \
-        "Enter the Docker registry (default is the Docker Hub; enter m for docker.merkator.com) : " \
+        "Enter the Docker registry (default is the Docker Hub; enter m for $merkator_registry) : " \
         DOCKER_REGISTRY
-    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=docker.merkator.com
+    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=$merkator_registry
     [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
 
     DOCKER_USER=$project_name
@@ -713,7 +719,9 @@ COPY template /template/
     fi
 
     [ "$inited" ] ||
-        error "Package directory not found at ../../; to create one, run $DOCKER4GIS_COMMAND init in the monorepo root, then cd into components/<name>/. Or did you mean base-component?"
+        error "Package directory not found.
+After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory.
+Or did you mean base-component?"
 
     pull() {
         local component=$1
@@ -856,8 +864,8 @@ ENV DOCKER_REPO=\$DOCKER_REPO
     ;;
 
 build | b | run | r | br | run-env | env | push | p | test | t | unbuild | stop | geoserver)
-    [ "$action" = build ] || [ "$action" = b ] && help "Build a new image for the application component in the current directory.
-Or pass a component name to build that component (e.g. \`$DOCKER4GIS_COMMAND build proxy\` from the package root).
+    [ "$action" = build ] || [ "$action" = b ] && help "Build a new image for the component in the current directory.
+Or pass a component name to build that component, e.g. \`$DOCKER4GIS_COMMAND build proxy\`.
 
 For components other than the 'package' component, any/all (unit) tests are run
 before the build starts, and the build is cancelled if any test fails (see
@@ -944,7 +952,9 @@ container, to the geoserver component repository in the current directory."
         monorepo_root=$(
             dir=$(realpath .)
             while [ "$dir" != "/" ]; do
-                grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null && echo "$dir" && exit 0
+                grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null &&
+                    echo "$dir" &&
+                    exit 0
                 dir=$(dirname "$dir")
             done
             exit 1
@@ -1009,7 +1019,8 @@ container, to the geoserver component repository in the current directory."
     "$DOCKER_BASE/main.sh" . "$action" "$@"
 
     # After a successful component push, write the new version to the ^package
-    # version-tracking directory, so `dg run` on ^package uses the right version.
+    # version-tracking directory, so `dg run` on ^package uses the right
+    # version.
     if [ "$action" = push ] && [ -d "../^package/components" ]; then
         ver=$(node --print "require('./package.json').version" 2>/dev/null || true)
         if [ -n "$ver" ] && [ "$ver" != "0.0.0" ]; then
@@ -1071,7 +1082,9 @@ Default USER is the DOCKER_USER value$DOCKER_USER."
     dotenv
     password=${1:?"password parameter not set"}
     user=${2:-$DOCKER_USER}
-    echo "$password" | docker login -u "$user" --password-stdin "$DOCKER_REGISTRY"
+    echo "$password" | docker login \
+        --username "$user" \
+        --password-stdin "$DOCKER_REGISTRY"
     ;;
 
 git-push | gp)
@@ -1226,7 +1239,7 @@ function setup_file() {
     ;;
 
 devops)
-    help "Provision a $docker4gis setup in a Azure DevOps project.
+    help "Provision a $docker4gis setup in an Azure DevOps project.
 
 Usage:
 - $DOCKER4GIS_COMMAND $action [components|c] [--project|-p PROJECT] [COMPONENT...]
@@ -1285,7 +1298,8 @@ The \"set\" action saves the value of a variable to the local file
 
 *)
     echo "Manage $docker4gis applications and their components and base components.
-Usage: $DOCKER4GIS_COMMAND init | component [local] [COMPONENT_NAME] [TEMPLATE] | build|b [COMPONENT] [ARG...] |
+Usage: $DOCKER4GIS_COMMAND init |
+  component [local] [COMPONENT_NAME] [TEMPLATE] | build|b [COMPONENT] [ARG...] |
   run|r | br [COMPONENT] [ARG...] | push|p [COMPONENT] [--no-save] [ARG...] |
   test|t [FILE] | unbuild [COMPONENT] | stop | geoserver | base-component |
   template | $docker4gis | base | login [PASSWORD] [USER] | run-env|env |
