@@ -59,17 +59,21 @@ when you ask about docker4gis command development, it first checks whether
 
 ### Package
 
-Clone your project's Git repo (the **monorepo**), cd into its root, and run
+From the directory where you want to create your new monorepo, run
 
 ```
-dg init
+dg init [PROJECT_NAME] [DOCKER_REGISTRY]
 ```
 
-It will ask you which docker registry to use, and how the application is called.
+If `PROJECT_NAME` is omitted, you'll be asked for it. If `DOCKER_REGISTRY` is
+omitted, you'll be asked for it as well.
 
-The repo root becomes the _package_ directory. The package image is used to
-run a specific version of the application, with all the specific versions of
-the application's different components.
+`dg init` creates the project directory and initialises the package there.
+
+The project directory becomes the monorepo root, and a _package_ component is
+initialised in `/components/^package`. The package image is used to
+deterministically run a specific version of the application, with all the
+specific versions of the application's different components.
 
 ### Components
 
@@ -208,9 +212,10 @@ Just run `dg devops` to get started. Run `dg help devops` for more information.
 
 So, in short, what you typically do is:
 
-1. In your new Git repo (the monorepo): `npx --yes docker4gis@latest init` (or
-   `dg init`, if you already have the _alias_) to initialise your application's
-   _package_.
+1. In the parent directory where you want the monorepo: run
+   `npx --yes docker4gis@latest init [PROJECT_NAME] [DOCKER_REGISTRY]` (or
+   `dg init [PROJECT_NAME] [DOCKER_REGISTRY]`, if you already have the
+   _alias_) to create and initialise your application's _package_.
 1. For each _component_: create `components/<name>/`, cd into it, and `dg
    component` to initialise it. The available base components are found as repos
    at
