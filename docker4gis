@@ -639,6 +639,18 @@ component."
         finish "$message" "$code"
     }
 
+    auto_add_postgis_ddl() {
+        [ "$action" = component ] || return 0
+        [ "$repo" = postgis ] || return 0
+
+        echo "Automatically adding postgis-ddl component."
+        if [ -n "$local" ]; then
+            "$0" component local postgis-ddl
+        else
+            "$0" component postgis-ddl
+        fi
+    }
+
     if [ "$action" = component ] && [ "$1" = local ]; then
         shift 1
         local=true
@@ -868,6 +880,7 @@ ENV DOCKER_REPO=\$DOCKER_REPO
             Dockerfile
     fi
 
+    auto_add_postgis_ddl
     finish
     ;;
 
