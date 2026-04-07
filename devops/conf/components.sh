@@ -410,6 +410,21 @@ if [ "$repository_result" = 0 ]; then
     fi
 fi
 
+refresh_components_from_repo() {
+    local repo_components_dir
+    repo_components_dir=~/"$SYSTEM_TEAMPROJECT/$REPOSITORY/components"
+    [ -d "$repo_components_dir" ] || return 0
+
+    local comp comp_dir
+    for comp_dir in "$repo_components_dir"/*/; do
+        comp=$(basename "$comp_dir")
+        # Skip ^package (handled separately) and duplicates.
+        [[ "$comp" == "^package" ]] && continue
+        [[ " ${non_package_components[*]} " == *" $comp "* ]] ||
+            non_package_components+=("$comp")
+    done
+}
+
 # Initialise the package and components in the monorepo.
 if [ "$repository_result" = 0 ]; then
     (
@@ -478,6 +493,10 @@ if [ "$repository_result" = 0 ]; then
             fi
         done
 
+        # Re-scan components after creation to include any auto-added
+        # dependencies (e.g. postgis-ddl added by dg component postgis).
+        refresh_components_from_repo
+
         if $needs_push; then
             git add . &&
                 git commit -m "docker4gis init/component" &&
@@ -487,6 +506,12 @@ if [ "$repository_result" = 0 ]; then
                     --default-branch main >/dev/null || exit 1
         fi
     ) || repository_result=$?
+fi
+
+# The initialisation block runs in a subshell, so refresh once more here to
+# ensure the parent shell list includes any auto-added components.
+if [ "$repository_result" = 0 ]; then
+    refresh_components_from_repo
 fi
 
 # Create pipelines for the ^package component.
