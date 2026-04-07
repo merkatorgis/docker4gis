@@ -1,6 +1,7 @@
 node_modules
 *.log
 dgtest
+infrabelow
 
 .vscode/
 !.vscode/settings.json
