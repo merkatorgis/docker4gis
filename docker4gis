@@ -27,6 +27,8 @@ action=$1
 shift 1
 
 default_docker4gis_command="npx --yes $docker4gis@latest"
+[ "$DOCKER4GIS_COMMAND" = dgt ] &&
+    default_docker4gis_command="npx --yes $docker4gis@test"
 DOCKER4GIS_COMMAND=${DOCKER4GIS_COMMAND:-$default_docker4gis_command}
 export DOCKER4GIS_COMMAND
 
