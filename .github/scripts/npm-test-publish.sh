@@ -10,18 +10,18 @@ AUTH_FAIL_CODE=11
 prompt_for_token() {
     local token
 
-    echo "Provide a granular npm token for test publish."
-    echo "Required: package publish for the target package only."
-    echo "Recommended: short expiration."
+    echo "Provide a granular npm token for test publish." >&2
+    echo "Required: package publish for the target package only." >&2
+    echo "Recommended: short expiration." >&2
 
     while true; do
-        read -r -s -p "NPM token: " token
-        echo
+        read -r -s -p "NPM token: " token >&2
+        echo >&2
         if [[ -n "$token" ]]; then
             printf '%s' "$token"
             return 0
         fi
-        echo "Token cannot be empty."
+        echo "Token cannot be empty." >&2
     done
 }
 
@@ -67,16 +67,29 @@ publish_with_token() {
 
 main() {
     local token=""
+    local token_source=""
 
     npm version prerelease --preid test --no-git-tag-version
 
-    token="$(load_token || true)"
+    # Prefer explicit environment token for non-interactive runs.
+    if [[ -n "${NPM_TOKEN:-}" ]]; then
+        token="$NPM_TOKEN"
+        token_source="env"
+    else
+        token="$(load_token || true)"
+        token_source="cache"
+    fi
+
     if [[ -z "$token" ]]; then
         token="$(prompt_for_token)"
+        token_source="prompt"
     fi
 
     if publish_with_token "$token"; then
-        save_token "$token"
+        # Keep cached token owner-only; do not persist env-injected tokens.
+        if [[ "$token_source" != "env" ]]; then
+            save_token "$token"
+        fi
         return 0
     fi
 
@@ -85,7 +98,7 @@ main() {
         return $status
     fi
 
-    echo "Stored token appears invalid. Please provide a new token."
+    echo "Stored token appears invalid. Please provide a new token." >&2
     token="$(prompt_for_token)"
     publish_with_token "$token"
     save_token "$token"
