@@ -11,48 +11,35 @@ description: >-
 Use this skill when the user wants to publish a test build to npm using the
 `test` dist-tag.
 
-## Required Safety Prompt
+## Quick Workflow
 
-Before running publish commands, ensure a granular npm access token is
-available with the minimum required capabilities.
-
-Request this explicitly:
-- Token type: granular access token
-- Package scope: only the target package
-- Permissions: publish package versions
-- Optional: short expiration
-
-Never hardcode tokens in files.
-Never echo a full token in responses.
-
-Token cache location (outside git):
-- `${XDG_CONFIG_HOME:-$HOME/.config}/docker4gis/npm-test-publish/token`
-- File permissions must remain owner-only (`0600`)
-- Re-prompt only when the token is missing or authentication fails
-
-## Workflow
-
-Run the project helper script:
+Run the helper script. If asked for a token, provide it. That's it.
 
 ```bash
 .github/scripts/npm-test-publish.sh
 ```
 
-The script does this:
-- Bumps prerelease version without creating a git tag or commit
-- Uses cached token when present
-- Prompts for token only when missing or auth fails
-- Retries publish once after replacing an invalid token
+The script handles:
+- Bumping prerelease version
+- Token prompting (only if needed)
+- Publishing to npm with `test` dist-tag
 
-Then verify what was published:
+**Success** = npm publish command completes without error.
 
-```bash
-npm view <package-name> versions --json
-npm view <package-name> dist-tags --json
-```
+## Token Storage
+
+Token cache location (outside git):
+`${XDG_CONFIG_HOME:-$HOME/.config}/docker4gis/npm-test-publish/token`
+
+Requirements:
+- Granular access token (package scope, publish permission)
+- File permissions: `0600` (owner-only)
+
+The script uses cached token if present. Only supply a new token if the script
+prompts for one or if auth fails.
 
 ## Notes
 
-- npm does not allow publishing the same version twice.
-- Each run must produce a unique prerelease version.
-- If publish fails with an auth error, verify token scope and permissions.
+- Each run produces a unique prerelease version.
+- npm rejects duplicate version publishes.
+- Repeatable: run multiple times to publish successive test versions.
