@@ -284,6 +284,17 @@ To try out your local changes to a base component, you can `dg build` it
 locally, and then run `dg component local` to create an application component
 from it that uses your newly built local base image.
 
+### Local docker4gis development
+
+Use `dgn` for local command development against the current worktree.
+
+- If `dgn` is on `PATH`, run `dgn <command>`.
+- Otherwise, run `./dgn <command>` from this repository root.
+
+`dgn` walks up from the current directory and executes the nearest
+`docker4gis` script, so it works across parallel worktrees without
+global linking.
+
 ### New base components
 
 Should you aspire to create a whole new base component, then issue `dg

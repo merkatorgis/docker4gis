@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Run the nearest docker4gis script by walking up from the current directory.
+dir=$PWD
+
+while :; do
+    docker4gis_path=$dir/docker4gis
+    if [ -x "$docker4gis_path" ]; then
+        exec env DOCKER4GIS_COMMAND=dgn "$docker4gis_path" "$@"
+    fi
+
+    if [ "$dir" = / ]; then
+        break
+    fi
+
+    dir=$(dirname "$dir")
+done
+
+echo "dgn: could not find a docker4gis script from $PWD upwards." >&2
+echo "Run this from a docker4gis worktree, or call docker4gis directly." >&2
+exit 1

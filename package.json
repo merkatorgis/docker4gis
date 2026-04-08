@@ -4,7 +4,9 @@
   "description": "Extensible linked Docker images for common GIS components. Created by https://www.merkator.com",
   "bin": {
     "docker4gis": "docker4gis",
-    "dg": "dg"
+    "dg": "dg",
+    "dgn": "dgn",
+    "dgt": "dgt"
   },
   "repository": {
     "type": "git",
