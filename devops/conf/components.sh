@@ -266,7 +266,7 @@ create_repository() {
                 git init &&
                 git commit --allow-empty -m "initialise repository" &&
                 git branch -m main &&
-                /devops/git_origin.sh remote add origin &&
+                git remote add origin "$AUTHORISED_COLLECTION_URI$SYSTEM_TEAMPROJECT/_git/$REPOSITORY" &&
                 git push origin main
         ) || return
 
@@ -281,6 +281,32 @@ git_clone() {
         mkdir -p ~/"$SYSTEM_TEAMPROJECT" &&
         cd ~/"$SYSTEM_TEAMPROJECT" &&
         /devops/git_origin.sh clone
+}
+
+# Ensure the default project repository has an initial commit on main.
+ensure_repository_main_branch() {
+    local origin
+    origin="$AUTHORISED_COLLECTION_URI$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
+
+    # Nothing to do when the repository already has at least one branch.
+    if git ls-remote --heads "$origin" | grep -q .; then
+        return 0
+    fi
+
+    log "Initialise repository $REPOSITORY with branch main" &&
+        (
+            temp=$(mktemp --directory) &&
+                cd "$temp" &&
+                git init &&
+                git commit --allow-empty -m "initialise repository" &&
+                git branch -m main &&
+                git remote add origin "$origin" &&
+                git push origin main
+        ) || return
+
+    log "Update repository $REPOSITORY: set default branch to 'main'" &&
+        az repos update --repository="$REPOSITORY" \
+            --default-branch main >/dev/null || return
 }
 
 # Create the Environments, each with an Approval check, and an SSH Service
@@ -342,6 +368,12 @@ repository_result=0
 # The default repo (named after the project) always exists; just get its ID.
 REPOSITORY_ID=$(az repos show --repository "$REPOSITORY" --query id --output tsv) &&
     export REPOSITORY_ID || repository_result=$?
+
+# For a newly created project, the default repo can be empty. Initialise it so
+# clone and subsequent setup always run on main.
+if [ "$repository_result" = 0 ]; then
+    ensure_repository_main_branch || repository_result=$?
+fi
 
 # Clone the repo if not already present locally.
 if [ "$repository_result" = 0 ] && ! [ -d ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" ]; then
