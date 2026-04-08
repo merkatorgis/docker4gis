@@ -24,7 +24,19 @@ The script handles:
 - Token prompting (only if needed)
 - Publishing to npm with `test` dist-tag
 
-**Success** = npm publish command completes without error.
+**Success** = use the terminal status directly. After the command runs, check
+if it exits with `0`, and if so, treat the publish as complete and stop
+immediately.
+
+If the terminal tool reports that output was written to a file (for example,
+`content.txt` because output was large), do not read that file when exit code
+is `0`. Report success and stop.
+
+On success, do NOT perform any further checks, including:
+- reading captured command output or log files (e.g. `content.txt`)
+- re-inspecting `$?` or the exit code via a follow-up command
+- tailing output
+- running `npm view`
 
 ## Token Storage
 
