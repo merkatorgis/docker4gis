@@ -112,6 +112,7 @@ docker container run --name "$CONTAINER" \
 	-ti \
 	"${root_env_mount[@]}" \
 	--env DEBUG="$DEBUG" \
+	--env DOCKER4GIS_COMMAND="$DOCKER4GIS_COMMAND" \
 	--env DOCKER_USER="$DOCKER_USER" \
 	--env DOCKER_REGISTRY="$DOCKER_REGISTRY" \
 	--env DEVOPS_ORGANISATION="$DEVOPS_ORGANISATION" \
