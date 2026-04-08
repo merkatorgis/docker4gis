@@ -1039,7 +1039,7 @@ container, to the geoserver component repository in the current directory."
         action=run
     }
 
-    "$DOCKER_BASE/main.sh" . "$action" "$@"
+    "$DOCKER_BASE/main.sh" . "$action" "$@" || exit
 
     # After a successful component push, write the new version to the ^package
     # version-tracking directory, so `dg run` on ^package uses the right

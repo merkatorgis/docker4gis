@@ -24,6 +24,17 @@ dotenv() {
         source "$file"
         if [ "$PIPELINE" ]; then
             # Running in a pipeline.
+            # For monorepo components, prefer the component directory name.
+            # Fall back to the pipeline repository name when not in
+            # components/<name>/.
+            local dir
+            dir=$(realpath "$(dirname "$file")")
+            local parent_dir
+            parent_dir=$(dirname "$dir")
+            if [ "$(basename "$parent_dir")" = "components" ]; then
+                DOCKER_REPO=${DOCKER_REPO:-$(basename "$dir")}
+                DOCKER_REPO=${DOCKER_REPO#^}
+            fi
             DOCKER_REPO=${DOCKER_REPO:-$PIPELINE_DOCKER_REPO}
             DOCKER_USER=${DOCKER_USER:-$PIPELINE_DOCKER_USER}
         else

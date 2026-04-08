@@ -111,7 +111,7 @@ push() {
     return "$result"
 }
 
-tag="$DOCKER_REPO $tag"
+tag="$DOCKER_REPO-$tag"
 
 message="$tag [skip ci]"
 
