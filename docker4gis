@@ -1009,10 +1009,15 @@ container, to the geoserver component repository in the current directory."
     # Load the current component's own environment variables.
     dotenv export
 
+    [ "$action" = b ] && action=build
+    [ "$action" = r ] && action=run
+    [ "$action" = p ] && action=push
+    [ "$action" = t ] && action='test'
+
     # If not running an unpublished, local, in-development version of
     # docker4gis, switch to the version that the component scripts are
-    # expecting.
-    if [ "$INSTALLED" ]; then
+    # expecting (except for the push action).
+    if [ "$INSTALLED" ] && ! [ "$action" = push ]; then
         if [ "$DOCKER4GIS_VERSION" != "$(version)" ]; then
             [ "$DOCKER4GIS_TRACE" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
             DOCKER_BASE=$( (
@@ -1027,11 +1032,6 @@ container, to the geoserver component repository in the current directory."
         # the new in-development version to see its effects.
         export DOCKER4GIS_VERSION=$version_development
     fi
-
-    [ "$action" = b ] && action=build
-    [ "$action" = r ] && action=run
-    [ "$action" = p ] && action=push
-    [ "$action" = t ] && action='test'
 
     [ "$action" = run-env ] || [ "$action" = env ] && {
         help "List the environment variables available at runtime."
@@ -1331,8 +1331,9 @@ Usage: $DOCKER4GIS_COMMAND init|new | [generate|g] component|c [local] [COMPONEN
   pwd|where | bats | all EXECUTABLE|self [ARG...] |
   devops [components|c] [--project|-p PROJECT] [COMPONENT...] |
   devops set|s pat|p|registry|r|organisation|o|default|d|vpn|v VALUE
-Note that build, run, br, push, test, stop, unbuild, and geoserver run with the
-  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env.
+Note that build, run, br, test, stop, unbuild, and geoserver run with the
+  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env,
+  as does the build step of the push command.
 For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
 For debugging (tracing all shell commands):
   $DOCKER4GIS_COMMAND trace COMMAND [ARG...]
