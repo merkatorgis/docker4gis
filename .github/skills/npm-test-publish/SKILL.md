@@ -8,8 +8,11 @@ description: >-
 
 # NPM Test Prerelease Publish
 
-Use this skill when the user wants to publish a test build to npm using the
-`test` dist-tag.
+Use this skill when the user wants to run a full-circle local test publish:
+1) bump prerelease version,
+2) build and push `docker4gis/package` for that version,
+3) publish npm package with `test` dist-tag,
+4) push git commit and tags.
 
 ## Quick Workflow
 
@@ -21,8 +24,12 @@ Run the helper script. If asked for a token, provide it. That's it.
 
 The script handles:
 - Bumping prerelease version
+- Updating template Dockerfiles to the bumped version
+- Committing and tagging the version
+- Building and pushing `docker4gis/package:v<version>`
 - Token prompting (only if needed)
 - Publishing to npm with `test` dist-tag
+- Pushing git branch and tags
 
 **Success** = use the terminal status directly. After the command runs, check
 if it exits with `0`, and if so, treat the publish as complete and stop
@@ -55,3 +62,4 @@ prompts for one or if auth fails.
 - Each run produces a unique prerelease version.
 - npm rejects duplicate version publishes.
 - Repeatable: run multiple times to publish successive test versions.
+- Local preconditions: existing git push access and docker login state.
