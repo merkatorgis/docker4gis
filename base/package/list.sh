@@ -16,6 +16,8 @@ BASE=$BASE
 DOCKER_BASE=$DOCKER_BASE
 DOCKER_REGISTRY=$DOCKER_REGISTRY
 DOCKER_USER=$DOCKER_USER
+package_docker_registry=$DOCKER_REGISTRY
+package_docker_user=$DOCKER_USER
 
 # Use a temp dir to collect component name→version mappings.
 temp_components=$(mktemp -d)
@@ -30,6 +32,30 @@ error() {
     finish 1
 }
 
+version_is_newer() {
+    local candidate=$1
+    local current=$2
+
+    [ "$candidate" = "$current" ] && return 1
+    [ "$(printf '%s\n%s\n' "$current" "$candidate" | sort -V | tail -n1)" = "$candidate" ]
+}
+
+prune_latest_runtime() {
+    local repo=$1
+    local image=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
+    local container=$DOCKER_USER-$repo
+    [ "$repo" = proxy ] && container=docker4gis-proxy
+
+    if old_image=$(docker container inspect --format='{{ .Config.Image }}' "$container" 2>/dev/null); then
+        [ "$old_image" = "$image" ] && {
+            docker container stop "$container" >/dev/null 2>&1 || true
+            docker container rm "$container" >/dev/null 2>&1 || true
+        }
+    fi
+
+    docker image rm -f "$image" >/dev/null 2>&1 || true
+}
+
 # In the monorepo, the ^package component lives at components/^package/.
 # Sibling components are at ../../components/*/.
 for comp_dir in ../../components/*/; do
@@ -40,7 +66,8 @@ for comp_dir in ../../components/*/; do
     # Start a subshell to prevent overwriting environment variables.
     (
         DOCKER4GIS_VERSION=
-        DOCKER_USER=
+        DOCKER_REGISTRY=$package_docker_registry
+        DOCKER_USER=$package_docker_user
         DOCKER_REPO=
 
         comp_env="${comp_dir}.env"
@@ -56,12 +83,45 @@ for comp_dir in ../../components/*/; do
         [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REPO" ] || exit
 
         # Look for the version tracking file in ./components/ (relative to
-        # the ^package dir), updated on each `dg push` of that component.
-        tracking_file="./components/$DOCKER_REPO"
-        if [ -f "$tracking_file" ]; then
+        # the ^package dir). In local dev (`dirty`), refresh it from the
+        # component's package.json, so `dg run` captures a tested set.
+        tracking_dir=./components
+        tracking_file="$tracking_dir/$DOCKER_REPO"
+        if [ "$directive" = dirty ]; then
+            mkdir -p "$tracking_dir" || exit
+            package_json="$comp_dir/package.json"
+            package_version=
+            tracked_version=
+            if [ -f "$package_json" ]; then
+                package_version=$(node --print "require('$package_json').version" 2>/dev/null || true)
+            fi
+            [ -f "$tracking_file" ] && tracked_version=$(cat "$tracking_file")
+
+            promote=
+            if [ -n "$package_version" ] && [ "$package_version" != "0.0.0" ]; then
+                if ! [ -f "$tracking_file" ]; then
+                    promote=true
+                elif [ -z "$tracked_version" ] || [ "$tracked_version" = latest ]; then
+                    promote=true
+                else
+                    tracked_semver=${tracked_version#v}
+                    [[ "$tracked_semver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] &&
+                        version_is_newer "$package_version" "$tracked_semver" &&
+                        promote=true
+                fi
+            fi
+
+            if [ "$promote" = true ]; then
+                version=v$package_version
+                echo "$version" >"$tracking_file"
+                prune_latest_runtime "$DOCKER_REPO"
+            elif [ -f "$tracking_file" ]; then
+                version=$(cat "$tracking_file")
+            else
+                version=latest
+            fi
+        elif [ -f "$tracking_file" ]; then
             version=$(cat "$tracking_file")
-        elif [ "$directive" = dirty ]; then
-            version=latest
         else
             echo "> ERROR: version unknown for '$DOCKER_REPO'; run \`dg push\` in that component first" >&2
             exit 1
