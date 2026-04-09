@@ -19,7 +19,8 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
 
     PR=
     triggers=
-    name=$REPOSITORY
+    name=${COMPONENT#^}
+    name=${name:-$REPOSITORY}
 
     [ "$yaml" = "$build_validation_yaml" ] && PR=true
 
@@ -29,29 +30,40 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
         triggers=$triggers_definition
     fi
 
-    log Create pipeline "$name"
+    # Check if pipeline already exists; if so, reuse it.
+    existing=$(/devops/rest.sh project GET build/definitions \
+        "name=$(node --print "encodeURIComponent('$name')")")
+    build_definition_id=$(node --print "($existing).count > 0 ? ($existing).value[0].id : 'new'")
+
+    if [ "$build_definition_id" = new ]; then
+        log Create pipeline "$name"
+    else
+        log "Pipeline $name exists"
+        continue
+    fi
 
     # Create the pipeline, a.k.a. build definition.
     build_definition=$(/devops/rest.sh project POST build/definitions '' "{
-        \"name\": \"$name\",
-        \"repository\": {
-            \"type\": \"TfsGit\",
-            \"name\": \"$REPOSITORY\"
-        },
-        \"process\": {
-            \"yamlFilename\": \"$yaml\",
-            \"type\": 2
-        },
-        \"variableGroups\": [ { \"id\": $VARIABLE_GROUP_ID } ],
-        \"queue\": { \"name\": \"Azure Pipelines\" },
-        $triggers
-    }")
-
+            \"name\": \"$name\",
+            \"repository\": {
+                \"type\": \"TfsGit\",
+                \"name\": \"$REPOSITORY\"
+            },
+            \"process\": {
+                \"yamlFilename\": \"${YAML_DIR:+$YAML_DIR/}$yaml\",
+                \"type\": 2
+            },
+            \"variableGroups\": [ { \"id\": $VARIABLE_GROUP_ID } ],
+            \"queue\": { \"name\": \"Azure Pipelines\" },
+            $triggers
+        }")
     build_definition_id=$(node --print "($build_definition).id")
 
     if [ "$PR" ]; then
-        # Create a policy to require a successful build before merging.
-        log Create build policy "$name"
+        # Create a branch policy to require a successful build before merging.
+        log Create branch policy "$name"
+        path_filter_args=()
+        [ -n "$YAML_DIR" ] && path_filter_args=(--path-filter "/components/$COMPONENT/*")
         response=$(az repos policy build create --blocking true \
             --build-definition-id "$build_definition_id" \
             --repository-id "$REPOSITORY_ID" \
@@ -60,7 +72,8 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
             --enabled true \
             --manual-queue-only false \
             --queue-on-source-update-only false \
-            --valid-duration 0)
+            --valid-duration 0 \
+            "${path_filter_args[@]}")
     else
         # Permit the continuous integration pipeline to use the deployment
         # environments and service connections.
@@ -100,7 +113,7 @@ for yaml in "$continuous_integration_yaml" "$build_validation_yaml"; do
 
             pipelinePermissions endpoint
 
-            [ "$REPOSITORY" = ^package ] || environment+=_SINGLE
+            [ -z "$YAML_DIR" ] || environment+=_SINGLE
             pipelinePermissions environment
         done
     fi

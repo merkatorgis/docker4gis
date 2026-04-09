@@ -13,6 +13,25 @@ elif [[ $project =~ ^--project= ]]; then
     shift
 fi
 
+# Write or update a key=value line in the root .env file (if mounted).
+write_root_env() {
+    local key=$1 value=$2
+    [ -n "$ROOT_ENV_FILE" ] && [ -f "$ROOT_ENV_FILE" ] || return 0
+    # Single-quote the value so spaces are safe and cut-based readers get the raw value.
+    local quoted_value="'${value//\'/\'\\\'\'}'"
+    if grep -q "^$key=" "$ROOT_ENV_FILE"; then
+        # Use a temp file + cp (not sed -i) to avoid "Device or resource busy"
+        # on Docker bind-mounted files, where rename(2) fails across mounts.
+        local tmp
+        tmp=$(mktemp)
+        sed "s|^$key=.*|$key=$quoted_value|" "$ROOT_ENV_FILE" >"$tmp"
+        cp "$tmp" "$ROOT_ENV_FILE"
+        rm "$tmp"
+    else
+        printf '%s=%s\n' "$key" "$quoted_value" >>"$ROOT_ENV_FILE"
+    fi
+}
+
 set_env() {
     local name=$1
     local message=$2
@@ -46,20 +65,16 @@ set_env() {
     while true; do
         if [ "$name" = PAT ]; then
             # Do not echo the value entered.
-            read -rsp "$message : " input_value
+            read -rsp "→  $message : " input_value
             echo
         else
-            read -rp "$message : " input_value
+            read -rp "→  $message : " input_value
         fi
 
-        # Use current value if no input and no explicit default, otherwise use
-        # explicit default
+        # When no input: use the displayed default, which is current_value if
+        # set, otherwise the explicit fallback $3.
         if [ -z "$input_value" ]; then
-            if [ -n "$3" ]; then
-                value="$3"
-            else
-                value="$current_value"
-            fi
+            value="${current_value:-$3}"
         else
             value="$input_value"
         fi
@@ -78,48 +93,60 @@ set_env() {
     fi
 }
 
-set_env SYSTEM_TEAMPROJECT \
-    "DevOps Project" \
-    "$DOCKER_USER"
+# SYSTEM_TEAMPROJECT: use DOCKER_USER from root .env without asking.
+# Only prompt if we have no project name at all.
+if [ -z "$SYSTEM_TEAMPROJECT" ]; then
+    if [ -n "$DOCKER_USER" ]; then
+        SYSTEM_TEAMPROJECT=$DOCKER_USER
+    else
+        set_env SYSTEM_TEAMPROJECT "DevOps Project"
+    fi
+fi
 
 export SYSTEM_TEAMPROJECT
 
-# Read current values from file.
+# Source env_file to pick up previously stored values (e.g. SYSTEM_COLLECTIONURI
+# from a prior `dg devops set organisation ...`).
 # shellcheck source=/dev/null
 source /devops/env_file
+
+# DEVOPS_ORGANISATION: when present in the current project's root .env, use it
+# silently; otherwise ask upfront (before DevOps connectivity checks).
+if [ "$ROOT_HAS_DEVOPS_ORGANISATION" = true ] && [ -n "$DEVOPS_ORGANISATION" ]; then
+    /devops/set.sh organisation "$DEVOPS_ORGANISATION"
+else
+    # Suggest env_file value first, then root .env value, then default.
+    set_env SYSTEM_COLLECTIONURI "DevOps Organisation" "${DEVOPS_ORGANISATION:-merkatordev}"
+fi
+source /devops/env_file
+
+# Keep the root .env aligned with the selected organisation.
+write_root_env DEVOPS_ORGANISATION "$SYSTEM_COLLECTIONURI"
 
 doc_url="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&tabs=Windows#create-a-pat"
 message="Personal Access Token (full access, incl. project creation)"
+
+# PAT: always ask; never saved to root .env (it's a personal secret).
 set_env PAT \
     "$message - see $doc_url"
-
-set_env DEFAULT_POOL \
-    "Pipeline Agent Pool for general jobs" \
-    "$DEVOPS_DEFAULT_POOL"
-
-set_env VPN_POOL \
-    "Pipeline Agent Pool for deployment jobs" \
-    "$DEVOPS_VPN_POOL"
-
-set_env DOCKER_REGISTRY \
-    "Docker Registry" \
-    "$DEVOPS_DOCKER_REGISTRY"
-
-set_env SYSTEM_COLLECTIONURI \
-    "DevOps Organisation" \
-    "$DEVOPS_ORGANISATION"
-
-# Read altered values from file.
-# shellcheck source=/dev/null
-source /devops/env_file
 
 # Login to the Azure DevOps CLI.
 export AZURE_DEVOPS_EXT_PAT=$PAT
 
-# Replace string to insert the \"\$PAT@\" value between the (https):// and the
+# Replace string to insert the "$PAT@" value between the (https):// and the
 # host name in the URI (e.g. https://dev.azure.com/merkatordev/).
 AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
 export AUTHORISED_COLLECTION_URI
+
+refresh_org_settings() {
+    # Keep authorised URI and Azure CLI defaults aligned with the selected org.
+    AUTHORISED_COLLECTION_URI=${SYSTEM_COLLECTIONURI/'://'/'://'$PAT@}
+    export AUTHORISED_COLLECTION_URI
+    az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+}
+
+# DOCKER_REGISTRY, DEFAULT_POOL, and VPN_POOL are deferred to after the project
+# clone; see the post-clone configuration block below.
 
 if [ -z "$DEBUG" ]; then
     log() {
@@ -142,7 +169,7 @@ export -f log
 log Setup
 
 # Set the default project and organisation for the Azure DevOps CLI.
-az devops configure --defaults "organization=$SYSTEM_COLLECTIONURI"
+refresh_org_settings
 az devops configure --defaults "project=$SYSTEM_TEAMPROJECT"
 
 # Configure git identity.
@@ -174,10 +201,7 @@ else
         2>/dev/null)
     # Make DevOps realise the new project exists.
     sleep 5
-    default_repository_id_to_delete=$(
-        az repos show --repository "$SYSTEM_TEAMPROJECT" --query id --output tsv
-    ) &&
-        get_project_id
+    get_project_id
 fi || exit
 
 log Check Project Administrators group membership
@@ -242,7 +266,7 @@ create_repository() {
                 git init &&
                 git commit --allow-empty -m "initialise repository" &&
                 git branch -m main &&
-                /devops/git_origin.sh remote add origin &&
+                git remote add origin "$AUTHORISED_COLLECTION_URI$SYSTEM_TEAMPROJECT/_git/$REPOSITORY" &&
                 git push origin main
         ) || return
 
@@ -259,20 +283,30 @@ git_clone() {
         /devops/git_origin.sh clone
 }
 
-# Create a docker4gis component for the repo $REPOSITORY.
-dg_init_component() {
-    log "dg init/component $COMPONENT in $REPOSITORY" &&
-        cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" &&
-        if [ "$REPOSITORY" = ^package ]; then
-            dg init "$DOCKER_REGISTRY"
-        else
-            dg component "$COMPONENT"
-        fi || return
+# Ensure the default project repository has an initial commit on main.
+ensure_repository_main_branch() {
+    local origin
+    origin="$AUTHORISED_COLLECTION_URI$SYSTEM_TEAMPROJECT/_git/$REPOSITORY"
 
-    log "Push $REPOSITORY changes" &&
-        git add . &&
-        git commit -m "docker4gis init/component" &&
-        git push origin
+    # Nothing to do when the repository already has at least one branch.
+    if git ls-remote --heads "$origin" | grep -q .; then
+        return 0
+    fi
+
+    log "Initialise repository $REPOSITORY with branch main" &&
+        (
+            temp=$(mktemp --directory) &&
+                cd "$temp" &&
+                git init &&
+                git commit --allow-empty -m "initialise repository" &&
+                git branch -m main &&
+                git remote add origin "$origin" &&
+                git push origin main
+        ) || return
+
+    log "Update repository $REPOSITORY: set default branch to 'main'" &&
+        az repos update --repository="$REPOSITORY" \
+            --default-branch main >/dev/null || return
 }
 
 # Create the Environments, each with an Approval check, and an SSH Service
@@ -307,78 +341,236 @@ fi
 export VARIABLE_GROUP_ID
 
 # ------------------------------------------------------------------------------
-# Begin of the main loop over the components.
+# Begin of the main monorepo setup.
 # ------------------------------------------------------------------------------
 
-# Add required components to the ones provided as arguments.
-components=(^package proxy "$@")
-# Make components lowercase.
-components=("${components[@],,}")
+# The monorepo: use the default repository Azure created for the project.
+# It is always named after the project.
+REPOSITORY=$SYSTEM_TEAMPROJECT
+export REPOSITORY
 
-log Components: "${components[@]}"
+# Build the list of non-package components from args. Proxy is always included.
+non_package_components=(proxy)
+for c in "$@"; do
+    IFS='=' read -r comp _ <<<"$c"
+    comp=${comp,,}
+    [[ " ${non_package_components[*]} " == *" $comp "* ]] ||
+        non_package_components+=("$comp")
+done
+
+log "Components: package ${non_package_components[*]}"
 
 # Temporarily allow "Bypass policies when pushing" for "Project Administrators".
 policy_exempt allow || exit
 
-# Create the repositories, components, and pipelines.
-for component_repository in "${components[@]}"; do
+repository_result=0
 
-    # Split component_repository into component and repository, using = as the
-    # separator.
-    IFS='=' read -r COMPONENT REPOSITORY <<<"$component_repository"
-    # shellcheck disable=SC2269
-    {
-        # Just to see the values in the log.
-        component_repository="$component_repository"
-        COMPONENT=$COMPONENT
-        REPOSITORY=$REPOSITORY
-    }
-    REPOSITORY=${REPOSITORY:-$COMPONENT}
-    export COMPONENT REPOSITORY
+# The default repo (named after the project) always exists; just get its ID.
+REPOSITORY_ID=$(az repos show --repository "$REPOSITORY" --query id --output tsv) &&
+    export REPOSITORY_ID || repository_result=$?
 
-    repository_result=0
+# For a newly created project, the default repo can be empty. Initialise it so
+# clone and subsequent setup always run on main.
+if [ "$repository_result" = 0 ]; then
+    ensure_repository_main_branch || repository_result=$?
+fi
 
-    # Skip if the repository already exists.
-    if az repos show --repository "$REPOSITORY" &>/dev/null; then
-        log "Repository $REPOSITORY already exists"
-        # Need the package directory for creating other components.
-        [ "$REPOSITORY" = ^package ] && git_clone
-        continue
+# Clone the repo if not already present locally.
+if [ "$repository_result" = 0 ] && ! [ -d ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" ]; then
+    git_clone || repository_result=$?
+fi
+
+# Post-clone configuration determination.
+# Priority for repo-backed values: (1) cloned project .env, (2) current root
+# .env passed in via run.sh, (3) prompt with defaults from /devops/env_file or
+# built-in defaults.
+cloned_env=~/"$SYSTEM_TEAMPROJECT/$REPOSITORY/.env"
+read_cloned_env() {
+    [ -f "$cloned_env" ] || return
+    grep "^$1=" "$cloned_env" 2>/dev/null | cut -d= -f2- | sed "s/^'//;s/'$//"
+}
+cloned_docker_registry=$(read_cloned_env DOCKER_REGISTRY)
+cloned_default_pool=$(read_cloned_env DEVOPS_DEFAULT_POOL)
+cloned_vpn_pool=$(read_cloned_env DEVOPS_VPN_POOL)
+
+if [ -n "$cloned_docker_registry" ]; then
+    /devops/set.sh registry "$cloned_docker_registry"
+elif [ "$ROOT_HAS_DOCKER_REGISTRY" = true ] && [ -n "$DOCKER_REGISTRY" ]; then
+    /devops/set.sh registry "$DOCKER_REGISTRY"
+else
+    set_env DOCKER_REGISTRY "Docker Registry" "${DOCKER_REGISTRY:-docker.io}"
+fi
+source /devops/env_file
+write_root_env DOCKER_REGISTRY "$DOCKER_REGISTRY"
+
+if [ -n "$cloned_default_pool" ]; then
+    /devops/set.sh default "$cloned_default_pool"
+elif [ "$ROOT_HAS_DEVOPS_DEFAULT_POOL" = true ] && [ -n "$DEVOPS_DEFAULT_POOL" ]; then
+    /devops/set.sh default "$DEVOPS_DEFAULT_POOL"
+else
+    set_env DEFAULT_POOL "Pipeline Agent Pool for general jobs" "${DEVOPS_DEFAULT_POOL:-Azure Pipelines}"
+fi
+source /devops/env_file
+[ "$ROOT_HAS_DEVOPS_DEFAULT_POOL" != true ] && write_root_env DEVOPS_DEFAULT_POOL "$DEFAULT_POOL"
+
+if [ -n "$cloned_vpn_pool" ]; then
+    /devops/set.sh vpn "$cloned_vpn_pool"
+elif [ "$ROOT_HAS_DEVOPS_VPN_POOL" = true ] && [ -n "$DEVOPS_VPN_POOL" ]; then
+    /devops/set.sh vpn "$DEVOPS_VPN_POOL"
+else
+    set_env VPN_POOL "Pipeline Agent Pool for deployment jobs" "${DEVOPS_VPN_POOL:-VPN}"
+fi
+source /devops/env_file
+[ "$ROOT_HAS_DEVOPS_VPN_POOL" != true ] && write_root_env DEVOPS_VPN_POOL "$VPN_POOL"
+
+# Map stored pool names to the DEVOPS_ variables that docker4gis pipeline()
+# uses when generating pipeline YAML files.
+export DEVOPS_DEFAULT_POOL=$DEFAULT_POOL
+export DEVOPS_VPN_POOL=$VPN_POOL
+
+# Discover existing components from the cloned repo and add to the list.
+if [ "$repository_result" = 0 ]; then
+    repo_components_dir=~/"$SYSTEM_TEAMPROJECT/$REPOSITORY/components"
+    if [ -d "$repo_components_dir" ]; then
+        for comp_dir in "$repo_components_dir"/*/; do
+            comp=$(basename "$comp_dir")
+            # Skip ^package (handled separately) and duplicates.
+            [[ "$comp" == "^package" ]] && continue
+            [[ " ${non_package_components[*]} " == *" $comp "* ]] ||
+                non_package_components+=("$comp")
+        done
     fi
+fi
 
-    # Create the repository, its docker4gis component, and its pipelines.
-    create_repository &&
-        git_clone &&
-        dg_init_component &&
-        /devops/pipelines.sh
+refresh_components_from_repo() {
+    local repo_components_dir
+    repo_components_dir=~/"$SYSTEM_TEAMPROJECT/$REPOSITORY/components"
+    [ -d "$repo_components_dir" ] || return 0
 
-    repository_result=$?
-    [ "$repository_result" = 0 ] || {
-        log "Error: non-zero repository_result: $repository_result"
-        break
-    }
+    local comp comp_dir
+    for comp_dir in "$repo_components_dir"/*/; do
+        comp=$(basename "$comp_dir")
+        # Skip ^package (handled separately) and duplicates.
+        [[ "$comp" == "^package" ]] && continue
+        [[ " ${non_package_components[*]} " == *" $comp "* ]] ||
+            non_package_components+=("$comp")
+    done
+}
+
+# Initialise the package and components in the monorepo.
+if [ "$repository_result" = 0 ]; then
+    (
+        cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" || exit 1
+        needs_push=false
+
+        # Initialise the package at the repo root.
+        if ! [ -f .env ]; then
+            log "dg init in $REPOSITORY"
+            (cd .. && dg init "$REPOSITORY" "$DOCKER_REGISTRY") || exit 1
+            needs_push=true
+        fi
+
+        # Write/update DEVOPS_* vars near the top of .env, directly below
+        # DOCKER_USER, so dg devops keeps this block ordered and current.
+        write_devops_env_block() {
+            local env_file=.env
+            local org pool_default pool_vpn
+            org="'${SYSTEM_COLLECTIONURI//\'/\'\\\'\'}'"
+            pool_default="'${DEFAULT_POOL//\'/\'\\\'\'}'"
+            pool_vpn="'${VPN_POOL//\'/\'\\\'\'}'"
+            local temp
+            temp=$(mktemp) || return 1
+
+            local inserted=
+            while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                DEVOPS_ORGANISATION=* | DEVOPS_DEFAULT_POOL=* | DEVOPS_VPN_POOL=*)
+                    continue
+                    ;;
+                esac
+
+                printf '%s\n' "$line" >>"$temp"
+
+                if [ -z "$inserted" ] && [[ "$line" == DOCKER_USER=* ]]; then
+                    printf '%s\n' "DEVOPS_ORGANISATION=$org" >>"$temp"
+                    printf '%s\n' "DEVOPS_DEFAULT_POOL=$pool_default" >>"$temp"
+                    printf '%s\n' "DEVOPS_VPN_POOL=$pool_vpn" >>"$temp"
+                    inserted=true
+                fi
+            done <"$env_file"
+
+            if [ -z "$inserted" ]; then
+                printf '%s\n' "DEVOPS_ORGANISATION=$org" >>"$temp"
+                printf '%s\n' "DEVOPS_DEFAULT_POOL=$pool_default" >>"$temp"
+                printf '%s\n' "DEVOPS_VPN_POOL=$pool_vpn" >>"$temp"
+            fi
+
+            if cmp -s "$env_file" "$temp"; then
+                rm "$temp"
+            else
+                mv "$temp" "$env_file"
+                needs_push=true
+            fi
+        }
+        write_devops_env_block || exit 1
+        unset -f write_devops_env_block
+
+        # Initialise each component in components/<name>/.
+        for component in "${non_package_components[@]}"; do
+            if ! [ -d "components/$component" ]; then
+                log "dg component $component in $REPOSITORY"
+                dg component "$component" &&
+                    cd ~/"$SYSTEM_TEAMPROJECT/$REPOSITORY" || exit 1
+                needs_push=true
+            fi
+        done
+
+        # Re-scan components after creation to include any auto-added
+        # dependencies (e.g. postgis-ddl added by dg component postgis).
+        refresh_components_from_repo
+
+        if $needs_push; then
+            git add . &&
+                git commit -m "docker4gis init/component" &&
+                git push origin &&
+                # Set the default branch to main now that the first commit exists.
+                az repos update --repository="$REPOSITORY" \
+                    --default-branch main >/dev/null || exit 1
+        fi
+    ) || repository_result=$?
+fi
+
+# The initialisation block runs in a subshell, so refresh once more here to
+# ensure the parent shell list includes any auto-added components.
+if [ "$repository_result" = 0 ]; then
+    refresh_components_from_repo
+fi
+
+# Create pipelines for the ^package component.
+if [ "$repository_result" = 0 ]; then
+    COMPONENT="^package" YAML_DIR="components/^package" /devops/pipelines.sh || repository_result=$?
+fi
+
+# Create pipelines for each component (YAML files under components/<name>/).
+for component in "${non_package_components[@]}"; do
+    [ "$repository_result" = 0 ] || break
+    COMPONENT=$component YAML_DIR="components/$component" /devops/pipelines.sh ||
+        repository_result=$?
 done
 
 # Undo temporarily allow "Bypass policies when pushing" for "Project
 # Administrators".
 policy_exempt deny || exit
 
-# Exit if any repository creation failed - but only after undoing the policy
-# change.
+# Exit if any step failed - but only after undoing the policy change.
 [ "$repository_result" = 0 ] || {
     log "Error: non-zero repository_result: $repository_result"
     exit "$repository_result"
 }
 
 # ------------------------------------------------------------------------------
-# End of the main loop over the components.
+# End of the main monorepo setup.
 # ------------------------------------------------------------------------------
-
-# Delete the default repository, if we created a new project.
-if [ -n "$default_repository_id_to_delete" ]; then
-    log "Delete default repository $SYSTEM_TEAMPROJECT"
-    response=$(az repos delete --yes --id "$default_repository_id_to_delete")
-fi || exit
 
 # Create a cross-repository policy (if it doesn't exist) to require all PR
 # comments to be roseolved before merging.
@@ -545,12 +737,4 @@ create_pool "$VPN_POOL" || exit
 # console.
 response=${response:-}
 
-# Save the repo list and project name to the env_file so that run.sh can
-# clone them locally on the host after the container exits.
-repos=$(az repos list --query "[].name" --output tsv | tr '\n' ' ') || repos=
-{
-    echo "DEVOPS_PROJECT='$SYSTEM_TEAMPROJECT'"
-    echo "DEVOPS_REPOS='$repos'"
-} >>"$ENV_FILE"
-
-log OK
+log "OK - ${SYSTEM_COLLECTIONURI%/}/$SYSTEM_TEAMPROJECT"

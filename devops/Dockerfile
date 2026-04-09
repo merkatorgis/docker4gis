@@ -1,4 +1,4 @@
-FROM node:22.12.0-bookworm
+FROM node:24.14.1-bookworm
 
 # Update System Packages.
 # Install Prerequisites.
@@ -43,7 +43,7 @@ RUN apt-get update && \
 RUN apt-get clean
 
 # Install the latest version of npm.
-RUN npm install -g npm@11.1.0
+RUN npm install -g npm@11.12.1
 
 WORKDIR /devops
 COPY conf .

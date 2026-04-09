@@ -69,15 +69,18 @@ dir() {
 		# below.
 		dir_found=$(mktemp)
 		rm "$dir_found"
-		for env_file in ../*/.env; do
-			[ -f "$env_file" ] || break
+
+		run_in_env_file() {
+			local env_file=$1
+			shift 1
+			[ -f "$env_file" ] || return
 			(
 				dotenv forgiving "$env_file"
 				if [ "$repo" = "$DOCKER_REPO" ]; then
+					local dir
 					dir=$(dirname "$env_file")
 					# Signal.
 					touch "$dir_found"
-					# echo " ! cd to $dir"
 					cd "$dir" || exit 1
 
 					installed_docker4gis="$DOCKER_BASE"/../../.bin/docker4gis
@@ -95,13 +98,25 @@ dir() {
 				fi
 			)
 			ret=$?
+		}
+
+		# In the monorepo, components are in ./components/ subdirectories.
+		for env_file in ./components/*/.env; do
+			[ -f "$env_file" ] || break
+			run_in_env_file "$env_file" "$@"
+			[ -f "$dir_found" ] && break
 		done
+
+		# Also check the monorepo package root (two levels up, from a component).
+		[ -f "$dir_found" ] || run_in_env_file "../../.env" "$@"
+
 		if [ -f "$dir_found" ]; then
 			rm -f "$dir_found"
 			exit "$ret"
 		fi
 	fi
 }
+
 
 case "$action" in
 

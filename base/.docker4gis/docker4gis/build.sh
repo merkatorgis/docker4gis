@@ -69,6 +69,9 @@ fi
 
 DOCKER_IMAGE=$DOCKER_REGISTRY/$DOCKER_USER/$repo:latest
 export DOCKER_IMAGE
+# Legacy compatibility: older docker4gis base-image build scripts read IMAGE
+# instead of DOCKER_IMAGE, so keep both set during the transition.
+export IMAGE="$DOCKER_IMAGE"
 echo
 echo "Building $DOCKER_IMAGE"
 

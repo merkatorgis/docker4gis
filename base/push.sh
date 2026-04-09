@@ -111,6 +111,8 @@ push() {
     return "$result"
 }
 
+tag="$DOCKER_REPO-$tag"
+
 message="$tag [skip ci]"
 
 log "Committing the version"

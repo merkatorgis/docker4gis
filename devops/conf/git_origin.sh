@@ -4,4 +4,8 @@
 
 origin=$AUTHORISED_COLLECTION_URI$SYSTEM_TEAMPROJECT/_git/$REPOSITORY
 
-git "$@" "$origin"
+if [ "$1" = clone ]; then
+    git "$@" --depth 1 "$origin"
+else
+    git "$@" "$origin"
+fi

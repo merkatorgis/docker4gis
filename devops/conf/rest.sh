@@ -42,7 +42,8 @@ if response=$(_curl); then
     result=$?
 else
     result=$?
-    if typeKey=$(node --print "($response).typeKey") &&
+    if [ -n "$response" ] &&
+        typeKey=$(node --print "($response).typeKey") &&
         [ "$typeKey" = VssInvalidPreviewVersionException ]; then
         # Retry with the preview version.
         api_version=$api_version-preview
