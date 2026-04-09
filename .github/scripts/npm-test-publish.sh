@@ -31,8 +31,10 @@ save_token() {
     local token="$1"
 
     mkdir -p "$TOKEN_DIR"
-    umask 177
-    printf '%s\n' "$token" >"$TOKEN_FILE"
+    (
+        umask 177
+        printf '%s\n' "$token" >"$TOKEN_FILE"
+    )
     chmod 600 "$TOKEN_FILE"
 }
 
