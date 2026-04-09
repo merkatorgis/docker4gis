@@ -44,8 +44,7 @@ steps:
 # Run shared workflow for release mode: bump version, build/push package image,
 # publish npm package, then push git commit and tags.
 - bash: |
-    PUBLISH_MODE=release \
-  ./base/publish_docker4gis_version.sh
-  displayName: 'bump build push publish push'
+    PUBLISH_MODE=release ./base/publish_docker4gis_version.sh
+  displayName: 'publish release'
   env:
     NPM_TOKEN: '$(NPM_TOKEN)'
