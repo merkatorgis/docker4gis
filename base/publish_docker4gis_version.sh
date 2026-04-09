@@ -124,8 +124,12 @@ publish_package() {
 }
 
 push_git_refs() {
-    git push
-    git push --tags
+    if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+        git push
+        git push --tags
+    else
+        echo "No upstream configured for current branch; skipping git push." >&2
+    fi
 }
 
 main() {
