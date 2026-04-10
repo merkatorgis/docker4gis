@@ -6,6 +6,11 @@ pr:
 - npm-package
 
 steps:
+# Shallow checkout is sufficient for BV and avoids persisting credentials.
+- checkout: self
+  fetchDepth: 1
+  displayName: Git checkout
+
 # Build the package image.
 - bash: |
     cd base/package
