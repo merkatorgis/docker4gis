@@ -115,21 +115,21 @@ pipeline() {
 
         # write - 1. Initialise variables.
 
-                local trigger=none
-                local trigger_paths=""
-                local trigger_yaml="- $trigger"
-                local pr=$main
-                local stage=pr_stage
-                local stage_display_name='Pull Request stage'
-                local job=pr_job
-                local job_display_name='Pull Request job'
-                local login_steps=""
+        local trigger=none
+        local trigger_paths=""
+        local trigger_yaml="- $trigger"
+        local pr=$main
+        local stage=pr_stage
+        local stage_display_name='Pull Request stage'
+        local job=pr_job
+        local job_display_name='Pull Request job'
+        local login_steps=""
 
-                # Ensure all generated pipelines use a shallow checkout.
-                if ! [ "$is_base_component" ]; then
-                    login_steps=$'- checkout: self\n  fetchDepth: 1\n'
-                    login_steps+=$'  displayName: Git checkout\n'
-                fi
+        # Ensure all generated pipelines use a shallow checkout.
+        if ! [ "$is_base_component" ]; then
+            login_steps=$'- checkout: self\n  fetchDepth: 1\n'
+            login_steps+=$'  displayName: Git checkout\n'
+        fi
 
         [ "$file" = "$continuous_integration" ] && {
             trigger=$main
