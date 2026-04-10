@@ -492,7 +492,8 @@ case "$action" in
 init | new)
     help "Initialise a new $docker4gis monorepo application.
 A new directory with the given name is created, and initialised as a $docker4gis
-project. Components are added as subdirectories inside \`components/\` (using
+project. The \`proxy\` component is added automatically, and additional
+components are added as subdirectories inside \`components/\` (using
 \`$DOCKER4GIS_COMMAND component\`).
 Usage: $DOCKER4GIS_COMMAND $action [PROJECT_NAME] [DOCKER_REGISTRY]"
 
@@ -590,6 +591,12 @@ POSTFIX_DOMAIN=" >>.env
         mkdir -p "components"
     ) || exit 1
 
+    # Add the proxy component by default, as every application needs it.
+    (
+        cd "$project_name" || exit
+        SKIP_SUCCESS_MESSAGE=true "$0" component proxy
+    ) || exit 1
+
     echo "$project_name initialised ✅"
     ;;
 
@@ -635,7 +642,9 @@ component."
     finish() {
         local message=${1:-"$action initialised ✅"}
         local code=${2:-0}
-        echo "$message"
+        if [ "$code" -ne 0 ] || [ -z "$SKIP_SUCCESS_MESSAGE" ]; then
+            echo "$message"
+        fi
         [ -n "$container" ] && docker container rm "$container" >/dev/null
         exit "$code"
     }
