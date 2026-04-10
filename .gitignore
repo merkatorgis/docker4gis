@@ -1,7 +1,6 @@
 node_modules
 *.log
-dgtest
-infrabelow
 
-.vscode/
+.vscode/*
 !.vscode/settings.json
+!.vscode/extensions.json
