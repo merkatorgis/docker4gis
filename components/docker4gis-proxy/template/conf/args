@@ -1,0 +1,8 @@
+##
+# List any arguments to pass to the container's run.sh script.
+# Environment variables are respected.
+# Lines _starting with_ # are ignored.
+##
+# dynamic=authorise,http://"$DOCKER_USER"-dynamic
+# extra1=http://container1
+# extra2=https://somewhere.outside.com
