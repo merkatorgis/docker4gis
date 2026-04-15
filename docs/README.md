@@ -377,13 +377,6 @@ A development environment requires:
 - A code oriented text editor (Atom, Sublime Text, Visual Studio Code, or maybe
   you're a fan of vi or Emacs, anything like these would work).
 
-On Windows, Docker requires Windows 10 Professional or Enterprise (the Home
-edition won't work), and you need 16 GB of RAM. If this poses any hurdles, take
-a look at our guide for setting up a [Cloud development
-environment](clouddevenv.md). Also, on Windows, make sure you get LF line
-endings, instead of CRLF; issuing `git config --global core.autocrlf false`
-before cloning the repo should do the trick.
-
 ### Fork
 
 Create a fork\*) of [the main docker4gis
@@ -645,7 +638,6 @@ load "$DOCKER_BASE"/test_helper/load.bash
 
 - plugins
 - certificates
-- [Cloud development environment](clouddevenv.md)
 
 \*) fork & merkatorgis:
 
