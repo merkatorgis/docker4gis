@@ -483,6 +483,10 @@ find_monorepo_root() {
 normalise_repo_name() {
     local value=$1
     value=$(basename "$value")
+    # Strip a leading project/user prefix (e.g. dgtest-proxy -> proxy).
+    if [ -n "$DOCKER_USER" ] && [[ "$value" == "$DOCKER_USER"-* ]]; then
+        value=${value#"$DOCKER_USER"-}
+    fi
     # Without a possible `docker4gis-` prefix.
     value=${value#"$docker4gis"-}
     # Up until a possible first `.` character (to support forked repos named
@@ -492,6 +496,44 @@ normalise_repo_name() {
     # them to the top, but invalid in Docker image names).
     value=${value#^}
     echo "$value"
+}
+
+component_dir_name() {
+    local component_name=$1
+    [ "$component_name" ] || return 1
+
+    # Keep explicit names unchanged if they are already project-prefixed.
+    if [ -n "$DOCKER_USER" ] && [[ "$component_name" == "$DOCKER_USER"-* ]]; then
+        echo "$component_name"
+        return 0
+    fi
+
+    if [ -n "$DOCKER_USER" ]; then
+        echo "$DOCKER_USER-$component_name"
+    else
+        echo "$component_name"
+    fi
+}
+
+resolve_component_dir() {
+    local components_root=$1
+    local component_name=$2
+
+    [ -d "$components_root/$component_name" ] && {
+        echo "$components_root/$component_name"
+        return 0
+    }
+
+    if [ -n "$DOCKER_USER" ]; then
+        local prefixed
+        prefixed=$(component_dir_name "$component_name")
+        [ -d "$components_root/$prefixed" ] && {
+            echo "$components_root/$prefixed"
+            return 0
+        }
+    fi
+
+    return 1
 }
 
 case "$action" in
@@ -568,7 +610,7 @@ POSTFIX_DOMAIN=" >>.env
     # docker4gis/package image has no /template; we create the files
     # directly.
     (
-        workdir=$project_name/components/^package
+        workdir=$project_name/components/$project_name-^package
         mkdir -p "$workdir" &&
             cd "$workdir" || exit
 
@@ -687,6 +729,9 @@ component."
             error "Not in a $docker4gis project (no .env with DOCKER4GIS_ROOT=true found).
 After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory."
 
+        # Load root variables (including DOCKER_USER) for directory naming.
+        dotenv forgiving "$monorepo_root/.env"
+
         components_dir=$monorepo_root/components
         [ -d "$components_dir" ] || mkdir -p "$components_dir"
 
@@ -698,7 +743,7 @@ After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory."
             default_component_name=
             if [ "$(dirname "$cwd")" = "$components_dir" ] &&
                 ! grep -q "^DOCKER4GIS_VERSION=" "$cwd/.env" 2>/dev/null; then
-                default_component_name=$(basename "$cwd")
+                default_component_name=$(normalise_repo_name "$cwd")
             fi
 
             name_question="Enter the component name"
@@ -710,7 +755,8 @@ After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory."
                 error "Component name not set."
         fi
 
-        target_dir=$components_dir/$component_name
+        component_dir=$(component_dir_name "$component_name")
+        target_dir=$components_dir/$component_dir
         [ -d "$target_dir" ] || mkdir -p "$target_dir" ||
             error "Failed to create directory: $target_dir"
         cd "$target_dir" || error "Failed to enter directory: $target_dir"
@@ -1036,11 +1082,21 @@ container, to the geoserver component repository in the current directory."
         if [ -n "$monorepo_root" ] && [ "$(realpath .)" != "$monorepo_root" ]; then
             # We're in between (e.g. components/). If $1 names a component, cd
             # into it and consume the argument; otherwise fall back to ^package.
-            if [ -n "$1" ] && [ -d "$monorepo_root/components/$1" ]; then
-                cd "$monorepo_root/components/$1" || exit 1
-                shift
-            else
-                cd "$monorepo_root/components/^package" || exit 1
+            dotenv forgiving "$monorepo_root/.env"
+            components_dir=$monorepo_root/components
+
+            if [ -n "$1" ]; then
+                component_dir=$(resolve_component_dir "$components_dir" "$1") || component_dir=
+                if [ -n "$component_dir" ]; then
+                    cd "$component_dir" || exit 1
+                    shift
+                fi
+            fi
+
+            if [ "$(basename "$PWD")" = "components" ]; then
+                package_dir=$(resolve_component_dir "$components_dir" '^package') ||
+                    package_dir=$components_dir/^package
+                cd "$package_dir" || exit 1
             fi
         fi
     fi
