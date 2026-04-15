@@ -27,10 +27,12 @@ the `dg` command to build, run, test, and publish the resulting images.
 
 # Getting started
 
+You'll need a Linux-like machine (Windows Subsystem for Linux (WSL) is fine)
+with Bash, Node, and Docker installed.
+
 ## Install
 
-In a Bash terminal on a Linux machine (Windows Subsystem for Linux (WSL) is
-fine), run:
+In a Bash terminal, run:
 
 ```
 npm install -g docker4gis
@@ -46,15 +48,16 @@ From the directory where you want to create your new monorepo, run
 dg init [PROJECT_NAME] [DOCKER_REGISTRY]
 ```
 
-If `PROJECT_NAME` is omitted, you'll be asked for it. If `DOCKER_REGISTRY` is
-omitted, you'll be asked for it as well.
+`dg init` creates the project directory, and a _package_ and a _proxy_ component
+are initialised.
 
-`dg init` creates the project directory, and a _package_ component is
-initialised in `components/^package`.
-
-The package image is used to deterministically run a specific version of the
+The package component is used to deterministically run a specific version of the
 application, with all the specific versions of the application's different
 components.
+
+The proxy component is a [reverse
+proxy](https://en.wikipedia.org/wiki/Reverse_proxy) that will serve as the
+access point for your application's users.
 
 ### Components
 
@@ -135,14 +138,11 @@ new image out locally with `dg run {version_number}`.
 ## Run the package
 
 On a server, use the package image to set up an environment to run the
-application. This mechanism hasn't changed; see [On the server](#on-the-server)
-for how it works.
-
-### On the server
+application.
 
 Once your images are in a registry, they are accessible from your servers. On a
-server, images are typically not built locally; instead, you run the packaged
-application version.
+server, images are not built locally; instead, you run the packaged application
+version.
 
 Run the package image once to output the startup script:
 
@@ -163,22 +163,6 @@ Then:
 1. Run the selected package version: `./theapp 237`.
 
 If your registry requires authentication, log in with Docker first.
-
-## Testing things
-
-Docker4gis supports both component-level tests and application-level tests.
-
-Use `dg test [COMPONENT]` for a specific component's unit tests.
-
-Use `dg test` without a component name to run application-level integration
-tests.
-
-During normal development, `dg build` runs a component's tests before building
-its image. To build a component and immediately start the application with the
-new image, use `dg br [COMPONENT]`.
-
-The detailed testing guide, including the BATS setup and helper conventions, is
-available in [testing.md](testing.md).
 
 ## Pipeline
 
@@ -268,6 +252,22 @@ docker.example.com/theapp/package:237 > theapp`.
 To list all available commands, run `dg` without any arguments.
 
 To read instructions for a specific command, run `dg help COMMAND`.
+
+## Testing things
+
+Docker4gis supports both component-level tests and application-level tests.
+
+Use `dg test [COMPONENT]` for a specific component's unit tests.
+
+Use `dg test` without a component name to run application-level integration
+tests.
+
+During normal development, `dg build` runs a component's tests before building
+its image. To build a component and immediately start the application with the
+new image, use `dg br [COMPONENT]`.
+
+The detailed testing guide, including the BATS setup and helper conventions, is
+available in [testing.md](testing.md).
 
 ## Background: version management
 

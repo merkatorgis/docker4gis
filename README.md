@@ -6,17 +6,22 @@ Quickly pull up a stable baseline for your Geographical Information System, by
 extending some of the Docker images for common GIS components:
 
 - Reverse proxy
-- GeoServer for map services
 - PostGIS database
 - PostgREST API server
-- Swagger UI
-- HTTP static file server
+- GeoServer for map services
 - Angular frontend
 - ASP.NET application
 - Maven build environment
 - Tomcat Java application server
 - Cron for scheduled tasks
 - Postfix mailserver
+- Swagger UI
+- HTTP static file server
+- More will follow...
+
+There's a Docker Registry component to self-host as well.
+
+## What you ship is what you get
 
 Enjoy having exactly the same setup on each server __and__ develepment
 environment.
@@ -27,12 +32,7 @@ variables, and issuing a 1-word command.
 Migrate each environment to the next release by issuing the same 1-word command,
 adding the version number.
 
-## Community-strengthened
-
-The more projects using Docker4GIS, the more issues are reported, the more bugs
-are fixed, the more features are proposed, the more pull requests are merged.
-Join in, use everything for free, communicate, and help to grow it bigger, and
-stronger.
+Or use the included Azure DevOps pipelines to deploy automatically.
 
 ## Docker Hub
 
