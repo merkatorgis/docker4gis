@@ -2,7 +2,12 @@ trigger:
 - none
 
 pr:
-- npm-package
+  branches:
+    include:
+    - npm-package
+  paths:
+    include:
+    - components/docker4gis-cron/**
 
 pool:
   vmImage: ubuntu-latest

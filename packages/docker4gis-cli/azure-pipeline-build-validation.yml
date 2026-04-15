@@ -2,8 +2,12 @@ trigger:
 - none
 
 pr:
-# NOTE: "npm-package" -> "master" after merge
-- npm-package
+  branches:
+    include:
+    - npm-package
+  paths:
+    include:
+    - packages/docker4gis-cli/**
 
 steps:
 # Shallow checkout is sufficient for BV and avoids persisting credentials.
