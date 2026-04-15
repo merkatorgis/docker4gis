@@ -71,10 +71,6 @@ It will ask you which base docker4gis component it should extend. If the base
 component has multiple "flavours", the flavours are listed, and you're asked to
 choose one.
 
-The available docker4gis base components all reside in their proper repo under
-[https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis/docker4gis-{name}),
-e.g. [proxy](https://github.com/merkatorgis/docker4gis-proxy).
-
 Should you need a component that won't act as a "server" that should be started
 when the application is run, run `dg standalone` after `dg component`.
 

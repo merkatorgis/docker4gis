@@ -23,11 +23,11 @@ Note that Netbeans can't deal with sources in WSL (not on a UNC path, and also
 not on a mapped drive, although at first it seems to work, you will get in
 trouble when Maven starts assembling the `.war` file).
 
-So what you can do is to clone the repo of your Java component not
-only in WSL, but on a local disk in Windows as well. Then from Netbeans, you
-would make your changes in the Windows clone, commit and push to your
-development branch, and then in WSL, you would pull these changes, and `dg
-build` etc. Just remember to work in the same branch in both clones.
+So what you can do is to clone the repo of your Java component not only in WSL,
+but on a local disk in Windows as well. Then from Netbeans, you would make your
+changes in the Windows clone, commit and push to your development branch, and
+then in WSL, you would pull these changes, and `dg build` etc. Just remember to
+work in the same branch in both clones.
 
 You can even rename the clone's folder in Windows to give it a `-windows`
 prefix, and then Add Folder To Workspace... in VSCode in WSL, so that you can
@@ -58,8 +58,7 @@ find your Windows folder.
       1. Java EE Version: Java EE 7 Web
       1. Context Path: make empty(!)
    1. OK
-1. Right-click project name | Properties (yes; again)
-   1. Build | Compile
+1. Right-click project name | Properties (yes; again) 1. Build | Compile
       1. Compile on Save
       1. OK
    1. OK
@@ -69,15 +68,15 @@ find your Windows folder.
    1. Query: `jersey-container-servlet`, Choose the org.glassfish one, newest
       2.x version | Add
    1. Query: `jersey-hk2`, Choose same version as jersey-container-servlet | Add
-1. Right-click project name | New | Other...
-   1. Web Services | RESTful Web Services from Patterns | Next
-   1. Simple Root Resource | Next | Finish
-1. Menu: Debug | Debug Project
+1. Right-click project name | New | Other... 1. Web Services | RESTful Web
+   Services from Patterns | Next 1. Simple Root Resource | Next | Finish 1.
+   Menu: Debug | Debug Project
    1. Provide `manager`/`manager` as Tomcat's uid/pwd, if requested.
    1. A browser window opens at localhost:8080
    1. Type url `localhost:8080/webresources/generic`
       1. Should get HTTP 500 w/ `UnsupportedOperationException` message
-      1. Change method `getXml()` in `GenericResource.java` to: `return "<hello>world</hello>";`
+      1. Change method `getXml()` in `GenericResource.java` to: `return
+         "<hello>world</hello>";`
       1. Ctrl-S to save the file
       1. Refresh the browser window, should get the xml text now
 1. File `ApplicationConfig.java`: Change `@javax.ws.rs.ApplicationPath` from
