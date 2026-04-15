@@ -13,17 +13,10 @@ pr:
 
 steps:
 - checkout: self
+  persistCredentials: true
   fetchDepth: 1
   sparseCheckoutDirectories: packages/docker4gis-cli
   displayName: 'git checkout'
-
-# Allow the pipeline to push directly to the protected branch, by explicitly
-# setting an admin user account, and a Personal Access Token as the password.
-# The token value is stored in our LastPass.
-- bash: |
-    git remote set-url origin https://merkatorgis:$(GITHUB_PASSWORD)@github.com/merkatorgis/docker4gis.git
-  displayName: 'git login'
-  workingDirectory: packages/docker4gis-cli
 
 # Login to the Docker Hub, so that we can push the image we'll build.
 - bash: |
