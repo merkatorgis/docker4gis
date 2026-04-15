@@ -464,7 +464,13 @@ find_monorepo_root() {
     local dir
     dir=$(realpath .)
     while [ "$dir" != "/" ]; do
+        # Check for deployed docker4gis application
         if grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null; then
+            echo "$dir"
+            return 0
+        fi
+        # Check for docker4gis development monorepo (components/ and packages/docker4gis-cli/)
+        if [ -d "$dir/components" ] && [ -d "$dir/packages/docker4gis-cli" ]; then
             echo "$dir"
             return 0
         fi
@@ -612,10 +618,13 @@ When COMPONENT_NAME is omitted, you'll be prompted for it first.
 (During development of a base component, you can pass \`local\` first to
 prevent pulling images and use only local images.)"
 
-    [ "$action" = base-component ] && help "Initialise a new $docker4gis base component in the current directory.
+    [ "$action" = base-component ] && help "Initialise a new $docker4gis base component.
 Base components are the repositories in https://hub.docker.com/u/$docker4gis.
 This action will render a skeleton that you can build upon. Get in touch with
-to discuss publication."
+to discuss publication.
+Usage: $DOCKER4GIS_COMMAND $action [COMPONENT_NAME]
+Run this from anywhere inside a $docker4gis monorepo. The component will be
+created under the monorepo's components/ directory with the docker4gis- prefix."
 
     [ "$action" = template ] && help "When developing a $docker4gis base component, scaffold a client application in
 the current directory, so that you can try your new base component. When you're
@@ -702,6 +711,32 @@ After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory."
 
         target_dir=$components_dir/$component_name
         [ -d "$target_dir" ] || mkdir -p "$target_dir" ||
+            error "Failed to create directory: $target_dir"
+        cd "$target_dir" || error "Failed to enter directory: $target_dir"
+    fi
+
+    if [ "$action" = base-component ]; then
+        monorepo_root=$(find_monorepo_root) ||
+            error "Not in a $docker4gis monorepo (no .env with DOCKER4GIS_ROOT=true found, or components/ and packages/docker4gis-cli/ structure).
+Run this from anywhere inside a $docker4gis monorepo."
+
+        components_dir=$monorepo_root/components
+        [ -d "$components_dir" ] || mkdir -p "$components_dir"
+
+        # Get base component name from first argument
+        base_component_name=$1
+        [ "$base_component_name" ] && shift 1
+
+        if ! [ "$base_component_name" ]; then
+            read -rp "Enter the base component name : " base_component_name
+            [ "$base_component_name" ] ||
+                error "Base component name not set."
+        fi
+
+        # Create target directory with docker4gis- prefix
+        target_dir=$components_dir/docker4gis-$base_component_name
+        [ -d "$target_dir" ] && error "Directory already exists: $target_dir"
+        mkdir -p "$target_dir" ||
             error "Failed to create directory: $target_dir"
         cd "$target_dir" || error "Failed to enter directory: $target_dir"
     fi
