@@ -173,13 +173,30 @@ pipeline() {
         # Prepend (local) steps with the correct number of spaces:
         steps=$(echo "$steps" | awk '{print "    " $0}')
 
-        # write - 3. Write the pipeline file, with the formatted steps in a
+        # write - 3. Build the pr section with path filters for BV pipelines.
+
+        local pr_section
+        if [ "$file" = "$continuous_integration" ]; then
+            # CI pipeline: no path filter in pr block (runs only on main merge).
+            pr_section="- $pr"
+        else
+            # BV pipeline: path filter ensures pipeline only runs on PR changes
+            # to the relevant component directory.
+            pr_section="  branches:
+    include:
+    - $pr
+  paths:
+    include:
+    - components/$dir_name/**"
+        fi
+
+        # write - 4. Write the pipeline file, with the formatted steps in a
         # first job of a first stage.
 
         echo "trigger:
 $trigger_yaml
 pr:
-- $pr
+$pr_section
 
 stages:
 - stage: $stage
