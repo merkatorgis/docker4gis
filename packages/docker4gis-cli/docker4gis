@@ -88,10 +88,11 @@ package_json() {
 }
 
 pipeline() {
-    local main=main
-
     [ "$action" = init ] && local is_package=true
     [ "$action" = base-component ] && local is_base_component=true
+
+    local main=main
+    [ "$is_base_component" ] && main=npm-package
 
     local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login"
     docker_login_command+=" --username=$DOCKER_USER"
