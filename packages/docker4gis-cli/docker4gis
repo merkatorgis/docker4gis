@@ -133,7 +133,7 @@ pipeline() {
             trigger_paths="
   paths:
     include:
-    - components/$dir_name"
+    - components/$dir_name/**"
             trigger_yaml="  branches:
     include:
     - $trigger$trigger_paths"
