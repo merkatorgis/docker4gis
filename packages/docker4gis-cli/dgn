@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+# Run the nearest docker4gis script by walking up from the current directory.
+dir=$PWD
+
+while :; do
+    docker4gis_path=$dir/docker4gis
+    if [ -f "$docker4gis_path" ] && [ -x "$docker4gis_path" ]; then
+        exec env DOCKER4GIS_COMMAND=dgn "$docker4gis_path" "$@"
+    fi
+
+    if [ "$dir" = / ]; then
+        break
+    fi
+
+    dir=$(dirname "$dir")
+done
+
+# If not found by walking up, try to find the monorepo root and look there.
+find_monorepo_root() {
+    local dir
+    dir=$(realpath .)
+    while [ "$dir" != "/" ]; do
+        # Check for deployed docker4gis application
+        if grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null; then
+            echo "$dir"
+            return 0
+        fi
+        # Check for docker4gis development monorepo (components/ and packages/docker4gis-cli/)
+        if [ -d "$dir/components" ] && [ -d "$dir/packages/docker4gis-cli" ]; then
+            echo "$dir"
+            return 0
+        fi
+        dir=$(dirname "$dir")
+    done
+    return 1
+}
+
+monorepo_root=$(find_monorepo_root) && {
+    docker4gis_path=$monorepo_root/packages/docker4gis-cli/docker4gis
+    if [ -f "$docker4gis_path" ] && [ -x "$docker4gis_path" ]; then
+        exec env DOCKER4GIS_COMMAND=dgn "$docker4gis_path" "$@"
+    fi
+}
+
+echo "dgn: could not find a docker4gis script from $PWD upwards or in monorepo." >&2
+echo "Run this from a docker4gis worktree, or call docker4gis directly." >&2
+exit 1
