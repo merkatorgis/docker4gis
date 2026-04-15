@@ -24,10 +24,6 @@ Set up a new environment by copying a 10-line script, setting 5 environment vari
 
 Migrate each environment to the next release by issuing the same 1-word command, adding the version number.
 
---- NOTE: the current version has a lot of breaking changes. ---
-
---- The good news is that the main new feature is: preventing breaking changes. ---
-
 ## Community-strengthened
 
 The more projects using Docker4GIS, the more issues are reported, the more bugs are fixed, the more features are proposed, the more pull requests are merged.
