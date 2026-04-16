@@ -1,8 +1,7 @@
 trigger:
-# NOTE: "npm-package" -> "master" after merge
   branches:
     include:
-    - npm-package
+    - master
   paths:
     include:
     - packages/docker4gis-cli/**
@@ -42,10 +41,9 @@ steps:
   workingDirectory: packages/docker4gis-cli
 
 # Prepare the git repo to accept commits.
-# NOTE: "npm-package" -> "master" (2x) after merge
 - bash: |
-    git checkout -b npm-package
-    git push --set-upstream origin npm-package
+    git checkout -b master
+    git push --set-upstream origin master
   displayName: 'git undo detached state'
   workingDirectory: packages/docker4gis-cli
 

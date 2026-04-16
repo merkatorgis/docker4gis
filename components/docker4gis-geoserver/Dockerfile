@@ -64,7 +64,7 @@ ONBUILD ENV DOCKER_REPO=$DOCKER_REPO
 ONBUILD ENV GEOSERVER_ADMIN_USER=${DOCKER_USER}_admin
 
 # Make this an extensible base component; see
-# https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
 COPY template /template/
 
 ENV POSTGRES_JNDI_ENABLED=true

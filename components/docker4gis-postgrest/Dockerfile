@@ -41,7 +41,7 @@ ONBUILD ENV PGRST_DB_SCHEMAS=$DOCKER_USER
 # Extension template, as required by `dg component`.
 COPY template /template/
 # Make this an extensible base component; see
-# https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
 COPY conf/.docker4gis /.docker4gis
 COPY build.sh /.docker4gis/build.sh
 COPY run.sh /.docker4gis/run.sh

@@ -14,7 +14,7 @@ ENTRYPOINT ["/entrypoint"]
 CMD ["maven"]
 
 # Note that this image is not an extensible base component as in
-# https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
 COPY conf/.docker4gis /.docker4gis
 COPY run.sh /.docker4gis/run.sh
 RUN touch /.docker4gis/args

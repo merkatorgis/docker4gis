@@ -92,7 +92,7 @@ pipeline() {
     [ "$action" = base-component ] && local is_base_component=true
 
     local main=main
-    [ "$is_base_component" ] && main=npm-package
+    [ "$is_base_component" ] && main=master
 
     local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login"
     docker_login_command+=" --username=$DOCKER_USER"
@@ -809,7 +809,7 @@ ONBUILD ARG DOCKER_REPO
 ONBUILD ENV DOCKER_REPO=\$DOCKER_REPO
 
 # Make this an extensible base component; see
-# https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
 COPY template /template/
 " >>Dockerfile
         replace_component

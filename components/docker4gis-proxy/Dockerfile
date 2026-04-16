@@ -46,7 +46,7 @@ ONBUILD ENV APP="http://$DOCKER_USER-app/"
 ONBUILD ENV HOMEDEST="/$DOCKER_USER/app/index.html"
 
 # Make this an extensible base component; see
-# https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
 COPY template /template/
 
 ONBUILD COPY conf/args /.docker4gis/
