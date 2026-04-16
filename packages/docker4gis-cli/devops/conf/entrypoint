@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = components ]; then
+	shift
+	exec /devops/components.sh "$@"
+fi
+
+# This allows you to, in rare cases, run a container with a different command.
+exec "$@"

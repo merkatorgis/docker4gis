@@ -1,0 +1,6 @@
+{
+  "[shellscript]": {
+    "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode",
+    "editor.formatOnSave": true
+  }
+}
