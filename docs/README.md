@@ -221,8 +221,7 @@ So, in short, what you typically do is:
    initialised with its package component.
 1. `cd [PROJECT_NAME]`
 1. For each _component_: `dg component [NAME]` to initialise it. The available
-   base components are found as repos at
-   [https://github.com/merkatorgis/docker4gis-{name}](https://github.com/merkatorgis?tab=repositories).
+   base components are found in the [components](/components/) directory.
 1. Build each component using `dg build [COMPONENT]`, or use `dg all self build` to
    build all components initially.
 1. Run the application using `dg run`.
@@ -238,7 +237,7 @@ So, in short, what you typically do is:
 docker.example.com/theapp/package:237 > theapp`.
    1. Edit the variables in the file to match the environment.
    1. Make the file executable: `chmod +x theapp`.
-   1. Execute it: `./theapp 237`.
+   1. Execute it: `./theapp v0.0.237`.
 1. Optionally, configure the monorepo in your Git hosting environment to use the
    _pipelines_:
    1. Use the _continuous integration_ pipeline (in each `components/<name>/`)
