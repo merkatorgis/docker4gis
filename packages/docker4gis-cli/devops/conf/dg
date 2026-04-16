@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec /devops/docker4gis/docker4gis "$@"

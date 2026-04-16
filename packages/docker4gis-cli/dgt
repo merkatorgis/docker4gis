@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-exec env DOCKER4GIS_COMMAND=dgt npx --yes docker4gis@test "$@"
