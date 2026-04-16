@@ -14,8 +14,6 @@ MAPSERVER="http://${DOCKER_USER}-mapserver"
 MAPPROXY="http://${DOCKER_USER}-mapproxy"
 SWAGGER="http://${DOCKER_USER}-swagger:8080"
 OSM="http://${DOCKER_USER}-osm"
-QGIS="http://${DOCKER_USER}-qgis"
-QGIS_DYNAMIC="http://${DOCKER_USER}-qgis-dynamic"
 
 echo DOCKER_USER="${DOCKER_USER}"
 
