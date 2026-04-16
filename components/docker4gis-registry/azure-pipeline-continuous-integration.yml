@@ -1,0 +1,43 @@
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - components/docker4gis-registry/**
+pr:
+- none
+
+stages:
+- stage: ci_stage
+  displayName: Continuous Integration stage
+  pool:
+    name: Azure Pipelines
+  jobs:
+  - job: ci_job
+    displayName: Continuous Integration job
+    steps:
+    - checkout: self
+      persistCredentials: true
+      fetchDepth: 1
+      sparseCheckoutDirectories: components/docker4gis-registry
+      displayName: Git login
+    
+    - bash: |
+        echo '$(DOCKER_PASSWORD)' | docker login --username=docker4gis --password-stdin docker.io
+      displayName: Docker login
+    
+    - bash: |
+        git config --global user.email 'pipeline@azure.com'
+        git config --global user.name 'Azure Pipeline'
+      displayName: Git config
+    
+    - bash: |
+        git checkout -b master
+        git push --set-upstream origin master
+      displayName: Git undo detached state
+    
+    - bash: |
+        npx --yes docker4gis@latest push
+      displayName: docker4gis push
+      workingDirectory: components/docker4gis-registry

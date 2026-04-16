@@ -1,0 +1,30 @@
+#!/bin/sh
+set -x
+
+if [ "$1" = 'postfix' ]; then
+	shift 1
+
+	# Here you can configure stuff, if needed, before starting the original
+	# ENTRYPOINT/CMD (which you can find by `inspect`ing the image you're
+	# extending FROM).
+
+	postconf -e "myorigin=$DESTINATION"
+
+	default_destination="\$myhostname localhost.\$mydomain localhost"
+	postconf -e "mydestination=$default_destination $DESTINATION"
+
+	postconf -e "$(postconf export_environment) DESTINATION=$DESTINATION"
+
+	# see api.sh
+	cp /usr/local/bin/runner.sh "/usr/local/bin/$DOCKER_USER"
+
+	touch /onstart
+	# shellcheck source=/dev/null
+	. /onstart
+
+	postconf -e "maillog_file = /dev/stdout"
+	exec postfix start-fg
+fi
+
+# This allows you to, in rare cases, run a container with a different command.
+exec "$@"

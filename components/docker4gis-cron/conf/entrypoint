@@ -1,0 +1,25 @@
+#!/bin/sh
+set -ex
+
+if [ "$1" = 'cron' ]; then
+	shift 1
+
+	# Here you can configure stuff, if needed, before starting the original
+	# ENTRYPOINT/CMD (which you can find by `inspect`ing the image you're
+	# extending FROM).
+
+	# Run startup.sh on startup.
+	(
+		sleep 60
+		/startup.sh
+	) &
+
+	# Run the mail sender daemon.
+	runner.sh postfix.sh
+
+	# Start cron in the foreground, logging verbosely to stdout.
+	exec crond -fl 0 -L /dev/stdout
+fi
+
+# This allows you to, in rare cases, run a container with a different command.
+exec "$@"

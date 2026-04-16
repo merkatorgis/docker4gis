@@ -1,0 +1,1438 @@
+#!/bin/bash
+
+export MSYS_NO_PATHCONV=1
+docker4gis=$(basename "$0")
+log_path=$docker4gis.log
+version_development=development
+
+# Trace/debug log.
+if [ "$1" = trace ]; then
+    shift 1
+    export DOCKER4GIS_TRACE=true
+    # Tee all stdout & stderr to a log file (from
+    # https://superuser.com/a/212436/462952).
+    exec > >(tee "$log_path") 2>&1
+    # Trace all shell commands.
+    set -x
+    export SHELLOPTS
+fi
+
+# Ignore the first argument if it's "generate" or "g".
+if [ "$1" = generate ] || [ "$1" = g ]; then
+    shift 1
+fi
+
+# Set the action variable.
+action=$1
+shift 1
+
+default_docker4gis_command="npx --yes $docker4gis@latest"
+[ "$DOCKER4GIS_COMMAND" = dgt ] &&
+    default_docker4gis_command="npx --yes $docker4gis@test"
+DOCKER4GIS_COMMAND=${DOCKER4GIS_COMMAND:-$default_docker4gis_command}
+export DOCKER4GIS_COMMAND
+
+# Don't use realpath here, to prevent resolving symlinks.
+DOCKER4GIS_EXECUTABLE=$0
+export DOCKER4GIS_EXECUTABLE
+
+# Set the INSTALLED variable.
+INSTALLED=
+dg_dir=$(dirname "$0")
+if [ "$(basename "$dg_dir")" = '.bin' ]; then
+    INSTALLED=true
+    dg_dir="$dg_dir"/../$docker4gis
+fi
+dg_dir=$(realpath "$dg_dir")
+
+# Facilitate running npm dependencies.
+if
+    if [ "$INSTALLED" ]; then
+        node_modules=$dg_dir/..
+    else
+        node_modules=$dg_dir/node_modules
+        # Install the git clone if it wasn't already.
+        [ -d "$node_modules" ] || (
+            cd "$dg_dir" &&
+                npm install
+        )
+    fi &&
+        node_modules=$(realpath "$node_modules") &&
+        [ -d "$node_modules" ] &&
+        [ "$(basename "$node_modules")" = node_modules ]
+then
+    # Export the paths to npm dependencies.
+    export BATS=$node_modules/.bin/bats
+else
+    echo "node_modules directory not found - $node_modules" >&2
+    exit 1
+fi
+
+# Set the DOCKER_BASE variable (leading to main.sh, amongst others).
+DOCKER_BASE="$dg_dir"/base
+
+export PIPELINE=${PIPELINE:-$TF_BUILD}
+export PIPELINE_DOCKER_REPO=${PIPELINE_DOCKER_REPO:-$BUILD_REPOSITORY_NAME}
+export PIPELINE_DOCKER_USER=${PIPELINE_DOCKER_USER:-$SYSTEM_TEAMPROJECT}
+
+export DEVOPS_ORGANISATION=${DEVOPS_ORGANISATION:-'merkatordev'}
+export DEVOPS_DOCKER_REGISTRY=${DEVOPS_DOCKER_REGISTRY:-"docker.merkator.com"}
+export DEVOPS_DEFAULT_POOL=${DEVOPS_DEFAULT_POOL:-'Azure Pipelines'}
+export DEVOPS_VPN_POOL=${DEVOPS_VPN_POOL:-'VPN'}
+
+package_json() {
+    [ -f package.json ] || echo '{
+  "version": "0.0.0"
+}' >package.json
+    echo '*.log' >>.gitignore
+}
+
+pipeline() {
+    [ "$action" = init ] && local is_package=true
+    [ "$action" = base-component ] && local is_base_component=true
+
+    local main=main
+    [ "$is_base_component" ] && main=master
+
+    local docker_login_command="echo '\$(DOCKER_PASSWORD)' | docker login"
+    docker_login_command+=" --username=$DOCKER_USER"
+    docker_login_command+=" --password-stdin $DOCKER_REGISTRY"
+
+    # Generated pipelines run from a monorepo checkout, so docker4gis commands
+    # must execute from the component subdirectory.
+    local working_dir_step=""
+    local dir_name
+    dir_name=$(basename "$PWD")
+    working_dir_step=$'\n  workingDirectory: components/'"$dir_name"
+
+    local steps
+
+    write() {
+        # Either $build_validation or $continuous_integration.
+        local file=$1
+
+        # write - 1. Initialise variables.
+
+        local trigger=none
+        local trigger_paths=""
+        local trigger_yaml="- $trigger"
+        local pr=$main
+        local stage=pr_stage
+        local stage_display_name='Pull Request stage'
+        local job=pr_job
+        local job_display_name='Pull Request job'
+        local login_steps=""
+
+        # Ensure all generated pipelines use a shallow checkout.
+        login_steps=$'- checkout: self\n  fetchDepth: 1\n'
+        login_steps+=$'  sparseCheckoutDirectories: components/'"$dir_name"$'\n'
+        login_steps+=$'  displayName: Git checkout\n'
+
+        [ "$file" = "$continuous_integration" ] && {
+            trigger=$main
+            trigger_paths="
+  paths:
+    include:
+    - components/$dir_name/**"
+            trigger_yaml="  branches:
+    include:
+    - $trigger$trigger_paths"
+            pr=none
+            stage=ci_stage
+            stage_display_name='Continuous Integration stage'
+            job=ci_job
+            job_display_name='Continuous Integration job'
+            # CI needs credentials persisted for git push/tag operations.
+            login_steps=$'- checkout: self\n'
+            login_steps+=$'  persistCredentials: true\n'
+            login_steps+=$'  fetchDepth: 1\n'
+            login_steps+=$'  sparseCheckoutDirectories: components/'"$dir_name"$'\n'
+            login_steps+="  displayName: Git login
+"
+        }
+
+        # The build of a Package image verifies that all component images are
+        # available at the docker registry, for which it needs to log in. All
+        # Continuous Integration pipelines need to log into the docker registry
+        # for pushing the resulting new image version.
+        if [ "$is_package" ] || [ "$file" = "$continuous_integration" ]; then
+            login_steps+="
+- bash: |
+    $docker_login_command
+  displayName: Docker login
+"
+        fi
+
+        # write - 2. Collect and format the steps.
+
+        # Prepend global steps with login_steps.
+        local steps=$login_steps$steps
+
+        # Trim the leading newline.
+        steps=${steps#$'\n'}
+
+        # Prepend (local) steps with the correct number of spaces:
+        steps=$(echo "$steps" | awk '{print "    " $0}')
+
+        # write - 3. Build the pr section with path filters for BV pipelines.
+
+        local pr_section
+        if [ "$file" = "$continuous_integration" ]; then
+            # CI pipeline: no path filter in pr block (runs only on main merge).
+            pr_section="- $pr"
+        else
+            # BV pipeline: path filter ensures pipeline only runs on PR changes
+            # to the relevant component directory.
+            pr_section="  branches:
+    include:
+    - $pr
+  paths:
+    include:
+    - components/$dir_name/**"
+        fi
+
+        # write - 4. Write the pipeline file, with the formatted steps in a
+        # first job of a first stage.
+
+        echo "trigger:
+$trigger_yaml
+pr:
+$pr_section
+
+stages:
+- stage: $stage
+  displayName: $stage_display_name
+  pool:
+    name: $DEVOPS_DEFAULT_POOL
+  jobs:
+  - job: $job
+    displayName: $job_display_name
+    steps:
+$steps" >"$file"
+
+        # write - End of function.
+    }
+
+    # pipeline - 1. Write the Build Validation pipeline.
+
+    steps="
+- bash: |
+    $default_docker4gis_command build
+  displayName: $docker4gis build$working_dir_step"
+
+    # For a package image, also run the application and any integration tests.
+    [ "$is_package" ] && steps+="
+
+- bash: |
+    echo '' | $default_docker4gis_command run latest
+  displayName: Run app and integration tests"
+
+    # Write the file.
+    local build_validation=azure-pipeline-build-validation.yml
+    write "$build_validation"
+
+    # pipeline - 2. Write the Continuous Integration pipeline.
+
+    # Save the current steps.
+    local build_steps=$steps
+
+    steps="
+- bash: |
+    git config --global user.email 'pipeline@azure.com'
+    git config --global user.name 'Azure Pipeline'
+  displayName: Git config
+
+- bash: |
+    git checkout -b $main
+    git push --set-upstream origin $main
+  displayName: Git undo detached state
+"
+
+    # For a package image, build, run, and test as a validation for the push
+    # action.
+    [ "$is_package" ] && steps+="$build_steps
+"
+
+    # Bump, build, push, tag, and commit the new version.
+    steps+="
+- bash: |
+    $default_docker4gis_command push
+  displayName: $docker4gis push$working_dir_step"
+
+    # For a non-base-component, set the DOCKER4GIS_VERSION variable for use in
+    # the deployment stages.
+    [ "$is_base_component" ] || steps+="
+
+- bash: |
+    DOCKER4GIS_VERSION=v\$(node --print \"require('./package.json').version\")
+    echo \"##vso[task.setvariable variable=DOCKER4GIS_VERSION;isOutput=true]\$DOCKER4GIS_VERSION\"
+  displayName: Set DOCKER4GIS_VERSION variable for deploy stage$working_dir_step
+  name: docker4gis_version_step"
+
+    # Write the file.
+    local continuous_integration=azure-pipeline-continuous-integration.yml
+    write "$continuous_integration"
+
+    # For a base-component, skip the deployment stages.
+    [ "$is_base_component" ] && return
+
+    # Append deployment stages.
+    [ "$is_package" ] || {
+        local suffix=_SINGLE
+        [ -n "$DOCKER4GIS_DEVOPS" ] && echo -n "
+# The deployment jobs depend on environments named with a $suffix suffix, which
+# are configured with a manual approval check to prevent the jobs from running
+# automatically." >>"$continuous_integration"
+        echo -n "
+# Note that the deployment jobs only run the container of a single component,
+# which is a different deployment model than letting the ^package pipeline
+# manage which version of each component is to be run." >>"$continuous_integration"
+        [ -n "$DOCKER4GIS_DEVOPS" ] && echo -n "
+# The ^package model uses the environments without the $suffix suffix, so you
+# choose the deployment model to use by removing the manual approval check from
+# either the \"plain\" or the $suffix environments." >>"$continuous_integration"
+        echo >>"$continuous_integration"
+    }
+    for environment in TEST PRODUCTION; do
+        local temp
+        temp=$(mktemp)
+        [ "$previous_environment" ] && local extra_dependency="
+  - ${previous_environment}_deploy_stage"
+        echo "
+- stage: ${environment}_deploy_stage
+  displayName: Deploy $environment stage
+  dependsOn:
+  - ci_stage$extra_dependency
+  # You probably need to set up a custom pool, with agents that run from a
+  # location that is whitelisted in your target servers' firewalls.
+  pool:
+    name: $DEVOPS_VPN_POOL
+  jobs:
+  - deployment: ${environment}_deploy_job
+    displayName: Deploy $environment job
+    environment: $environment$suffix
+    variables:
+      DOCKER4GIS_VERSION: \$[ stageDependencies.ci_stage.ci_job.outputs['docker4gis_version_step.DOCKER4GIS_VERSION'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: SSH@0
+            inputs:
+              sshEndpoint: $environment
+              runOptions: inline
+              inline: |
+                # Log into the Docker registry.
+                $docker_login_command 2>&1 || exit
+
+                # Go to the application's directory.
+                app_dir=/opt/docker4gis/$DOCKER_USER
+                mkdir -p \$app_dir
+                cd \$app_dir || exit
+
+                tag=\$(DOCKER4GIS_VERSION)
+$(
+            if [ "$is_package" ]; then
+                export DOCKER_REGISTRY
+                export DOCKER_USER
+                echo "                echo '' | {"
+                # Loop over each line in the output of command
+                # $DOCKER_BASE/package/setup_pipeline.sh.
+                while IFS= read -r line; do
+                    echo "                  $line"
+                done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
+                echo "                }"
+            else
+                echo "                export DOCKER_ENV=$environment"
+                if [ "$repo" = proxy ]; then
+                    local subdomain=tst
+                    [ "$environment" = PRODUCTION ] && subdomain=www
+                    echo "                export PROXY_HOST=$subdomain.$DOCKER_USER.com"
+                    echo "                # Set to true to get a certificate through LetsEncrypt."
+                    echo "                export AUTOCERT=false"
+                fi
+                local image=$DOCKER_REGISTRY/$DOCKER_USER/$repo:\$tag
+                local dcr="docker container run --rm \"$image\""
+                dcr+=" /.docker4gis/run \"\$tag\""
+                echo "                eval \"\$($dcr)\""
+            fi
+        )" >"$temp"
+        if [ -n "$DOCKER4GIS_DEVOPS" ]; then
+            # We're running from the dg devops command, so the Environments, and
+            # their Manual Approval checks are set up as well, preventing the
+            # deployment stages from running automatically, so we don't have to
+            # comment-out their definiion.
+            cat "$temp" >>"$continuous_integration"
+        else
+            [ "$previous_environment" ] || echo "
+# Uncomment the deploy stages to have the pipeline deploy automatically to the
+# corresponding environment. This depends on the docker4gis_version_step in the
+# ci_stage, AND on a Service Connection (of type \"SSH\") (see the
+# \"sshEndpoint\" attribute) configured in the Project for each environment." >>"$continuous_integration"
+            # Loop over each line in "$temp" and append it, commented-out, to
+            # "$continuous_integration".
+            while IFS= read -r line; do
+                echo "# $line" >>"$continuous_integration"
+            done <"$temp"
+        fi
+        rm "$temp"
+        previous_environment=$environment
+    done
+
+    # pipeline - End of function.
+}
+
+# shellcheck disable=SC1091
+source "$DOCKER_BASE"/dotenv.bash
+
+assert_docker4gis_directory() {
+    dotenv
+}
+
+# shellcheck disable=SC2317  # It's correct that the function is never called in
+# this script.
+self() {
+    # Command given to the "all" action may use `self` to run docker4gis
+    # actions.
+    "$0" "$@"
+}
+
+just_help=
+[ "$1" = help ] && just_help=true
+[ "$action" = help ] && {
+    just_help=true
+    action=$1
+    shift 1
+}
+help() {
+    [ "$just_help" ] || return 0
+    local help_text=$1
+    echo "$help_text" | less --quit-if-one-screen
+    exit
+}
+just_help() {
+    just_help=true
+    help "$@"
+}
+
+remote_branch_name_available() {
+    local new_branch=$1
+    remote_branch_info=$(git ls-remote --heads origin refs/heads/"$new_branch") &&
+        if [ "$remote_branch_info" ]; then
+            echo "Error: remote branch exists: $new_branch" >&2
+            false
+        fi
+}
+
+rename_replace() {
+    local old_value=$1
+    local new_value=$2
+
+    find_no_git() {
+        # Use -prune to to exclude any `.git` directory;
+        # https://stackoverflow.com/a/4210072/2389922.
+        dir=$1
+        shift 1
+        find "$dir" -type d -name .git -prune -false -o "$@"
+    }
+
+    # 1. Replace text in files.
+    find_no_git . -type f \
+        -exec sed -i "s|$old_value|$new_value|g" {} \;
+
+    # 2. Rename files and directories. See
+    # https://www.shellcheck.net/wiki/SC2044 for the loop over `find`.
+    while IFS= read -r -d '' file; do
+        file=$(realpath "$file")
+        mv "$file" "$(dirname "$file")/$new_value"
+    done < <(find_no_git . -name "$old_value" -print0)
+}
+
+version() {
+    local local=$1
+    local actual=$1
+    if [ "$local" = local ]; then
+        dotenv &&
+            echo "$DOCKER4GIS_VERSION"
+    elif [ "$actual" = actual ] || [ "$INSTALLED" ] || [ "$DOCKER4GIS_DEVOPS" ]; then
+        node --print "require('$DOCKER_BASE/../package.json').version"
+    else
+        echo "$version_development"
+    fi
+}
+
+find_monorepo_root() {
+    local dir
+    dir=$(realpath .)
+    while [ "$dir" != "/" ]; do
+        # Check for deployed docker4gis application
+        if grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null; then
+            echo "$dir"
+            return 0
+        fi
+        # Check for docker4gis development monorepo (components/ and packages/docker4gis-cli/)
+        if [ -d "$dir/components" ] && [ -d "$dir/packages/docker4gis-cli" ]; then
+            echo "$dir"
+            return 0
+        fi
+        dir=$(dirname "$dir")
+    done
+    return 1
+}
+
+normalise_repo_name() {
+    local value=$1
+    value=$(basename "$value")
+    # Strip a leading project/user prefix (e.g. dgtest-proxy -> proxy).
+    if [ -n "$DOCKER_USER" ] && [[ "$value" == "$DOCKER_USER"-* ]]; then
+        value=${value#"$DOCKER_USER"-}
+    fi
+    # Without a possible `docker4gis-` prefix.
+    value=${value#"$docker4gis"-}
+    # Up until a possible first `.` character (to support forked repos named
+    # component.name.surname).
+    value=${value%%.*}
+    # Strip a leading `^` (used in directory names like `^package` to sort
+    # them to the top, but invalid in Docker image names).
+    value=${value#^}
+    echo "$value"
+}
+
+component_dir_name() {
+    local component_name=$1
+    [ "$component_name" ] || return 1
+
+    # Keep explicit names unchanged if they are already project-prefixed.
+    if [ -n "$DOCKER_USER" ] && [[ "$component_name" == "$DOCKER_USER"-* ]]; then
+        echo "$component_name"
+        return 0
+    fi
+
+    if [ -n "$DOCKER_USER" ]; then
+        echo "$DOCKER_USER-$component_name"
+    else
+        echo "$component_name"
+    fi
+}
+
+resolve_component_dir() {
+    local components_root=$1
+    local component_name=$2
+
+    [ -d "$components_root/$component_name" ] && {
+        echo "$components_root/$component_name"
+        return 0
+    }
+
+    if [ -n "$DOCKER_USER" ]; then
+        local prefixed
+        prefixed=$(component_dir_name "$component_name")
+        [ -d "$components_root/$prefixed" ] && {
+            echo "$components_root/$prefixed"
+            return 0
+        }
+    fi
+
+    return 1
+}
+
+case "$action" in
+
+init | new)
+    help "Initialise a new $docker4gis monorepo application.
+A new directory with the given name is created, and initialised as a $docker4gis
+project. The \`proxy\` component is added automatically, and additional
+components are added as subdirectories inside \`components/\` (using
+\`$DOCKER4GIS_COMMAND component\`).
+Usage: $DOCKER4GIS_COMMAND $action [PROJECT_NAME] [DOCKER_REGISTRY]"
+
+    [ "$action" = new ] && action=init
+
+    project_name=$1
+    [ "$project_name" ] && shift 1
+    [ "$project_name" ] || read -rp \
+        "Enter the project name : " \
+        project_name
+    [ "$project_name" ] || {
+        echo "Project name not set." >&2
+        exit 1
+    }
+
+    DOCKER_REGISTRY=$1
+    merkator_registry=docker.merkator.com
+    [ "$DOCKER_REGISTRY" ] && shift 1
+    [ "$DOCKER_REGISTRY" ] || read -rp \
+        "Enter the Docker registry (default is the Docker Hub; enter m for $merkator_registry) : " \
+        DOCKER_REGISTRY
+    [ "$DOCKER_REGISTRY" = 'm' ] && DOCKER_REGISTRY=$merkator_registry
+    [ "$DOCKER_REGISTRY" ] || DOCKER_REGISTRY=docker.io
+
+    DOCKER_USER=$project_name
+
+    (
+        workdir=$project_name
+        mkdir -p "$workdir" &&
+            cd "$workdir" || exit
+
+        echo "DOCKER4GIS_VERSION=$(version)
+DOCKER4GIS_ROOT=true
+DOCKER_REGISTRY=$DOCKER_REGISTRY
+DOCKER_USER=$DOCKER_USER" >.env
+        echo "DEBUG=false
+PROXY_HOST=
+PROXY_PORT=
+PROXY_PORT_HTTP=
+API=
+AUTH_PATH=
+APP=
+HOMEDEST=
+TZ=
+PGHOST=
+PGHOSTADDR=
+PGPORT=
+PGDATABASE=
+PGUSER=
+PGPASSWORD=
+POSTGRES_LOG_STATEMENT=
+# POSTGRES_LOG_STATEMENT=ddl
+# POSTGRES_LOG_STATEMENT=all
+MYSQL_HOST=
+MYSQL_DATABASE=
+MYSQL_ROOT_PASSWORD=
+POSTFIX_DESTINATION=
+POSTFIX_DOMAIN=" >>.env
+
+        # Create package.json for version tracking.
+        package_json
+    ) || exit 1
+
+    # Initialise the ^package component in its directory. Note: the
+    # docker4gis/package image has no /template; we create the files
+    # directly.
+    (
+        workdir=$project_name/components/$project_name-^package
+        mkdir -p "$workdir" &&
+            cd "$workdir" || exit
+
+        # Write the component's .env (no DOCKER_REGISTRY - inherited from
+        # root).
+        {
+            echo "DOCKER4GIS_VERSION=$(version)"
+            echo "DOCKER_REPO=package"
+        } >.env
+
+        # Create package.json for version tracking.
+        package_json
+
+        # Build script delegates to the package base-image build.
+        {
+            echo '#!/bin/bash'
+            # shellcheck disable=SC2016
+            echo '"$DOCKER_BASE/package/build.sh"'
+        } >build.sh
+        chmod +x build.sh
+
+        # Create pipeline YAML files (action=init → is_package=true in
+        # pipeline()).
+        pipeline
+
+        # Create the version-tracking directory inside ^package.
+        mkdir -p "components"
+    ) || exit 1
+
+    # Add the proxy component by default, as every application needs it.
+    (
+        cd "$project_name" || exit
+        SKIP_SUCCESS_MESSAGE=true "$0" component proxy
+    ) || exit 1
+
+    echo "$project_name initialised ✅"
+    ;;
+
+component | c | base-component | template)
+    [ "$action" = c ] && action=component
+    [ "$action" = component ] && help "Initialise a new $docker4gis application component.
+Usage: \`$DOCKER4GIS_COMMAND $action [local] [COMPONENT_NAME] [TEMPLATE]\`.
+If COMPONENT_NAME is supplied, that name is used for the new directory under
+\`components/\`. If a base image with that same name exists, it is used
+automatically; otherwise you'll be asked which base image to extend, with
+\`n\` to create a component without extending a base image.
+When COMPONENT_NAME is omitted, you'll be prompted for it first.
+(During development of a base component, you can pass \`local\` first to
+prevent pulling images and use only local images.)"
+
+    [ "$action" = base-component ] && help "Initialise a new $docker4gis base component.
+Base components are the repositories in https://hub.docker.com/u/$docker4gis.
+This action will render a skeleton that you can build upon. Get in touch with
+to discuss publication.
+Usage: $DOCKER4GIS_COMMAND $action [COMPONENT_NAME]
+Run this from anywhere inside a $docker4gis monorepo. The component will be
+created under the monorepo's components/ directory with the docker4gis- prefix."
+
+    [ "$action" = template ] && help "When developing a $docker4gis base component, scaffold a client application in
+the current directory, so that you can try your new base component. When you're
+happy, you can copy the contents into the 'template' directory of your base
+component."
+
+    write_dotenv() {
+        local docker_user=$1
+
+        DOCKER4GIS_VERSION=${DOCKER4GIS_VERSION:-$(version actual)}
+
+        echo "DOCKER4GIS_VERSION=$DOCKER4GIS_VERSION" >>.env
+        if [ "$docker_user" ]; then
+            # Base components need explicit DOCKER_REGISTRY and DOCKER_USER.
+            echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" >>.env
+            echo "DOCKER_USER=$DOCKER_USER" >>.env
+        fi
+    }
+
+    replace_component() {
+        rename_replace '{{COMPONENT}}' "$repo"
+    }
+
+    finish() {
+        local message=${1:-"$action initialised ✅"}
+        local code=${2:-0}
+        if [ "$code" -ne 0 ] || [ -z "$SKIP_SUCCESS_MESSAGE" ]; then
+            echo "$message"
+        fi
+        [ -n "$container" ] && docker container rm "$container" >/dev/null
+        exit "$code"
+    }
+
+    error() {
+        local message=${1:-error}
+        local code=${2:-1}
+        finish "$message" "$code"
+    }
+
+    auto_add_postgis_ddl() {
+        [ "$action" = component ] || return 0
+        [ "$repo" = postgis ] || return 0
+
+        echo "Automatically adding postgis-ddl component."
+        if [ -n "$local" ]; then
+            "$0" component local postgis-ddl
+        else
+            "$0" component postgis-ddl
+        fi
+    }
+
+    if [ "$action" = component ] && [ "$1" = local ]; then
+        shift 1
+        local=true
+    fi
+
+    if [ "$action" = component ]; then
+        monorepo_root=$(find_monorepo_root) ||
+            error "Not in a $docker4gis project (no .env with DOCKER4GIS_ROOT=true found).
+After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory."
+
+        # Load root variables (including DOCKER_USER) for directory naming.
+        dotenv forgiving "$monorepo_root/.env"
+
+        components_dir=$monorepo_root/components
+        [ -d "$components_dir" ] || mkdir -p "$components_dir"
+
+        component_name=$1
+        [ "$component_name" ] && shift 1
+
+        if ! [ "$component_name" ]; then
+            cwd=$(realpath .)
+            default_component_name=
+            if [ "$(dirname "$cwd")" = "$components_dir" ] &&
+                ! grep -q "^DOCKER4GIS_VERSION=" "$cwd/.env" 2>/dev/null; then
+                default_component_name=$(normalise_repo_name "$cwd")
+            fi
+
+            name_question="Enter the component name"
+            [ "$default_component_name" ] &&
+                name_question+=" (default is $default_component_name)"
+            read -rp "$name_question : " component_name
+            [ "$component_name" ] || component_name=$default_component_name
+            [ "$component_name" ] ||
+                error "Component name not set."
+        fi
+
+        component_dir=$(component_dir_name "$component_name")
+        target_dir=$components_dir/$component_dir
+        [ -d "$target_dir" ] || mkdir -p "$target_dir" ||
+            error "Failed to create directory: $target_dir"
+        cd "$target_dir" || error "Failed to enter directory: $target_dir"
+    fi
+
+    if [ "$action" = base-component ]; then
+        monorepo_root=$(find_monorepo_root) ||
+            error "Not in a $docker4gis monorepo (no .env with DOCKER4GIS_ROOT=true found, or components/ and packages/docker4gis-cli/ structure).
+Run this from anywhere inside a $docker4gis monorepo."
+
+        components_dir=$monorepo_root/components
+        [ -d "$components_dir" ] || mkdir -p "$components_dir"
+
+        # Get base component name from first argument
+        base_component_name=$1
+        [ "$base_component_name" ] && shift 1
+
+        if ! [ "$base_component_name" ]; then
+            read -rp "Enter the base component name : " base_component_name
+            [ "$base_component_name" ] ||
+                error "Base component name not set."
+        fi
+
+        # Create target directory with docker4gis- prefix
+        target_dir=$components_dir/docker4gis-$base_component_name
+        [ -d "$target_dir" ] && error "Directory already exists: $target_dir"
+        mkdir -p "$target_dir" ||
+            error "Failed to create directory: $target_dir"
+        cd "$target_dir" || error "Failed to enter directory: $target_dir"
+    fi
+
+    package_json
+
+    repo=$(normalise_repo_name "$PWD")
+    export repo
+
+    [ "$action" = base-component ] && {
+        # Creating a generic docker4gis base component.
+        DOCKER_REGISTRY=docker.io
+        DOCKER_USER=$docker4gis
+
+        cp -r "$DOCKER_BASE"/template/. .
+        echo "
+# Set environment variables.
+ONBUILD ARG DOCKER_REGISTRY
+ONBUILD ENV DOCKER_REGISTRY=\$DOCKER_REGISTRY
+ONBUILD ARG DOCKER_USER
+ONBUILD ENV DOCKER_USER=\$DOCKER_USER
+ONBUILD ARG DOCKER_REPO
+ONBUILD ENV DOCKER_REPO=\$DOCKER_REPO
+
+# Make this an extensible base component; see
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
+COPY template /template/
+" >>Dockerfile
+        replace_component
+
+        write_dotenv "$DOCKER_USER"
+        pipeline
+        # And we're done!
+        finish
+    }
+
+    # Creating a concrete application's component.
+
+    # Test if inited by finding the monorepo package directory two levels up
+    # (components/<name>/ → package root).
+    package_env=../../.env
+    if [ -f "$package_env" ]; then
+        DOCKER4GIS_ROOT=
+        DOCKER4GIS_VERSION=
+        DOCKER_REGISTRY=
+        DOCKER_USER=
+        dotenv forgiving "$package_env"
+        if [ "$DOCKER4GIS_ROOT" = true ] && [ "$DOCKER4GIS_VERSION" ] && [ "$DOCKER_REGISTRY" ] && [ "$DOCKER_USER" ]; then
+            inited=true
+        fi
+    fi
+
+    [ "$inited" ] ||
+        error "Package directory not found.
+After \`$DOCKER4GIS_COMMAND init\`, cd into the project directory.
+Or did you mean base-component?"
+
+    pull() {
+        local component=$1
+        local stderr=$2
+
+        image=$docker4gis/$component:latest
+
+        if [ -n "$local" ]; then
+            # Don't pull, but check if the image exists locally.
+            if ! docker image inspect "$image" >/dev/null 2>&1; then
+                echo "Image not found locally: $image" >&2
+                return 1
+            fi
+            return 0
+        fi
+
+        local cmd="docker image pull $image"
+        if [ "$stderr" = stderr ]; then
+            $cmd
+        else
+            $cmd 2>/dev/null
+        fi
+    }
+
+    if [ "$action" = component ]; then
+        template=$1
+        component=$repo
+        pull "$component" || component=
+    else
+        [ "$1" ] || interactive=true
+        component=$1
+        template=$2
+    fi
+
+    if ! [ "$component" ]; then
+        [ "$repo" = api ] && suggestion=postgrest
+        [ "$repo" = app ] && suggestion=angular
+    fi
+    if ! [ "$suggestion" ] && ! [ "$component" ]; then
+        pull "$repo" && component=$repo
+    fi
+    while ! [ "$component" ]; do
+        if [ "$suggestion" ] || ! [ "$action" = template ]; then
+            hints=true
+        fi
+        component_question="Which $docker4gis base image to extend? e.g. proxy, or postgis"
+        [ "$hints" ] && component_question+=' ('
+        [ "$suggestion" ] && component_question+="default is $suggestion"
+        [ "$suggestion" ] && [ "$action" != template ] && component_question+=", "
+        [ "$action" = template ] || component_question+="n for none"
+        [ "$hints" ] && component_question+=')'
+
+        read -rp \
+            "$component_question : " \
+            component
+        [ "$component" ] || component=$suggestion
+        [ "$component" = n ] && [ "$action" != template ] && break
+        pull "$component" stderr || component=
+    done
+
+    [ "$action" = template ] && {
+        # Just scaffolding an inital setup for developing a template for a new
+        # base component.
+        cp -r "$DOCKER_BASE"/template/template/. .
+    }
+
+    [ "$component" = n ] && {
+        # Creating a component _not_ extending a docker4gis base component.
+        cp -r "$DOCKER_BASE"/template/. .
+        rm -rf template
+        echo "
+# Set environment variables.
+ARG DOCKER_REGISTRY
+ENV DOCKER_REGISTRY=\$DOCKER_REGISTRY
+ARG DOCKER_USER
+ENV DOCKER_USER=\$DOCKER_USER
+ARG DOCKER_REPO
+ENV DOCKER_REPO=\$DOCKER_REPO
+" >>Dockerfile
+        pipeline
+    }
+
+    [ "$action" = template ] || [ "$component" = n ] && {
+        write_dotenv
+        replace_component
+        # And we're done!
+        finish
+    }
+
+    # Creating a component extending a docker4gis base component.
+
+    pipeline
+
+    DOCKER4GIS_VERSION=$(docker container run --rm "$image" \
+        cat /.docker4gis/docker4gis/VERSION)
+    write_dotenv
+
+    container=$(docker container create "$image") ||
+        error "Failed to create container from image $image"
+
+    docker container cp "$container":/template . ||
+        error "$image doesn't seem a $docker4gis base component"
+
+    if ! [ "$template" ]; then
+        # Test if there are multiple templates, by checking the existence of the
+        # '.default' file.
+        default=./template/.default
+        if [ -f "$default" ]; then
+            default=$(cat "$default")
+            # Override the default template if there's a template named just
+            # like the repo itself.
+            [ -d "./template/$repo" ] && default=$repo
+            template=$default
+            [ "$interactive" ] && {
+                choices=$(ls ./template)
+                choices=$(echo "$choices" | xargs)
+                read -rp \
+                    "Enter the template name (one of: $choices - default is $default) : " \
+                    template
+                [ "$template" ] || template=$default
+                ls ./template/"$template" >/dev/null 2>&1 ||
+                    error "Template not found: $template"
+            }
+        fi
+    fi
+
+    cp -r ./template/"$template"/. .
+    rm -rf ./template
+    rename_replace '{{DOCKER_USER}}' "$DOCKER_USER"
+
+    # With `dg component local`, amend the template's Dockerfile to be FROM
+    # the locally built :latest version.
+    if [ -n "$local" ]; then
+        sed -i \
+            "s|\b$docker4gis/$component:\S*|$docker4gis/$component:latest|g" \
+            Dockerfile
+    fi
+
+    auto_add_postgis_ddl
+    finish
+    ;;
+
+build | b | run | r | br | run-env | env | push | p | test | t | unbuild | stop | geoserver)
+    [ "$action" = build ] || [ "$action" = b ] && help "Build a new image for the component in the current directory.
+Or pass a component name to build that component, e.g. \`$DOCKER4GIS_COMMAND build proxy\`.
+
+For components other than the 'package' component, any/all (unit) tests are run
+before the build starts, and the build is cancelled if any test fails (see
+\`$DOCKER4GIS_COMMAND help test\`.)"
+
+    [ "$action" = run ] || [ "$action" = r ] && help "Run the application.
+
+Component versions are read from each component's package.json inside
+the components/ directory. For components that haven't been pushed yet,
+a 'latest' version is used.
+
+After all components' containers are started, any/all (integration) tests are
+run (see \`$DOCKER4GIS_COMMAND help test\`.)"
+
+    [ "$action" = br ] && help "First build, then run.
+Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT] [ARG...]\` from the package root."
+
+    [ "$action" = push ] || [ "$action" = p ] && help "Increment the component's version, build its image, push it to the Docker
+registry, commit and push git changes.
+
+Note that ideally, this is run by the Continuous Integration pipeline. If
+that's configured, refrain from running \`$DOCKER4GIS_COMMAND $action\` by hand.
+
+Pass --no-save as the first argument to prevent the component's version from
+being bumped and saved in git, which is useful when you create different
+'flavours' of the image with each version. --no-save also prevents the image
+being additionally tagged as 'latest'.
+Use --no-save in all but the last \`$action\` step in a pipeline."
+
+    [ "$action" = test ] || [ "$action" = t ] && help "Run the component's tests.
+First, any files named 'test.sh' in the component's directory (and below) are
+run. Exit from a test.sh with a non-zero code to indicate failure. Call the
+exported function abort_tests to prevent running any further tests.
+
+Then, any files named '*.bats' in the component's directory (and below) are run
+using the [bash automated testing system](https://www.npmjs.com/package/bats).
+
+If run with the optional FILE parameter, only the tests in that file are run. It
+should be a .bats file, or an executable .sh file.
+
+On \`$DOCKER4GIS_COMMAND build\`, all tests (considered to be 'unit tests') are
+run before starting the build. If any test fails, the build is cancelled.
+This is true for pipelines as well. Should a test depend on any external
+package, amend the pipelines to install it, or include it as an [npm]
+(https://www.npmjs.com/) dependency.
+
+An exception is the 'package' component. Here, test are considered 'integration
+tests', and they're not run before the \`$DOCKER4GIS_COMMAND build\`, but after
+the \`$DOCKER4GIS_COMMAND run\`. So when these tests run, all the components'
+containers have been started, and you can verify their interacting together.
+Note that \`$DOCKER4GIS_COMMAND run\` is only done in the development
+environment; not on any server where the application is deployed (though it can
+be imagined as part of some future test-deploy pipeline)."
+
+    [ "$action" = unbuild ] && help "Remove the local 'latest' version of the component's image.
+Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT]\` from the package root."
+
+    [ "$action" = stop ] && help "Stop the application's containers.
+Except the proxy container, since that may still serve other applications."
+
+    [ "$action" = geoserver ] && help "Copy the GeoServer configuration files out of the running $DOCKER_USER-geoserver
+container, to the geoserver component repository in the current directory."
+
+    # Walk up from cwd to find the component root: the nearest directory that
+    # has a .env with DOCKER4GIS_VERSION (but not DOCKER4GIS_ROOT=true, which
+    # would be the monorepo root rather than a component).
+    _find_component_root() {
+        local dir
+        dir=$(realpath .)
+        while [ "$dir" != "/" ]; do
+            if grep -q "^DOCKER4GIS_VERSION=" "$dir/.env" 2>/dev/null &&
+                ! grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null; then
+                echo "$dir"
+                return 0
+            fi
+            dir=$(dirname "$dir")
+        done
+        return 1
+    }
+    if component_root=$(_find_component_root); then
+        cd "$component_root" || exit 1
+    else
+        # Not inside a component. Find the monorepo root (if any).
+        monorepo_root=$(
+            dir=$(realpath .)
+            while [ "$dir" != "/" ]; do
+                grep -q "^DOCKER4GIS_ROOT=true" "$dir/.env" 2>/dev/null &&
+                    echo "$dir" &&
+                    exit 0
+                dir=$(dirname "$dir")
+            done
+            exit 1
+        ) || true
+
+        if [ -n "$monorepo_root" ] && [ "$(realpath .)" != "$monorepo_root" ]; then
+            # We're in between (e.g. components/). If $1 names a component, cd
+            # into it and consume the argument; otherwise fall back to ^package.
+            dotenv forgiving "$monorepo_root/.env"
+            components_dir=$monorepo_root/components
+
+            if [ -n "$1" ]; then
+                component_dir=$(resolve_component_dir "$components_dir" "$1") || component_dir=
+                if [ -n "$component_dir" ]; then
+                    cd "$component_dir" || exit 1
+                    shift
+                fi
+            fi
+
+            if [ "$(basename "$PWD")" = "components" ]; then
+                package_dir=$(resolve_component_dir "$components_dir" '^package') ||
+                    package_dir=$components_dir/^package
+                cd "$package_dir" || exit 1
+            fi
+        fi
+    fi
+
+    # For application components, load the package component's environment
+    # values. Components live in components/<name>/ so the package is at ../../.
+    # For base components (build), there's no package component, and nothing
+    # happens here.
+    if [ -f "../../.env" ]; then
+        dotenv forgiving "../../.env"
+        if [ "$DOCKER4GIS_ROOT" = true ]; then
+            dotenv export "../../.env"
+        fi
+    fi
+
+    # Load the current component's own environment variables.
+    dotenv export
+
+    [ "$action" = b ] && action=build
+    [ "$action" = r ] && action=run
+    [ "$action" = p ] && action=push
+    [ "$action" = t ] && action='test'
+
+    # If not running an unpublished, local, in-development version of
+    # docker4gis, switch to the version that the component scripts are
+    # expecting (except for the push action).
+    if [ "$INSTALLED" ] && ! [ "$action" = push ]; then
+        if [ "$DOCKER4GIS_VERSION" != "$(version)" ]; then
+            [ "$DOCKER4GIS_TRACE" ] && echo "-- Switching to DOCKER4GIS_VERSION $DOCKER4GIS_VERSION."
+            DOCKER_BASE=$( (
+                # Prevent any trace output.
+                set +x
+                # Output this version's base directory.
+                npx --yes "$docker4gis"@"$DOCKER4GIS_VERSION" base
+            ))
+        fi
+    else
+        # Otherwise, ignore the component's current DOCKER4GIS_VERSION, and use
+        # the new in-development version to see its effects.
+        export DOCKER4GIS_VERSION=$version_development
+    fi
+
+    [ "$action" = run-env ] || [ "$action" = env ] && {
+        help "List the environment variables available at runtime."
+        export DOCKER4GIS_RUN_ENV=true
+        action=run
+    }
+
+    "$DOCKER_BASE/main.sh" . "$action" "$@"
+    ;;
+
+run-single | rs)
+    help "Run a single container.
+Usage: $DOCKER4GIS_COMMAND $action [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY]"
+
+    dotenv forgiving
+    export DOCKER_TAG=${1:-$DOCKER_TAG}
+    export DOCKER_REPO=${2:-$DOCKER_REPO}
+    export DOCKER_USER=${3:-$DOCKER_USER}
+    export DOCKER_REGISTRY=${4:-$DOCKER_REGISTRY}
+    eval "$("$DOCKER_BASE"/.docker4gis/run)"
+    ;;
+
+"$docker4gis")
+    help "Just echo '$docker4gis' to indicate that this is that program."
+
+    echo "$docker4gis"
+    ;;
+
+base)
+    help "Echo the value of the DOCKER_BASE variable."
+
+    echo "$DOCKER_BASE"
+    ;;
+
+pwd | where)
+    help "Echo the directory that this $docker4gis command runs from."
+
+    echo "$dg_dir"
+    ;;
+
+version | v)
+    help "Echo the $docker4gis version.
+\`$DOCKER4GIS_COMMAND $action\` gives the version of that $docker4gis command
+itself.
+\`$DOCKER4GIS_COMMAND $action local\` gives the value of the
+\$DOCKER4GIS_VERSION variable in the current $docker4gis component directory."
+
+    version "$@"
+    ;;
+
+login)
+    dotenv forgiving && {
+        DOCKER_REGISTRY=" ($DOCKER_REGISTRY)"
+        DOCKER_USER=" ($DOCKER_USER)"
+    }
+    help "Log into the DOCKER_REGISTRY$DOCKER_REGISTRY.
+Usage: $DOCKER4GIS_COMMAND $action [PASSWORD] [USER].
+Without PASSWORD, you'll be asked to type it.
+Default USER is the DOCKER_USER value$DOCKER_USER."
+
+    dotenv
+    password=${1:?"password parameter not set"}
+    user=${2:-$DOCKER_USER}
+    echo "$password" | docker login \
+        --username "$user" \
+        --password-stdin "$DOCKER_REGISTRY"
+    ;;
+
+git-push | gp)
+    default_new_branch=$docker4gis-changes
+    help "Commit and push all changes to a remote branch.
+Usage: $DOCKER4GIS_COMMAND $action [BRANCH_NAME].
+The default BRANCH_NAME is $default_new_branch.
+If more than one parameter is supplied, all parameters are joined with hyphens
+(-) to form the BRANCH_NAME.
+All changes are committed in git in a new branch, that is pushed to \`origin\`,
+ready to create a pull request. Locally, the new branch is deleted after
+switching back to the current branch, ready for fetching the remote changes
+after merging the pull request (and running the Continuous Integration
+pipeline, and syncing a forked repo)."
+
+    [ "$(git status --short)" ] || {
+        echo "No changes to commit."
+        exit
+    }
+    new_branch=${*:-"$default_new_branch"}
+    # Replace all spaces with hyphens.
+    new_branch=${new_branch// /-}
+    remote_branch_name_available "$new_branch" &&
+        current_branch=$(git rev-parse --abbrev-ref HEAD) &&
+        if [ "$current_branch" != "$new_branch" ]; then
+            # This will fail if a branch with that name already exists.
+            # Which is good, since it'd be acceptable when we're already
+            # _on_ the new_branch, but not when we're on another branch and
+            # the new_branch is just existing.
+            git switch --create "$new_branch"
+        fi &&
+        git add --all &&
+        git commit --message="$new_branch" &&
+        git push --set-upstream origin "$new_branch" &&
+        git switch "$current_branch" &&
+        git branch --delete "$new_branch" &&
+        echo "-> Remote branch $new_branch ready for pull request; the local branch is deleted."
+    ;;
+
+bump)
+    help "In the current directory's component, bump $docker4gis to the latest version ($(version)).
+Usage: $DOCKER4GIS_COMMAND $action [push|gp].
+With \`push\` (or \`gp\`), the change is committed in git in a new branch, that 
+is pushed to \`origin\`, ready to create a pull request. Locally, the new branch
+is deleted after switching back to the current branch, ready for fetching the
+remote changes after merging the pull request (and running the Continuous
+Integration pipeline, and syncing a forked repo)."
+
+    assert_docker4gis_directory
+
+    if [ "$1" = push ] || [ "$1" = gp ]; then
+        bump_branch=$docker4gis-bump
+        "$DOCKER_BASE"/check_git_clear.sh &&
+            remote_branch_name_available "$bump_branch"
+    fi &&
+        # The actual bump action.
+        echo "DOCKER4GIS_VERSION=$(version)" >>.env &&
+        version &&
+        if [ "$bump_branch" ]; then
+            self git-push "$bump_branch"
+        fi
+    ;;
+
+standalone)
+    help "Don't start the current directory's component when running the application.
+Usage: $DOCKER4GIS_COMMAND $action.
+Normally, components are expected to be a \"server\" of some sort, and running
+the application comes down to starting a container, with the --detach option,
+for each component.
+A standalone component is excluded from the list of server containers to start,
+while you still manage the code and the image for the component in the current
+project. For instance, you might want a component that runs a specific data
+processing task, maybe as a one-off instance somewhere \"in the cloud\"."
+
+    assert_docker4gis_directory
+
+    [ -z "$1" ] || {
+        echo "No parameters expected."
+        exit 1
+    }
+
+    echo "DOCKER4GIS_STANDALONE=true" >>.env
+
+    [ -x run.sh ] || {
+        {
+            echo "#!/bin/bash"
+            echo ""
+            echo "# This script is run on \`$DOCKER4GIS_COMMAND run\` for this standalone component."
+        } >run.sh
+        chmod +x run.sh
+    }
+
+    echo "Component $DOCKER_REPO marked as standalone."
+    ;;
+
+all)
+    help "Run something in each $docker4gis directory in the monorepo.
+Usage: $DOCKER4GIS_COMMAND $action EXECUTABLE [ARG...]
+If \`$DOCKER4GIS_COMMAND\` should be executed, use \`self\` instead, e.g.
+\`$DOCKER4GIS_COMMAND $action self bump push\`"
+
+    run_in_dir() {
+        local dir=$1
+        shift
+        [ -d "$dir" ] || return
+        if (
+            cd "$dir" || exit
+            dotenv forgiving || exit
+            echo
+            realpath .
+        ); then
+            (
+                cd "$dir" || exit
+                "$@"
+            ) || error=true
+            any=true
+        fi
+    }
+
+    root=$(find_monorepo_root) || {
+        echo "Could not find monorepo root (no .env with DOCKER4GIS_ROOT=true found)." >&2
+        exit 1
+    }
+
+    for dir in "$root"/components/*/; do
+        run_in_dir "$dir" "$@"
+    done
+
+    # Reflect that we ran something, and that every run was successful.
+    [ "$any" ] && ! [ "$error" ]
+    ;;
+
+bats)
+    default_file=./test.bats
+    help "Create a new file in the current directory, that calls the generic bats helper
+($DOCKER_BASE/.plugins/bats/helper.bash).
+Usage: $DOCKER4GIS_COMMAND $action [FILE]
+The deault FILE is $default_file."
+
+    file=${1:-$default_file}
+    if [ -e "$file" ]; then
+        echo "$file already exists."
+        exit 1
+    fi
+    echo "load ~/.bats/helper.bash
+
+function setup_file() {
+    helper
+}
+
+" >"$file"
+    ;;
+
+devops)
+    help "Provision a $docker4gis setup in an Azure DevOps project.
+
+Usage:
+- $DOCKER4GIS_COMMAND $action [components|c] [--project|-p PROJECT] [COMPONENT...]
+- $DOCKER4GIS_COMMAND $action set|s pat|t|registry|r|organisation|o|pool|p VALUE
+
+=> You need a Personal Access Token (PAT) of a user that has the right to create
+Projects in Azure DevOps (or, for an existing project, of a user that is a
+Project Administrator). Create a PAT with scope \"full access\". See for
+instructions:
+https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?toc=%2Fazure%2Fdevops%2Forganizations%2Ftoc.json&view=azure-devops&tabs=Windows
+
+The \"components\" action (which is the default) creates a new Project in Azure
+DevOps, with a single monorepo Repository (named after the project/DOCKER_USER).
+The repository contains the package at the root and all components under
+\`components/<name>/\`. Each component gets its own Build Validation Pipeline
+(triggered automatically on each new or modified Pull Request), scoped to its
+path (\`components/<name>/*\`) via a path filter on the branch policy, so only
+relevant changes trigger a build. The package gets a Build Validation Pipeline
+covering the whole repo. Each pipeline must succeed before its PR can be
+completed. A Continuous Integration Pipeline is also created for each, running
+automatically on each PR merge/completion.
+
+=> Edit the generated \"docker4gis\" Variable Group (Pipelines | Library |
+docker4gis) to set the proper value for the DOCKER_PASSWORD variable, which is
+needed for Pipelines to pull and push images from/to your Docker Registry.
+
+Additionally, a \"TEST\" and \"PRODUCTION\" Environment are created, each with a
+template SSH Service Connection. Both Environments require manual Approval by a
+project Team member, so the respective Deployment Stages of the package's
+Continuous Integration Pipeline aren't run automatically. Edit the Service
+Connection details (Project settings | Pipelines | Service connections), before
+removing the TEST Environment Approval Check (Pipelines | Environments |
+TEST/PRODUCTION | Approvals and checks | {hover} | ⁝ | Delete).
+
+The \"components\" action will ask you to type in the Project name (or accept a
+default value based on DOCKER_USER), unless you specify it through the
+--project|-p option.
+
+A component is created for each name you list (plus \"proxy\" which is always
+included). For an existing Project, existing components are left untouched, and
+newly listed ones are added.
+
+The \"set\" action saves the value of a variable to the local file
+\`~/$docker4gis-$action.env\`. If any of the variables is not set, the
+\"components\" action asks you to type it in the first time.
+- pat|p: Personal Access Token
+- registry|r: Docker Registry, default: $DEVOPS_DOCKER_REGISTRY
+- organisation|o: Organisation, default: $DEVOPS_ORGANISATION
+- default|d: the Agent Pool name that is used in general Pipeline Tasks,
+  default: $DEVOPS_DEFAULT_POOL
+- vpn|v: the Agent Pool name that is used in Deployment Pipeline Tasks,
+  default: $DEVOPS_VPN_POOL
+"
+    "$DOCKER_BASE/../$action/run.sh" "$@"
+    ;;
+
+*)
+    echo "Manage $docker4gis applications and their components and base components.
+Usage: $DOCKER4GIS_COMMAND init|new | [generate|g] component|c [local] [COMPONENT_NAME] [TEMPLATE] |
+  build|b [COMPONENT] [ARG...] | run|r | br [COMPONENT] [ARG...] |
+  push|p [COMPONENT] [--no-save] [ARG...] | test|t [FILE] |
+  unbuild [COMPONENT] | stop | geoserver | base-component |
+  template | $docker4gis | base | login [PASSWORD] [USER] | run-env|env |
+  version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
+  run-single|rs [DOCKER_TAG] [DOCKER_REPO] [DOCKER_USER] [DOCKER_REGISTRY] |
+  pwd|where | bats | all EXECUTABLE|self [ARG...] |
+  devops [components|c] [--project|-p PROJECT] [COMPONENT...] |
+  devops set|s pat|p|registry|r|organisation|o|default|d|vpn|v VALUE
+Note that build, run, br, test, stop, unbuild, and geoserver run with the
+  $docker4gis version of DOCKER4GIS_VERSION from the current directory's .env,
+  as does the build step of the push command.
+For help: $DOCKER4GIS_COMMAND COMMAND help, or $DOCKER4GIS_COMMAND help COMMAND.
+For debugging (tracing all shell commands):
+  $DOCKER4GIS_COMMAND trace COMMAND [ARG...]
+  output is saved in $log_path."
+    ;;
+esac
