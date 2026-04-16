@@ -1,5 +1,7 @@
 {
   "recommendations": [
-    "mads-hartmann.bash-ide-vscode"
+    "mads-hartmann.bash-ide-vscode",
+    "ms-vscode-remote.remote-containers",
+    "eamodio.gitlens"
   ]
 }
