@@ -2,8 +2,12 @@
 
 function src() {
 	angular_json=$(find . -name angular.json | head -n 1)
+
+	# Set the SRC directory, which is needed as a Docker build-arg.
 	SRC=$(dirname "$angular_json")
-	[ -n "$angular_json" ]
+
+	# Return true if angular.json is found, false otherwise.
+	[ -f "$angular_json" ]
 }
 
 here=$(dirname "$0")
@@ -16,14 +20,15 @@ if ! [ "${DOCKER_USER:?}" = "docker4gis" ] && ! src; then
 		# Create a new Angular project, skipping git initialization.
 		ng new "$app" --skip-git true &&
 		src || exit &&
+		(
+			cd "$app" &&
 
-		# https://angular.dev/ai/develop-with-ai#rules-files
-		cp -r "$here/conf/app/." "$app" &&
+				# https://angular.dev/ai/develop-with-ai#rules-files
+				cp -r "$here/conf/app/." ./ &&
 
-		# https://angular.dev/ai/agent-skills
-		pushd "$app" &&
-		npx skills add https://github.com/angular/skills --skill '*' --yes &&
-		popd || exit
+				# https://angular.dev/ai/agent-skills
+				npx skills add https://github.com/angular/skills --skill '*' --yes
+		)
 fi
 
 docker image build \
