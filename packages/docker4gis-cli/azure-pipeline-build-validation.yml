@@ -4,7 +4,7 @@ trigger:
 pr:
   branches:
     include:
-    - npm-package
+    - master
   paths:
     include:
     - packages/docker4gis-cli/**

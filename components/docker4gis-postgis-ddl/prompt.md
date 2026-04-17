@@ -2,7 +2,7 @@ This docker4gis-postgis image features a Postgres database. Users are supposed
 to extend a custom new image FROM it, "inheriting" this "abstact" image's
 features and tools; the extension image's setup looks like the what's in the
 `template` directory. We have an encompassing tool ("docker4gis", it's in the
-`npm-package` directory; mainly the `docker4gis` executable shell script; it has
+`master` directory; mainly the `docker4gis` executable shell script; it has
 a "usage" section listing the available commands, and a "help" system that lists
 instructions for each command) that works with these "docker4gis" images; the
 tool will call the build.sh script to build the extension image, as well as the

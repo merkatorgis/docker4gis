@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-    - npm-package
+    - master
   paths:
     include:
     - components/docker4gis-postgis/**
@@ -30,8 +30,8 @@ steps:
   displayName: 'git config'
 
 - script: |
-    git checkout -b npm-package
-    git push --set-upstream origin npm-package
+    git checkout -b master
+    git push --set-upstream origin master
   displayName: 'git undo detached state'
 
 - script: |

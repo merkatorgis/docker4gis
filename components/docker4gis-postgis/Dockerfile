@@ -223,6 +223,6 @@ ONBUILD ARG DOCKER_REPO
 ONBUILD ENV DOCKER_REPO=$DOCKER_REPO
 
 # Make this an extensible base component; see
-# https://github.com/merkatorgis/docker4gis/tree/npm-package/docs#extending-base-components.
+# https://github.com/merkatorgis/docker4gis/tree/master/docs#extending-base-components.
 ONBUILD COPY conf/args /.docker4gis/
 COPY template /template/
