@@ -1,4 +1,4 @@
-FROM node:22.12.0-bookworm
+FROM node:24.14.1-trixie
 
 # The source directory is given as a build argument.
 ONBUILD ARG SRC
