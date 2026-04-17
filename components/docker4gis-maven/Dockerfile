@@ -1,4 +1,4 @@
-FROM openjdk:8-alpine
+FROM alpine:3.23.4
 
 RUN apk add maven
 
