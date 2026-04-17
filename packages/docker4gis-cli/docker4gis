@@ -502,6 +502,12 @@ component_dir_name() {
     local component_name=$1
     [ "$component_name" ] || return 1
 
+    # Keep the package component directory unprefixed in monorepos.
+    [ "$component_name" = '^package' ] && {
+        echo '^package'
+        return 0
+    }
+
     # Keep explicit names unchanged if they are already project-prefixed.
     if [ -n "$DOCKER_USER" ] && [[ "$component_name" == "$DOCKER_USER"-* ]]; then
         echo "$component_name"
@@ -610,7 +616,7 @@ POSTFIX_DOMAIN=" >>.env
     # docker4gis/package image has no /template; we create the files
     # directly.
     (
-        workdir=$project_name/components/$project_name-^package
+        workdir=$project_name/components/^package
         mkdir -p "$workdir" &&
             cd "$workdir" || exit
 
