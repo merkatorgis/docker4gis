@@ -19,6 +19,20 @@ DOCKER_USER=$DOCKER_USER
 package_docker_registry=$DOCKER_REGISTRY
 package_docker_user=$DOCKER_USER
 
+normalise_component_repo_name() {
+    local value=$1
+
+    value=$(basename "$value")
+    if [ -n "$package_docker_user" ] && [[ "$value" == "$package_docker_user"-* ]]; then
+        value=${value#"$package_docker_user"-}
+    fi
+    value=${value#docker4gis-}
+    value=${value%%.*}
+    value=${value#^}
+
+    echo "$value"
+}
+
 # Use a temp dir to collect component name→version mappings.
 temp_components=$(mktemp -d)
 
@@ -61,8 +75,9 @@ prune_latest_runtime() {
 for comp_dir in ../../components/*/; do
     [ -d "$comp_dir" ] || continue
     comp_name=$(basename "$comp_dir")
+    comp_repo=$(normalise_component_repo_name "$comp_name")
     # Skip the ^package component itself.
-    [ "$comp_name" = "^package" ] && continue
+    [ "$comp_repo" = package ] && continue
     # Start a subshell to prevent overwriting environment variables.
     (
         DOCKER4GIS_VERSION=
@@ -75,7 +90,7 @@ for comp_dir in ../../components/*/; do
         # shellcheck source=/dev/null
         . "$comp_env"
 
-        [ "$DOCKER_REPO" ] || DOCKER_REPO=$comp_name
+        [ "$DOCKER_REPO" ] || DOCKER_REPO=$comp_repo
 
         # Skip standalone components.
         [ -n "$DOCKER4GIS_STANDALONE" ] && exit

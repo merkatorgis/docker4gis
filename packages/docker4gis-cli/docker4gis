@@ -1079,9 +1079,10 @@ container, to the geoserver component repository in the current directory."
             exit 1
         ) || true
 
-        if [ -n "$monorepo_root" ] && [ "$(realpath .)" != "$monorepo_root" ]; then
-            # We're in between (e.g. components/). If $1 names a component, cd
-            # into it and consume the argument; otherwise fall back to ^package.
+        if [ -n "$monorepo_root" ]; then
+            # If $1 names a component, cd into it and consume the argument.
+            # Otherwise, from the monorepo root (or from components/), fall
+            # back to ^package.
             dotenv forgiving "$monorepo_root/.env"
             components_dir=$monorepo_root/components
 
@@ -1093,7 +1094,7 @@ container, to the geoserver component repository in the current directory."
                 fi
             fi
 
-            if [ "$(basename "$PWD")" = "components" ]; then
+            if [ "$(realpath .)" = "$monorepo_root" ] || [ "$(basename "$PWD")" = "components" ]; then
                 package_dir=$(resolve_component_dir "$components_dir" '^package') ||
                     package_dir=$components_dir/^package
                 cd "$package_dir" || exit 1
@@ -1114,6 +1115,14 @@ container, to the geoserver component repository in the current directory."
 
     # Load the current component's own environment variables.
     dotenv export
+
+    # Component .env files may not define DOCKER_REPO explicitly. dotenv then
+    # falls back to the raw directory basename (e.g. dgtest-app), so normalize
+    # when there is no explicit DOCKER_REPO entry.
+    if ! grep -q "^DOCKER_REPO=" ./.env 2>/dev/null || [ -z "$DOCKER_REPO" ]; then
+        DOCKER_REPO=$(normalise_repo_name "$PWD")
+        export DOCKER_REPO
+    fi
 
     [ "$action" = b ] && action=build
     [ "$action" = r ] && action=run
