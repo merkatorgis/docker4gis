@@ -48,6 +48,12 @@ steps:
   workingDirectory: packages/docker4gis-cli
 
 
+# Run the CLI test suite before publishing.
+- bash: |
+    npm test
+  displayName: run tests
+  workingDirectory: packages/docker4gis-cli
+
 # Run shared workflow for release mode: bump version, build/push package image,
 # publish npm package, then push git commit and tags.
 - bash: |
