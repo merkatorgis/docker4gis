@@ -18,6 +18,9 @@
     "url": "https://github.com/merkatorgis/docker4gis/issues"
   },
   "homepage": "https://github.com/merkatorgis/docker4gis#readme",
+  "scripts": {
+    "test": "tests/run.sh"
+  },
   "dependencies": {
     "bats": "^1.11.0"
   }
