@@ -6,4 +6,5 @@ node_modules
 !.vscode/extensions.json
 binds/
 .claude/settings.local.json
-.dmux/
+.claude/worktrees
+.dmux
