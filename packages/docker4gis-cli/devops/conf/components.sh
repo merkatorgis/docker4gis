@@ -360,10 +360,10 @@ normalise_component_name() {
     }
     # Strip base-image docker4gis- prefix.
     comp=${comp#docker4gis-}
-    if [ -n "$DOCKER_USER" ]; then
-        # Strip existing DOCKER_USER- prefix to avoid double-prefixing.
-        comp=${comp#"$DOCKER_USER"-}
-        echo "$DOCKER_USER-$comp"
+    if [ -n "$SYSTEM_TEAMPROJECT" ]; then
+        # Strip existing prefix to avoid double-prefixing.
+        comp=${comp#"$SYSTEM_TEAMPROJECT"-}
+        echo "$SYSTEM_TEAMPROJECT-$comp"
     else
         echo "docker4gis-$comp"
     fi
@@ -563,11 +563,6 @@ fi
 # ensure the parent shell list includes any auto-added components.
 if [ "$repository_result" = 0 ]; then
     refresh_components_from_repo
-fi
-
-# Create pipelines for the docker4gis-cli package.
-if [ "$repository_result" = 0 ]; then
-    COMPONENT="docker4gis-cli" YAML_DIR="packages/docker4gis-cli" /devops/pipelines.sh || repository_result=$?
 fi
 
 # Create pipelines for each component (YAML files under components/<name>/).
