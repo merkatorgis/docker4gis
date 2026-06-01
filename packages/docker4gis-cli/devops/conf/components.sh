@@ -358,11 +358,18 @@ normalise_component_name() {
         echo "$comp"
         return 0
     }
-    [[ "$comp" == docker4gis-* ]] || comp="docker4gis-$comp"
-    echo "$comp"
+    # Strip base-image docker4gis- prefix.
+    comp=${comp#docker4gis-}
+    if [ -n "$DOCKER_USER" ]; then
+        # Strip existing DOCKER_USER- prefix to avoid double-prefixing.
+        comp=${comp#"$DOCKER_USER"-}
+        echo "$DOCKER_USER-$comp"
+    else
+        echo "docker4gis-$comp"
+    fi
 }
 
-non_package_components=(docker4gis-proxy)
+non_package_components=("$(normalise_component_name proxy)")
 for c in "$@"; do
     IFS='=' read -r comp _ <<<"$c"
     comp=$(normalise_component_name "$comp")
