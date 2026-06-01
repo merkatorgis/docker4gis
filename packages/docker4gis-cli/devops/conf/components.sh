@@ -565,6 +565,11 @@ if [ "$repository_result" = 0 ]; then
     refresh_components_from_repo
 fi
 
+# Create pipelines for the ^package component.
+if [ "$repository_result" = 0 ]; then
+    COMPONENT="^package" YAML_DIR="components/^package" /devops/pipelines.sh || repository_result=$?
+fi
+
 # Create pipelines for each component (YAML files under components/<name>/).
 for component in "${non_package_components[@]}"; do
     [ "$repository_result" = 0 ] || break
