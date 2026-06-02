@@ -608,7 +608,8 @@ MYSQL_ROOT_PASSWORD=
 POSTFIX_DESTINATION=
 POSTFIX_DOMAIN=" >>.env
 
-        # Create package.json for version tracking.
+        # Create package.json as a sentinel: dotenv validates a directory
+        # by checking for its presence alongside .env.
         package_json
     ) || exit 1
 
