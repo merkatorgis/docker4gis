@@ -94,7 +94,9 @@ log "Pushing $image:latest"
 docker image push "$image":latest
 
 push() {
-    git pull origin "$(git branch --show-current)"
+    git pull origin \
+        "$(git branch --show-current)" \
+        --allow-unrelated-histories
     git push origin "$@"
 }
 
