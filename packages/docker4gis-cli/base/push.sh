@@ -94,6 +94,7 @@ log "Pushing $image:latest"
 docker image push "$image":latest
 
 push() {
+    git pull origin
     git push origin "$@"
 }
 
