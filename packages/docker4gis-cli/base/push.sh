@@ -94,21 +94,7 @@ log "Pushing $image:latest"
 docker image push "$image":latest
 
 push() {
-    local result
-
-    if git push origin "$@"; then
-        return 0
-    else
-        result=$?
-    fi
-
-    if [ "$result" -eq 128 ]; then
-        # Support a non-remote context (e.g. pipeline).
-        echo "INFO: remote not found: origin"
-        return 0
-    fi
-
-    return "$result"
+    git push origin "$@"
 }
 
 tag="$DOCKER_REPO-$tag"
