@@ -240,12 +240,8 @@ $steps" >"$file"
 - bash: |
     git config --global user.email 'pipeline@azure.com'
     git config --global user.name 'Azure Pipeline'
-  displayName: Git config
-
-- bash: |
     git checkout -b $main
-    git push --set-upstream origin $main
-  displayName: Git undo detached state
+  displayName: Git config
 "
 
     # For a package image, build, run, and test as a validation for the push
