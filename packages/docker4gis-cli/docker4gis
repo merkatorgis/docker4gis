@@ -242,7 +242,9 @@ $steps" >"$file"
     git config --global user.name 'Azure Pipeline'
     git config --global push.autoSetupRemote true
     git config --global pull.rebase false
-    git checkout -b $main
+    git fetch origin
+    git checkout -B $main "origin/$main" 2>/dev/null \
+        || git checkout -b $main
   displayName: Git config
 "
 
