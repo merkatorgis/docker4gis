@@ -125,7 +125,9 @@ pipeline() {
 
         # Ensure all generated pipelines use a shallow checkout.
         login_steps=$'- checkout: self\n  fetchDepth: 1\n'
-        login_steps+=$'  sparseCheckoutDirectories: components/'"$dir_name"$'\n'
+        # Package pipelines need all sibling components, so no sparse checkout.
+        [ "$is_package" ] ||
+            login_steps+=$'  sparseCheckoutDirectories: components/'"$dir_name"$'\n'
         login_steps+=$'  displayName: Git checkout\n'
 
         [ "$file" = "$continuous_integration" ] && {
@@ -146,7 +148,9 @@ pipeline() {
             login_steps=$'- checkout: self\n'
             login_steps+=$'  persistCredentials: true\n'
             login_steps+=$'  fetchDepth: 1\n'
-            login_steps+=$'  sparseCheckoutDirectories: components/'"$dir_name"$'\n'
+            # Package pipelines need all sibling components, so no sparse checkout.
+            [ "$is_package" ] ||
+                login_steps+=$'  sparseCheckoutDirectories: components/'"$dir_name"$'\n'
             login_steps+="  displayName: Git login
 "
         }
