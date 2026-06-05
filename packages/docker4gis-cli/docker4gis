@@ -483,6 +483,7 @@ find_monorepo_root() {
     done
     return 1
 }
+export -f find_monorepo_root
 
 normalise_repo_name() {
     local value=$1
