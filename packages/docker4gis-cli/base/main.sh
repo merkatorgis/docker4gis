@@ -4,7 +4,7 @@ DOCKER_BASE=$(realpath "$(dirname "$0")")
 export DOCKER_BASE
 
 base_dir=~
-[ -n "$PIPELINE" ] && base_dir=..
+[ -n "$PIPELINE" ] && base_dir="$(find_monorepo_root)"
 DOCKER_BINDS_DIR=${DOCKER_BINDS_DIR:-$base_dir/docker-binds}
 DOCKER_BINDS_DIR=$(realpath "$DOCKER_BINDS_DIR")
 mkdir -p "$DOCKER_BINDS_DIR"
@@ -116,7 +116,6 @@ dir() {
 		fi
 	fi
 }
-
 
 case "$action" in
 
