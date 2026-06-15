@@ -1,7 +1,7 @@
 # Writes /build.
-FROM docker4gis/angular-builder:v0.0.27 AS builder
+FROM docker4gis/angular-builder:v0.0.28 AS builder
 
 # Serves /wwwroot.
-FROM docker4gis/angular:v0.0.27
+FROM docker4gis/angular:v0.0.28
 
 COPY --from=builder /build /wwwroot
