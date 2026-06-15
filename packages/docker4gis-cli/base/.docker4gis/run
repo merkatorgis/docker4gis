@@ -28,12 +28,13 @@ echo "
 (
     export DOCKER_REGISTRY=$DOCKER_REGISTRY
     export DOCKER_USER=$DOCKER_USER
+    component_dir=\$(pwd) &&
     temp=\$(mktemp -d) &&
         dummy=\$(docker container create '$DOCKER_IMAGE') &&
         docker container cp \"\$dummy\":/.docker4gis \"\$temp\" >/dev/null &&
         docker container rm \"\$dummy\" >/dev/null &&
         cd \"\$temp\"/.docker4gis &&
-        docker4gis/run.sh '$DOCKER_REPO' '$DOCKER_TAG'
+        DOCKER4GIS_COMPONENT_DIR=\"\$component_dir\" docker4gis/run.sh '$DOCKER_REPO' '$DOCKER_TAG'
     result=\$?
     rm -rf \"\$temp\"
     exit \$result

@@ -69,6 +69,16 @@ DOCKER_CONTAINER=$DOCKER_CONTAINER
 DOCKER_NETWORK=$DOCKER_NETWORK
 DOCKER_VOLUME=$DOCKER_VOLUME
 DEBUG=$DEBUG" >>"$ENV_FILE"
+
+# Append the component's .env so any variable defined there flows into the
+# container.
+_dotenv_file="$DOCKER4GIS_COMPONENT_DIR/.env"
+if [ -f "$_dotenv_file" ]; then
+    grep -v '^[[:space:]]*#' "$_dotenv_file" |
+        grep -v '^[[:space:]]*$' >>"$ENV_FILE"
+fi
+unset _dotenv_file
+
 export ENV_FILE
 
 # Write environment variables having the "${DOCKER_USER}_${DOCKER_REPO}_" prefix
