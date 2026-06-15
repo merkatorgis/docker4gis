@@ -7,6 +7,9 @@ ENV AUTH_PATH="http://$DOCKER_USER-api:8080/rpc/auth_path"
 ENV CACHE_PATH="http://$DOCKER_USER-api:8080/rpc/cache_path"
 ENV APP="http://$DOCKER_USER-app/"
 ENV HOMEDEST="/$DOCKER_USER/app/"
+# Comma-separated list of legacy DOCKER_USER names to redirect to the current
+# DOCKER_USER (leave empty if not needed):
+ENV DOCKER_USER_LEGACY=""
 
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
 # https://hstspreload.org/

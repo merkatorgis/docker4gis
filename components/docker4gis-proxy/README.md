@@ -77,6 +77,14 @@ container. Starting point for each application's routes is
 will be handled as if it belonged to the `${DOCKER_USER}` of the image that the
 proxy container is running from)
 
+### Legacy application names
+
+If an application was previously deployed under a different Docker user name,
+set `DOCKER_USER_LEGACY` to a comma-separated list of old names. Any incoming
+request whose first path component matches one of those names will be treated
+as if it used the current `${DOCKER_USER}` name instead, preserving existing
+links without a redirect.
+
 ## Configuration
 
 ### SSL certificate

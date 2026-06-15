@@ -30,6 +30,7 @@ docker container run --restart "$RESTART" --name "$DOCKER_CONTAINER" \
 	--env PROXY_HOST="$PROXY_HOST" \
 	--env PROXY_PORT="$PROXY_PORT" \
 	--env AUTOCERT="$AUTOCERT" \
+	--env DOCKER_USER_LEGACY="$DOCKER_USER_LEGACY" \
 	--mount type=bind,source="$DOCKER_BINDS_DIR"/certificates,target=/certificates \
 	--publish "$PROXY_PORT":443 \
 	--publish "$PROXY_PORT_HTTP":80 \
