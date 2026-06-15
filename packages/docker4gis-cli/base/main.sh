@@ -107,6 +107,15 @@ dir() {
 			[ -f "$dir_found" ] && break
 		done
 
+		# Also check sibling components (when running from inside a component).
+		if ! [ -f "$dir_found" ]; then
+			for env_file in ../../components/*/.env; do
+				[ -f "$env_file" ] || break
+				run_in_env_file "$env_file" "$@"
+				[ -f "$dir_found" ] && break
+			done
+		fi
+
 		# Also check the monorepo package root (two levels up, from a component).
 		[ -f "$dir_found" ] || run_in_env_file "../../.env" "$@"
 
