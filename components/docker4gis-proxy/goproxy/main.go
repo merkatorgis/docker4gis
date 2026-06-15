@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/gorilla/handlers"
@@ -29,6 +30,14 @@ type config struct {
 	proxies   map[string]*proxy
 }
 
+func csvEnv(name string) []string {
+	value := os.Getenv(name)
+	if value == "" {
+		return nil
+	}
+	return strings.Split(value, ",")
+}
+
 var (
 	configs                         = make(map[string]*config)
 	proxyHost                       = os.Getenv("PROXY_HOST")
@@ -36,6 +45,7 @@ var (
 	useAutocert                     = os.Getenv("AUTOCERT")
 	dockerEnv                       = os.Getenv("DOCKER_ENV")
 	dockerUser                      = os.Getenv("DOCKER_USER")
+	dockerUserLegacy                = csvEnv("DOCKER_USER_LEGACY")
 	debug                           = os.Getenv("DEBUG") == "true"
 	hstsMaxAge                      = os.Getenv("HSTS_MAX_AGE")
 	hstsIncludeSubdomains           = os.Getenv("HSTS_INCLUDE_SUBDOMAINS")
@@ -234,6 +244,9 @@ func reverse(w http.ResponseWriter, r *http.Request) {
 	path := "/"
 	requestParts := strings.Split(r.URL.Path, "/")
 	app := requestParts[1]
+	if slices.Contains(dockerUserLegacy, app) {
+		app = dockerUser
+	}
 	if _, ok := configs[app]; ok {
 		// Normal case: path starts with app directory
 		if len(requestParts) > 2 {
