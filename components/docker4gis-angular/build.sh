@@ -27,7 +27,10 @@ if ! [ "${DOCKER_USER:?}" = "docker4gis" ] && ! src; then
 				cp -r "$here/conf/app/." ./ &&
 
 				# https://angular.dev/ai/agent-skills
-				npx skills add https://github.com/angular/skills --skill '*' --yes
+				npx skills add https://github.com/angular/skills --skill '*' --yes &&
+
+				# https://goo.gle/modern-web-guidance
+				npx skills add GoogleChrome/modern-web-guidance --skill '*' --yes
 		)
 fi
 
