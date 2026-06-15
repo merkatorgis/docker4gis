@@ -345,7 +345,7 @@ $(
                 while IFS= read -r line; do
                     echo "                  $line"
                 done < <("$DOCKER_BASE/package/setup_pipeline.sh" "$environment")
-                echo "                }"
+                echo "                } 2>&1"
             else
                 echo "                export DOCKER_ENV=$environment"
                 if [ "$repo" = proxy ]; then
@@ -358,7 +358,7 @@ $(
                 local image=$DOCKER_REGISTRY/$DOCKER_USER/$repo:\$tag
                 local dcr="docker container run --rm \"$image\""
                 dcr+=" /.docker4gis/run \"\$tag\""
-                echo "                eval \"\$($dcr)\""
+                echo "                eval \"\$($dcr)\" 2>&1"
             fi
         )" >"$temp"
         if [ -n "$DOCKER4GIS_DEVOPS" ]; then
