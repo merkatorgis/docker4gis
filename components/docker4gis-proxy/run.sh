@@ -16,6 +16,8 @@ AUTOCERT=${AUTOCERT:-false}
 	echo "AUTH_PATH=$AUTH_PATH" >>"$ENV_FILE"
 [ -z "$CACHE_PATH" ] ||
 	echo "CACHE_PATH=$CACHE_PATH" >>"$ENV_FILE"
+[ -z "$DOCKER_USER_LEGACY" ] ||
+	echo "DOCKER_USER_LEGACY=$DOCKER_USER_LEGACY" >>"$ENV_FILE"
 
 mkdir -p "$DOCKER_BINDS_DIR"/certificates
 
@@ -30,7 +32,6 @@ docker container run --restart "$RESTART" --name "$DOCKER_CONTAINER" \
 	--env PROXY_HOST="$PROXY_HOST" \
 	--env PROXY_PORT="$PROXY_PORT" \
 	--env AUTOCERT="$AUTOCERT" \
-	--env DOCKER_USER_LEGACY="$DOCKER_USER_LEGACY" \
 	--mount type=bind,source="$DOCKER_BINDS_DIR"/certificates,target=/certificates \
 	--publish "$PROXY_PORT":443 \
 	--publish "$PROXY_PORT_HTTP":80 \
