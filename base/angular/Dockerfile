@@ -1,4 +1,4 @@
-FROM node:24.1.0-bookworm
+FROM node:24.16.0-trixie
 
 RUN mkdir /src
 WORKDIR /src

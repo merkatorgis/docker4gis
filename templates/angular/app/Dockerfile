@@ -1,4 +1,4 @@
-FROM docker4gis/angular:661 AS builder
+FROM docker4gis/angular:733 AS builder
 
 FROM docker4gis/serve:460
 ENV SINGLE=true
