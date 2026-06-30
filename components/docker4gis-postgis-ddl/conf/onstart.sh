@@ -9,6 +9,11 @@ done
 # Clear and reuse the deferred execution file for schema scripts.
 echo '' >/last
 
+# Resync identity sequences (forward-only, idempotent) before the schema
+# migrations, so each migration's seed inserts cleanly over any lag left by an
+# earlier deploy. On a fresh database this is a harmless no-op.
+resync_sequences.sh
+
 /subconf.sh /tmp/mail/conf.sh
 /subconf.sh /tmp/web/conf.sh
 /subconf.sh /tmp/admin/conf.sh
@@ -19,3 +24,7 @@ echo '' >/last
 
 # shellcheck disable=SC1091
 source /last
+
+# Resync again after the migrations (including the deferred /last seeds) to
+# catch any lag introduced by this deploy's seeds.
+resync_sequences.sh
