@@ -32,7 +32,8 @@ ONBUILD ENV PGPASSWORD=${PGPASSWORD:-postgres}
 
 COPY conf/schema.sh /usr/local/bin/
 COPY conf/last.sh /usr/local/bin/
-COPY ["conf/subconf.sh", "conf/onstart.sh", "/"]
+COPY conf/resync_sequences.sh /usr/local/bin/
+COPY ["conf/subconf.sh", "conf/onstart.sh", "conf/resync_sequences.sql", "/"]
 
 COPY conf/mail /tmp/mail
 COPY conf/web /tmp/web
