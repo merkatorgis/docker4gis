@@ -11,6 +11,7 @@
   - [Setup app directory](#setup-app-directory)
 - [Building things](#building-things)
 - [Running things](#running-things)
+  - [Standalone components](#standalone-components)
   - [On the server](#on-the-server)
 - [Testing things](#testing-things)
   - [Unit tests](#unit-tests)
@@ -122,6 +123,34 @@ you can update all at once to the most recently pushed version through `./app
 latest`. That will remove all existing containers, update all images, and then
 run everything. To store a newly built, but not yet versioned image of a
 specific component, use `./app push {component}` (without any tag).
+
+### Standalone components
+
+Not every component is a service. A component may be a *batch job*: an importer
+or a loader, run on demand, for minutes or hours, and then gone. Such a
+component must not be started along with the app, and `run` would otherwise
+insist on it — a component with no `tag` file aborts `run` for the whole app,
+and one with a `tag` file gets a container started for it every time.
+
+Mark it standalone in its own `.env`, and `run` leaves it alone:
+
+```sh
+# {component}/.env
+DOCKER4GIS_STANDALONE=1
+```
+
+Everything else is unchanged. `./app build {component}` and `./app push
+{component} {tag}` work exactly as for any other component, so a standalone
+component is versioned and published the same way. It is then run from its
+published image, wherever there is a Docker daemon and no clone of the app:
+
+```sh
+docker container run --rm {registry}/{user}/{component}:{tag} {command} {args}
+```
+
+Give such an image no `ENTRYPOINT`, so the caller names the command to run, and
+let its `CMD` print usage rather than start the job — a container started by
+accident should not begin an hours-long download.
 
 ### On the server
 

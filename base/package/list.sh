@@ -29,6 +29,36 @@ add_repo() {
     # run after the containers are started.
     [ "$repo" = test ] && return
 
+    # Skip standalone components. A standalone component is a batch job -- an
+    # on-demand loader or task -- rather than a service, so it must not be
+    # started with the stack. It declares itself in its own .env, with the same
+    # variable docker4gis proper uses:
+    #
+    #     # <component>/.env
+    #     DOCKER4GIS_STANDALONE=1
+    #
+    # Sourced in a subshell, so a component's .env cannot leak variables into
+    # this script. Tested BEFORE the tag lookup below, which is the point: a
+    # component with no tag file reaches error(), and error() exits 1, taking
+    # the whole of `run` with it. Without this skip, placing a batch job here
+    # is a choice between breaking `run` outright (no tag file) and having a
+    # container started for it on every `run` (with one) -- which is why such
+    # jobs have had to idle on `CMD ["sleep", "infinity"]` and be reached with
+    # `docker container exec`.
+    #
+    # build and push are unaffected and keep working: a standalone component
+    # is built and pushed like any other, and is then run from its published
+    # image with a plain `docker container run`, needing no clone.
+    if [ -f "$repo_path"/.env ] && (
+        DOCKER4GIS_STANDALONE=
+        # shellcheck source=/dev/null
+        . "$repo_path"/.env
+        [ -n "$DOCKER4GIS_STANDALONE" ]
+    ); then
+        echo "Skipping standalone component $repo." >&2
+        return
+    fi
+
     echo "Fetching $repo..." >&2
     local image=$DOCKER_REGISTRY$DOCKER_USER/$repo
     local tag
