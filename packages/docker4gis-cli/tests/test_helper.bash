@@ -21,6 +21,17 @@ _make_fake_component() {
     printf '{"version":"0.0.0"}\n' > "$dir/package.json"
 }
 
+# Create a minimal fake component inside a fake monorepo's components/
+# directory, prefixed with the project name that _make_fake_monorepo sets.
+# Args: root, component name (without the project prefix)
+_make_fake_monorepo_component() {
+    local dir="$1/components/testapp-$2"
+    mkdir -p "$dir"
+    printf 'DOCKER4GIS_VERSION=0.0.1\n' > "$dir/.env"
+    printf '{"version":"0.0.0"}\n' > "$dir/package.json"
+    echo "$dir"
+}
+
 # Create a minimal fake docker4gis monorepo root with a components/ directory.
 # Args: root
 _make_fake_monorepo() {
