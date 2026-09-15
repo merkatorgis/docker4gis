@@ -46,3 +46,6 @@ dg help [COMMAND]
 ## Documentation
 
 See the [docs](/docs) for more features and explanation.
+
+Maintainers: see [docs/releasing.md](docs/releasing.md) for how a release
+is staged by the pipeline and approved on npm.
