@@ -18,9 +18,10 @@ steps:
 
 # Pin the same toolchain the CI pipeline publishes with, so the tests run
 # against the Node and npm that produce the release.
-- task: NodeTool@0
+- task: UseNode@1
   inputs:
-    versionSpec: '24.x'
+    versionSource: 'spec'
+    version: '24.x'
   displayName: 'use Node 24'
 
 - bash: |

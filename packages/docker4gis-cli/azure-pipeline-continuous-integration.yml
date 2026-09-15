@@ -19,11 +19,12 @@ steps:
 
 # Pin the toolchain. `npm stage publish` (used by the release step) was
 # added in npm 11.15.0, which Node 24.18+ bundles; the hosted image's
-# default Node is older, and NodeTool may resolve '24.x' to a cached build
+# default Node is older, and UseNode may resolve '24.x' to a cached build
 # with an older npm, so pin npm explicitly as well.
-- task: NodeTool@0
+- task: UseNode@1
   inputs:
-    versionSpec: '24.x'
+    versionSource: 'spec'
+    version: '24.x'
   displayName: 'use Node 24'
 
 - bash: |

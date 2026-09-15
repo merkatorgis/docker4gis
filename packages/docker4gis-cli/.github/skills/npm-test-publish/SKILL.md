@@ -11,7 +11,7 @@ description: >-
 Use this skill when the user wants to run a full-circle local test publish:
 1) bump prerelease version,
 2) build and push `docker4gis/package` for that version,
-3) publish npm package with `test` dist-tag,
+3) stage an npm publish with the `test` dist-tag,
 4) push git commit and tags.
 
 ## Quick Workflow
@@ -28,7 +28,7 @@ The script handles:
 - Committing and tagging the version
 - Building and pushing `docker4gis/package:v<version>`
 - Token prompting (only if needed)
-- Publishing to npm with `test` dist-tag
+- Staging the npm publish with the `test` dist-tag
 - Pushing git branch and tags
 
 **Success** = use the terminal status directly. After the command runs, check
@@ -44,6 +44,23 @@ On success, do NOT perform any further checks, including:
 - re-inspecting `$?` or the exit code via a follow-up command
 - tailing output
 - running `npm view`
+
+## Staged Publishing
+
+The script stages the prerelease rather than publishing it outright; the
+npm token is not allowed to publish directly. Staging is the whole of this
+skill's job, so a zero exit code still means done.
+
+Approving the staged version is a separate, deliberate action for the user
+to take later, not part of this run and not a check on it:
+
+```bash
+npm stage list docker4gis
+npm stage approve <stage-id>
+```
+
+Until then `npm install docker4gis@test` will not see the version. See
+`docs/releasing.md` for the full procedure.
 
 ## Token Storage
 
@@ -62,4 +79,5 @@ prompts for one or if auth fails.
 - Each run produces a unique prerelease version.
 - npm rejects duplicate version publishes.
 - Repeatable: run multiple times to publish successive test versions.
-- Local preconditions: existing git push access and docker login state.
+- Local preconditions: existing git push access, docker login state, and
+  npm 11.15.0 or newer (for `npm stage`).
