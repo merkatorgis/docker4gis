@@ -71,3 +71,15 @@ function teardown() {
     assert_success
     assert_output --partial "test"
 }
+
+@test "'test COMPONENT' tests the named component, not the current one" {
+    _make_fake_monorepo "$WORKDIR"
+    app_dir=$(_make_fake_monorepo_component "$WORKDIR" app)
+    geoserver_dir=$(_make_fake_monorepo_component "$WORKDIR" geoserver)
+    printf '#!/bin/bash\nexit 1\n' > "$app_dir/test.sh"
+    chmod +x "$app_dir/test.sh"
+    cd "$geoserver_dir"
+    run "$DG" test app
+    assert_failure
+    assert_output --partial "unit tests in $app_dir"
+}

@@ -1012,7 +1012,9 @@ After all components' containers are started, any/all (integration) tests are
 run (see \`$DOCKER4GIS_COMMAND help test\`.)"
 
     [ "$action" = br ] && help "First build, then run.
-Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT] [ARG...]\` from the package root."
+Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT] [ARG...]\` from anywhere in the
+monorepo; a COMPONENT argument takes precedence over the current directory's
+component."
 
     [ "$action" = push ] || [ "$action" = p ] && help "Increment the component's version, build its image, push it to the Docker
 registry, commit and push git changes.
@@ -1034,6 +1036,9 @@ exported function abort_tests to prevent running any further tests.
 Then, any files named '*.bats' in the component's directory (and below) are run
 using the [bash automated testing system](https://www.npmjs.com/package/bats).
 
+Or pass a component name to run that component's tests, e.g.
+\`$DOCKER4GIS_COMMAND test proxy\`.
+
 If run with the optional FILE parameter, only the tests in that file are run. It
 should be a .bats file, or an executable .sh file.
 
@@ -1052,7 +1057,8 @@ environment; not on any server where the application is deployed (though it can
 be imagined as part of some future test-deploy pipeline)."
 
     [ "$action" = unbuild ] && help "Remove the local 'latest' version of the component's image.
-Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT]\` from the package root."
+Can also \`$DOCKER4GIS_COMMAND $action [COMPONENT]\` from anywhere in the monorepo;
+a COMPONENT argument takes precedence over the current directory's component."
 
     [ "$action" = stop ] && help "Stop the application's containers.
 Except the proxy container, since that may still serve other applications."
@@ -1076,7 +1082,35 @@ container, to the geoserver component repository in the current directory."
         done
         return 1
     }
-    if component_root=$(_find_component_root); then
+
+    # Resolve a COMPONENT argument against the enclosing monorepo's
+    # components/ directory. Echoes nothing when $1 doesn't name a component;
+    # it's then just an argument to pass on. Called from a command
+    # substitution, so that reading the monorepo root's .env (for DOCKER_USER,
+    # which resolve_component_dir needs to match prefixed directory names)
+    # happens in a subshell, leaving this shell's environment alone.
+    _resolve_component_argument() {
+        local monorepo_root
+        monorepo_root=$(find_monorepo_root) || return 1
+        dotenv forgiving "$monorepo_root/.env"
+        resolve_component_dir "$monorepo_root/components" "$1"
+    }
+
+    # A COMPONENT argument takes precedence over the component of the current
+    # directory, so that e.g. `dg br app` acts on the app component, also when
+    # run from another component's directory.
+    component_dir=
+    case $action in
+    build | b | br | push | p | test | t | unbuild)
+        [ "$1" ] &&
+            component_dir=$(_resolve_component_argument "$1")
+        ;;
+    esac
+
+    if [ "$component_dir" ]; then
+        cd "$component_dir" || exit 1
+        shift
+    elif component_root=$(_find_component_root); then
         cd "$component_root" || exit 1
     else
         # Not inside a component. Find the monorepo root (if any).
@@ -1440,7 +1474,7 @@ The \"set\" action saves the value of a variable to the local file
     echo "Manage $docker4gis applications and their components and base components.
 Usage: $DOCKER4GIS_COMMAND init|new | [generate|g] component|c [local] [COMPONENT_NAME] [TEMPLATE] |
   build|b [COMPONENT] [ARG...] | run|r | br [COMPONENT] [ARG...] |
-  push|p [COMPONENT] [--no-save] [ARG...] | test|t [FILE] |
+  push|p [COMPONENT] [--no-save] [ARG...] | test|t [COMPONENT|FILE] |
   unbuild [COMPONENT] | stop | geoserver | base-component |
   template | $docker4gis | base | login [PASSWORD] [USER] | run-env|env |
   version|v [local] | bump [push] | standalone | git-push|gp [BRANCH_NAME...] |
