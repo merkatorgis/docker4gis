@@ -17,6 +17,21 @@ steps:
   sparseCheckoutDirectories: packages/docker4gis-cli
   displayName: 'git checkout'
 
+# Pin the toolchain. `npm stage publish` (used by the release step) was
+# added in npm 11.15.0, which Node 24.18+ bundles; the hosted image's
+# default Node is older, and NodeTool may resolve '24.x' to a cached build
+# with an older npm, so pin npm explicitly as well.
+- task: NodeTool@0
+  inputs:
+    versionSpec: '24.x'
+  displayName: 'use Node 24'
+
+- bash: |
+    npm install --global npm@^11.15.0
+    node --version
+    npm --version
+  displayName: 'pin npm'
+
 # Login to the Docker Hub, so that we can push the image we'll build.
 - bash: |
     echo '$(DOCKER_PASSWORD)' | docker login -u=docker4gis --password-stdin docker.io

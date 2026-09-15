@@ -22,16 +22,18 @@ validate_mode() {
 publish_with_token() {
     local token="$1"
     local output_file
+    local status=0
+    local -a publish_cmd=(npm stage publish)
+
+    if [[ "$PUBLISH_MODE" == "test" ]]; then
+        publish_cmd+=(--tag test)
+    fi
 
     output_file="$(mktemp)"
-    set +e
-    if [[ "$PUBLISH_MODE" == "test" ]]; then
-        NPM_TOKEN="$token" npm publish --tag test 2>&1 | tee "$output_file"
-    else
-        NPM_TOKEN="$token" npm publish 2>&1 | tee "$output_file"
-    fi
-    local status=${PIPESTATUS[0]}
-    set -e
+    # `|| status=$?` keeps errexit from killing the script here, while
+    # pipefail makes the pipeline report npm's own exit status.
+    NPM_TOKEN="$token" "${publish_cmd[@]}" 2>&1 | tee "$output_file" ||
+        status=$?
 
     if [[ $status -eq 0 ]]; then
         rm -f "$output_file"
@@ -110,16 +112,21 @@ publish_package() {
         return 1
     fi
 
-    if publish_with_token "$token"; then
+    # Capture the status directly; `status=$?` after an `if` block would
+    # read the status of the `if` itself (0), masking the failure.
+    status=0
+    publish_with_token "$token" || status=$?
+
+    if [[ $status -eq 0 ]]; then
         return 0
     fi
 
-    status=$?
-    if [[ $status -ne $AUTH_FAIL_CODE ]]; then
-        return $status
+    if [[ $status -eq $AUTH_FAIL_CODE ]]; then
+        echo "Provided NPM token is not authorized." >&2
+    else
+        echo "npm publish failed with exit status $status." >&2
     fi
 
-    echo "Provided NPM token is not authorized." >&2
     return $status
 }
 
@@ -147,4 +154,6 @@ main() {
     push_git_refs
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi
