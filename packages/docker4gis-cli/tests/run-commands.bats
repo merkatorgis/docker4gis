@@ -55,3 +55,16 @@ function teardown() {
     assert_success
     assert_output --partial "environment variables"
 }
+
+@test "'br COMPONENT' acts on the named component, not the current one" {
+    _make_fake_monorepo "$WORKDIR"
+    app_dir=$(_make_fake_monorepo_component "$WORKDIR" app)
+    geoserver_dir=$(_make_fake_monorepo_component "$WORKDIR" geoserver)
+    printf '#!/bin/bash\nexit 1\n' > "$app_dir/test.sh"
+    chmod +x "$app_dir/test.sh"
+    cd "$geoserver_dir"
+    run "$DG" br app
+    assert_failure
+    assert_output --partial "unit tests in $app_dir"
+    assert_output --partial "Not starting the build"
+}
