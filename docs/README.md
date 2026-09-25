@@ -123,7 +123,8 @@ them to `origin`.
 
 Each time you `dg run` the application, component versions are read from each
 component's `package.json`. For components that haven't been pushed yet, a
-version `latest` is used.
+version `latest` is used. Versioned/pushed components' versions are recorded in
+the package's `components` directory.
 
 Once all components are pushed, you can issue `dg build` from the ^package
 directory to create a new package image. The package image includes the list of
